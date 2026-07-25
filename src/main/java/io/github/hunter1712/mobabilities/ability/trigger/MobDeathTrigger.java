@@ -1,75 +1,42 @@
 package io.github.hunter1712.mobabilities.ability.trigger;
 
 import io.github.hunter1712.mobabilities.ability.Ability;
-import io.github.hunter1712.mobabilities.ability.AbilityRegistry;
 import io.github.hunter1712.mobabilities.ability.TriggerType;
-import io.github.hunter1712.mobabilities.MobAbilitiesMod;
+import io.github.hunter1712.mobabilities.tier.MobTierManager;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Mob;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Handles the {@link TriggerType#DEATH DEATH} trigger for hostile mobs.
- *
- * <p>Listens for {@link ServerLivingEntityEvents#AFTER_DEATH}, filters
- * for {@link Monster} entities, queries the ability registry for
- * DEATH-triggered abilities, selects one at random (weighted), and
- * executes its effect logic with the killer as the second argument.
- *
- * <p>Death effect implementations (Split, Horde Caller, Corrosive Splash)
- * live in the {@code ability.effect} package and are invoked via the
- * registry's {@code effectLogic} BiConsumers.
+ * Handles the {@link TriggerType#DEATH} trigger.
+ * <p>
+ * Fires all DEATH abilities (Split) when the mob dies,
+ * then cleans up tier tracking to prevent memory leaks.
  */
 public final class MobDeathTrigger {
 
-    private MobDeathTrigger() {
-        // static-only utility class
+    private MobDeathTrigger() {}
+
+    public static void register() {
+        ServerLivingEntityEvents.AFTER_DEATH.register(MobDeathTrigger::onDeath);
     }
 
-    /**
-     * Registers the {@code AFTER_DEATH} event handler.
-     */
-    public static void register() {
-        ServerLivingEntityEvents.AFTER_DEATH.register((LivingEntity entity, DamageSource source) -> {
-            // Only process hostile mobs
-            if (!(entity instanceof Monster mob)) {
-                return;
-            }
+    private static void onDeath(LivingEntity entity, DamageSource source) {
+        if (!(entity instanceof Mob mob)) return;
 
-            // 1. Query available DEATH abilities (for debugging / logging)
-            List<Ability> abilities =
-                    AbilityRegistry.getAbilitiesForMob(mob, TriggerType.DEATH);
-            if (abilities.isEmpty()) {
-                return;
-            }
+        LivingEntity killer = source.getEntity() instanceof LivingEntity living ? living : null;
 
-            if (MobAbilitiesMod.LOGGER.isDebugEnabled()) {
-                MobAbilitiesMod.LOGGER.debug(
-                        "MobDeathTrigger: {} has {} death ability candidates",
-                        BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()),
-                        abilities.size());
-            }
+        // Fire ALL DEATH abilities
+        List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.DEATH);
+        for (Ability ability : abilities) {
+            ability.effectLogic().accept(mob, killer);
+        }
 
-            // 2. Weighted-random selection of one DEATH ability
-            Optional<Ability> selected =
-                    AbilityRegistry.selectRandomAbility(mob, TriggerType.DEATH);
-            if (selected.isEmpty()) {
-                return;
-            }
-
-            // 3. Resolve the killer as the target (may be null)
-            LivingEntity target = source.getEntity() instanceof LivingEntity living
-                    ? living
-                    : null;
-
-            // 4. Execute the registered effect logic
-            selected.get().effectLogic().accept(mob, target);
-        });
+        // Clean up tracking
+        MobTierManager.removeMob(mob);
     }
 }

@@ -3,12 +3,7 @@ package io.github.hunter1712.mobabilities;
 import io.github.hunter1712.mobabilities.ability.AbilityRegistry;
 import io.github.hunter1712.mobabilities.ability.trigger.MobDeathTrigger;
 import io.github.hunter1712.mobabilities.ability.trigger.MobHurtTrigger;
-import io.github.hunter1712.mobabilities.ability.trigger.MobSpawnTrigger;
 import io.github.hunter1712.mobabilities.ability.trigger.MobTickTrigger;
-import io.github.hunter1712.mobabilities.ability.trigger.ProjectileHitTrigger;
-import io.github.hunter1712.mobabilities.config.ModConfig;
-import io.github.hunter1712.mobabilities.damage.ModDamageTypes;
-import io.github.hunter1712.mobabilities.effect.ModEffects;
 
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -25,15 +20,10 @@ public class MobAbilitiesMod implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("MobAbilitiesMod initializing...");
 
-		ModEffects.onInitialize();
-		ModDamageTypes.onInitialize();
 		AbilityRegistry.registerAll();
-		ModConfig.onInitialize();
-		MobSpawnTrigger.register();
 		MobTickTrigger.register();
 		MobHurtTrigger.register();
 		MobDeathTrigger.register();
-		ProjectileHitTrigger.register();
 	}
 
 	public static Identifier id(String path) {
