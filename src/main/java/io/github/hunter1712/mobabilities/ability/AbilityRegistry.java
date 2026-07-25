@@ -9,14 +9,15 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 
 /**
- * Central registry containing all 12 global mob abilities.
+ * Central registry containing the global mob ability pool.
  * <p>
  * Abilities are stored in a flat list and randomly sampled when a mob
  * is assigned a tier on spawn. There is no per-mob-type registration.
@@ -33,73 +34,73 @@ public final class AbilityRegistry {
 
     /**
      * Populates the global ability pool. Must be called during mod init.
-     * All 12 abilities use vanilla effects — no custom status effects needed.
+     * All abilities use vanilla effects — no custom status effects needed.
      */
     public static void registerAll() {
         // ---- HURT abilities (fire when the mob melee-hits a player) ----
 
-        all("blight",    "Blight",
+        all("venom",    "Venom",
                 TriggerType.HURT, (mob, target) ->
                         target.addEffect(new MobEffectInstance(MobEffects.POISON, 60, 0)));
 
-        all("shackle",   "Shackle",
+        all("freeze",   "Freeze",
                 TriggerType.HURT, (mob, target) ->
                         target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, 0)));
 
-        all("rot",       "Rot",
+        all("decay",    "Decay",
                 TriggerType.HURT, (mob, target) ->
                         target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0)));
 
-        all("hellfire",  "Hellfire",
+        all("inferno",  "Inferno",
                 TriggerType.HURT, (mob, target) ->
                         target.igniteForSeconds(3));
 
-        all("drain",     "Drain",
+        all("siphon",   "Siphon",
                 TriggerType.HURT, (mob, target) -> {
                     float amount = DamageContext.getAndClear();
                     if (amount > 0) mob.heal(amount * 0.5f);
                 });
 
-        all("corrode",   "Corrode",
-                TriggerType.HURT, (mob, target) -> {
-                    if (target instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
-                        player.getItemBySlot(EquipmentSlot.HEAD).hurtAndBreak(2, level, player, item -> {});
-                        player.getItemBySlot(EquipmentSlot.CHEST).hurtAndBreak(2, level, player, item -> {});
-                        player.getItemBySlot(EquipmentSlot.LEGS).hurtAndBreak(2, level, player, item -> {});
-                        player.getItemBySlot(EquipmentSlot.FEET).hurtAndBreak(2, level, player, item -> {});
-                    }
-                });
+        all("acid",     "Acid",
+                TriggerType.HURT, AbilityRegistry::damageArmor);
 
-        all("cripple",   "Cripple",
+        all("hex",      "Hex",
                 TriggerType.HURT, (mob, target) ->
                         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 0)));
 
         // ---- TICK abilities (passive, refresh every 2 seconds while alive) ----
 
-        all("bone",      "Bone",
+        all("fortify",  "Fortify",
                 TriggerType.TICK, (mob, target) ->
                         mob.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 0)));
 
-        all("wrath",     "Wrath",
+        all("fury",     "Fury",
                 TriggerType.TICK, (mob, target) ->
                         mob.addEffect(new MobEffectInstance(MobEffects.STRENGTH, 40, 0)));
 
-        all("haste",     "Haste",
+        all("gust",     "Gust",
                 TriggerType.TICK, (mob, target) ->
                         mob.addEffect(new MobEffectInstance(MobEffects.SPEED, 40, 0)));
 
-        all("flesh",     "Flesh",
+        all("bloom",    "Bloom",
                 TriggerType.TICK, (mob, target) ->
                         mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 0)));
 
         // ---- DEATH abilities ----
 
-        all("rend",      "Rend",
-                TriggerType.DEATH, (mob, target) -> {
-                    if (mob.level() instanceof ServerLevel serverLevel) {
-                        SplitEffect.apply(mob, serverLevel);
-                    }
-                });
+        all("fission",  "Fission",
+                TriggerType.DEATH, (mob, target) ->
+                        SplitEffect.apply(mob));
+    }
+
+    /** Damages all 4 armor slots by 2 durability each. */
+    private static void damageArmor(LivingEntity mob, LivingEntity target) {
+        if (!(target instanceof ServerPlayer player)) return;
+        if (!(player.level() instanceof ServerLevel level)) return;
+        player.getItemBySlot(EquipmentSlot.HEAD).hurtAndBreak(2, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.CHEST).hurtAndBreak(2, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.LEGS).hurtAndBreak(2, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.FEET).hurtAndBreak(2, level, player, item -> {});
     }
 
     /** Convenience: builds and registers a single ability. */

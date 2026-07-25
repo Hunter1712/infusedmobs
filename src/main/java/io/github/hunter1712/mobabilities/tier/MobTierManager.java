@@ -4,10 +4,17 @@ import io.github.hunter1712.mobabilities.ability.Ability;
 import io.github.hunter1712.mobabilities.ability.AbilityRegistry;
 import io.github.hunter1712.mobabilities.ability.TriggerType;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Manages per-mob tier assignments and ability tracking.
@@ -36,30 +43,35 @@ public final class MobTierManager {
      * fully healed to its new max. Split copies are skipped entirely.
      */
     public static void assignTier(Mob mob) {
-        if (mob.level() instanceof net.minecraft.server.level.ServerLevel) {
-            if (SPLIT_COPIES.contains(mob.getUUID())) return;
-        } else {
-            return;
-        }
+        if (!(mob.level() instanceof net.minecraft.server.level.ServerLevel)) return;
+        if (mob.getType().getCategory() != MobCategory.MONSTER) return;
+        if (SPLIT_COPIES.contains(mob.getUUID())) return;
 
         for (MobTier tier : MobTier.values()) {
-            if (mob.getRandom().nextDouble() < tier.spawnChance()) {
-                TIERS.put(mob.getUUID(), tier);
+            if (!(mob.getRandom().nextDouble() < tier.spawnChance())) continue;
 
-                int range = tier.maxAbilities() - tier.minAbilities() + 1;
-                int count = tier.minAbilities() + mob.getRandom().nextInt(range);
-                List<Ability> abilities = AbilityRegistry.getRandomAbilities(count);
-                ABILITIES.put(mob.getUUID(), abilities);
+            TIERS.put(mob.getUUID(), tier);
 
-                // Apply health multiplier
-                var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
-                if (attribute != null) {
-                    attribute.setBaseValue(attribute.getBaseValue() * tier.healthMultiplier());
-                    mob.setHealth(mob.getMaxHealth());
-                }
-                return;
-            }
+            int count = rollAbilityCount(tier, mob);
+            List<Ability> abilities = AbilityRegistry.getRandomAbilities(count);
+            ABILITIES.put(mob.getUUID(), abilities);
+
+            applyHealthMultiplier(mob, tier);
+            setMobNameTag(mob, tier, abilities);
+            return;
         }
+    }
+
+    private static int rollAbilityCount(MobTier tier, Mob mob) {
+        int range = tier.maxAbilities() - tier.minAbilities() + 1;
+        return tier.minAbilities() + mob.getRandom().nextInt(range);
+    }
+
+    private static void applyHealthMultiplier(Mob mob, MobTier tier) {
+        var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
+        if (attribute == null) return;
+        attribute.setBaseValue(attribute.getBaseValue() * tier.healthMultiplier());
+        mob.setHealth(mob.getMaxHealth());
     }
 
     // ========================================
@@ -69,11 +81,6 @@ public final class MobTierManager {
     /** Returns the tier assigned to this mob, or null. */
     public static MobTier getTier(Mob mob) {
         return TIERS.get(mob.getUUID());
-    }
-
-    /** Returns all abilities assigned to this mob (empty list if none). */
-    public static List<Ability> getAbilities(Mob mob) {
-        return ABILITIES.getOrDefault(mob.getUUID(), List.of());
     }
 
     /**
@@ -98,8 +105,30 @@ public final class MobTierManager {
         SPLIT_COPIES.remove(mob.getUUID());
     }
 
+    /** Returns all abilities assigned to this mob (empty list if none). */
+    public static List<Ability> getAllAbilities(Mob mob) {
+        return ABILITIES.getOrDefault(mob.getUUID(), List.of());
+    }
+
     /** Marks a mob as a split copy so it won't receive tier assignment. */
     public static void markSplitCopy(UUID uuid) {
         SPLIT_COPIES.add(uuid);
+    }
+
+    // ========================================
+    // Nametag helpers
+    // ========================================
+
+    private static void setMobNameTag(Mob mob, MobTier tier, List<Ability> abilities) {
+        // Tier colour: green → yellow → red
+        String colour = switch (tier) {
+            case EMBER -> "§a";
+            case SURGE -> "§e";
+            case TEMPEST -> "§c";
+        };
+
+        String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
+        mob.setCustomName(Component.literal(colour + abilityList + " §f" + mob.getName().getString()));
+        mob.setCustomNameVisible(true);
     }
 }

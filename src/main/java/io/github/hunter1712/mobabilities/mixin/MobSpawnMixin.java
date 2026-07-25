@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Mixes into {@link Mob#tick} to assign a tier on the first tick.
- * This is the single entry point for tier/ability assignment.
+ * Entry point for tier/ability assignment on spawn.
  */
 @Mixin(Mob.class)
 public class MobSpawnMixin {
@@ -20,12 +20,11 @@ public class MobSpawnMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
-        if (!mobabilities$spawned) {
-            mobabilities$spawned = true;
-            Mob self = (Mob) (Object) this;
-            if (self.level() instanceof net.minecraft.server.level.ServerLevel) {
-                MobTierManager.assignTier(self);
-            }
+        if (mobabilities$spawned) return;
+        mobabilities$spawned = true;
+        Mob self = (Mob) (Object) this;
+        if (self.level() instanceof net.minecraft.server.level.ServerLevel) {
+            MobTierManager.assignTier(self);
         }
     }
 }
