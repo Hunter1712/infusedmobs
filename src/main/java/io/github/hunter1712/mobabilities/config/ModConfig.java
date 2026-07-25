@@ -109,14 +109,15 @@ public final class ModConfig {
     public static final int SPIDER_CORRUPTED_PRESENCE = 6;
 
     // ---- CREEPER weights ----
-    public static final int CREEPER_LIFESTRIKE      = 3;
-    public static final int CREEPER_RUST            = 4;
-    public static final int CREEPER_CORROSIVE_SPLASH = 12;
-    public static final int CREEPER_SPLIT           = 6;
-    public static final int CREEPER_FRENZY          = 5;
-    public static final int CREEPER_BERSERKER       = 6;
-    public static final int CREEPER_SHADOWSTEP      = 4;
-    public static final int CREEPER_THORNS          = 5;
+    public static final int CREEPER_LIFESTRIKE        = 3;
+    public static final int CREEPER_RUST              = 4;
+    public static final int CREEPER_CORROSIVE_SPLASH  = 12;
+    public static final int CREEPER_SPLIT             = 6;
+    public static final int CREEPER_FRENZY            = 5;
+    public static final int CREEPER_BERSERKER         = 6;
+    public static final int CREEPER_SHADOWSTEP        = 4;
+    public static final int CREEPER_REGENERATOR       = 5;
+    public static final int CREEPER_THORNS            = 5;
     public static final int CREEPER_CORRUPTED_PRESENCE = 7;
 
     // ---- PILLAGER weights ----

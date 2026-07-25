@@ -29,6 +29,7 @@ public class MobAbilitiesMod implements ModInitializer {
 		ModDamageTypes.onInitialize();
 		AbilityRegistry.registerAll();
 		ModConfig.onInitialize();
+		MobSpawnTrigger.register();
 		MobTickTrigger.register();
 		MobHurtTrigger.register();
 		MobDeathTrigger.register();

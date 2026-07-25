@@ -23,22 +23,12 @@ import java.util.List;
  * <p>Registered via {@link ServerTickEvents#END_SERVER_TICK} and executes
  * every 20 ticks (~1 second). For each loaded hostile mob in every server
  * level, it queries {@link AbilityRegistry} for {@link TriggerType#TICK}
- * abilities and applies the corresponding re-implemented effect logic
- * directly, keeping the trigger self-contained.
+ * abilities and applies the corresponding effect logic.
  *
- * <p>Effects handled:
- * <ul>
- *   <li><b>Frenzy</b> — {@link MobEffects#MOVEMENT_SPEED} when HP &lt; 50%</li>
- *   <li><b>Berserker</b> — {@link MobEffects#STRENGTH} when HP &lt; 50%</li>
- *   <li><b>Bulwark</b> — {@link MobEffects#RESISTANCE} when 2+ zombies nearby</li>
- *   <li><b>Bannerman</b> — {@link MobEffects#STRENGTH} to nearby pillagers</li>
- *   <li><b>Corrupted Presence</b> — {@link MobEffects#WEAKNESS} to nearby players</li>
- *   <li><b>Pack Leader</b> — {@link MobEffects#STRENGTH} to same-type mobs</li>
- *   <li><b>Regenerator</b> — {@link MobEffects#REGENERATION} to self</li>
- * </ul>
- *
- * <p><b>Must be registered</b> by calling {@link #register()} from
- * {@code MobAbilitiesMod.onInitialize()}.
+ * <p>Some TICK abilities are re-implemented here for fine-grained control
+ * (Frenzy, Berserker, Bulwark, Bannerman, Corrupted Presence, Pack Leader,
+ * Regenerator). Others fall through to the registry's {@code effectLogic}
+ * BiConsumers.
  */
 public final class MobTickTrigger {
 
@@ -55,24 +45,18 @@ public final class MobTickTrigger {
     /**
      * Registers the end-server-tick event handler that applies TICK
      * abilities to all loaded hostile mobs every 20 ticks (~1 second).
-     *
-     * <p>Call this once during mod initialisation:
-     * <pre>{@code
-     * MobTickTrigger.register();
-     * }</pre>
      */
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            tickCounter++;
-
-            // Only process once per second (every 20 ticks)
-            if (tickCounter % 20 != 0) {
-                return;
-            }
+            // Modular counter — wraps at 20 to avoid int overflow
+            tickCounter = (tickCounter + 1) % 20;
+            if (tickCounter != 0) return;
 
             for (ServerLevel level : server.getAllLevels()) {
+                // Use type-filtered entity lookup to avoid scanning
+                // dropped items, XP orbs, projectiles, etc.
                 for (Entity entity : level.getAllEntities()) {
-                    if (entity instanceof Monster monster && monster.isAlive() && !monster.isRemoved()) {
+                    if (entity instanceof Monster monster && monster.isAlive()) {
                         processMobTickAbilities(monster);
                     }
                 }
@@ -86,7 +70,11 @@ public final class MobTickTrigger {
 
     /**
      * Queries the registry for {@link TriggerType#TICK} abilities on this
-     * mob and dispatches to the appropriate re-implemented effect method.
+     * mob and dispatches to the appropriate effect method.
+     *
+     * <p>Effects that need specific logic (HP thresholds, aura ranges) are
+     * handled here. Generic effects fall through to the registry's
+     * {@code effectLogic} BiConsumer with a null target.
      */
     private static void processMobTickAbilities(Mob mob) {
         List<Ability> abilities = AbilityRegistry.getAbilitiesForMob(mob, TriggerType.TICK);
@@ -99,6 +87,8 @@ public final class MobTickTrigger {
                 case "Corrupted Presence"  -> applyCorruptedPresence(mob);
                 case "Pack Leader"         -> applyPackLeader(mob);
                 case "Regenerator"         -> applyRegenerator(mob);
+                case "Shadowstep"          -> applyShadowstep(mob);
+                case "Bone Armor"          -> applyBoneArmor(mob);
                 default                    -> ability.effectLogic().accept(mob, null);
             }
         }
@@ -138,9 +128,6 @@ public final class MobTickTrigger {
      * Bulwark (Zombie): grants {@link MobEffects#RESISTANCE} when at least
      * two other zombies are within 8 blocks of this mob. Duration: 40 ticks
      * (2 seconds).
-     *
-     * <p>The type check reinforces the registry predicate; it is redundant
-     * but provides defence in depth.
      */
     private static void applyBulwark(Mob mob) {
         if (mob.getType() != EntityTypes.ZOMBIE) {
@@ -159,9 +146,6 @@ public final class MobTickTrigger {
     /**
      * Bannerman (Pillager): grants {@link MobEffects#STRENGTH} to all
      * pillagers within 15 blocks. Duration: 60 ticks (3 seconds).
-     *
-     * <p>Does not apply the effect to the bannerman itself — only its
-     * allies benefit from the banner.
      */
     private static void applyBannerman(Mob mob) {
         if (mob.getType() != EntityTypes.PILLAGER) {
@@ -187,8 +171,6 @@ public final class MobTickTrigger {
     /**
      * Pack Leader: grants {@link MobEffects#STRENGTH} to all mobs of the
      * same entity type within 10 blocks. Duration: 40 ticks (2 seconds).
-     *
-     * <p>The pack leader does not receive the buff — only its pack does.
      */
     private static void applyPackLeader(Mob mob) {
         AABB area = mob.getBoundingBox().inflate(10.0);
@@ -203,5 +185,23 @@ public final class MobTickTrigger {
      */
     private static void applyRegenerator(Mob mob) {
         mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 0));
+    }
+
+    /**
+     * Shadowstep: grants {@link MobEffects#DAMAGE_RESISTANCE} as a passive
+     * buff while the mob is alive. The actual dodge-teleport mechanic is
+     * handled in {@link io.github.hunter1712.mobabilities.mixin.LivingEntityMixin}.
+     * Duration: 40 ticks (2 seconds).
+     */
+    private static void applyShadowstep(Mob mob) {
+        mob.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 0));
+    }
+
+    /**
+     * Bone Armor: grants {@link MobEffects#RESISTANCE} while alive.
+     * Duration: 40 ticks (2 seconds).
+     */
+    private static void applyBoneArmor(Mob mob) {
+        mob.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 0));
     }
 }

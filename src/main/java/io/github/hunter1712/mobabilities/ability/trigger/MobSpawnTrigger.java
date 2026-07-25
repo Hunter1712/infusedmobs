@@ -4,6 +4,7 @@ import io.github.hunter1712.mobabilities.ability.Ability;
 import io.github.hunter1712.mobabilities.ability.AbilityRegistry;
 import io.github.hunter1712.mobabilities.ability.TriggerType;
 
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -80,6 +81,21 @@ public final class MobSpawnTrigger {
             }
             default -> {}
         }
+    }
+
+    // ========================================
+    // Lifecycle hooks (called from mod init)
+    // ========================================
+
+    /**
+     * Registers event handlers for cleanup logic. Currently hooks the
+     * death event to remove Thorns mob entries, preventing unbounded
+     * growth of the {@link #THORNS_MOBS} set.
+     */
+    public static void register() {
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+            THORNS_MOBS.remove(entity.getUUID());
+        });
     }
 
     private MobSpawnTrigger() {}

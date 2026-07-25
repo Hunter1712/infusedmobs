@@ -6,10 +6,14 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * Prevents natural healing while active.
+ * Blocks all forms of healing while active.
  * <p>
- * The mere presence of this effect blocks natural health regeneration
- * (Minecraft does not regen health while any status effect is active).
+ * A {@code CursedWoundMixin} into {@link LivingEntity#heal} prevents
+ * the entity from regenerating health by any means — natural regen,
+ * potions, golden apples, or other effects — for the effect's duration.
+ *
+ * <p>This makes Cursed Wound a severe debuff that requires milk or
+ * time to clear.
  */
 public class CursedWoundEffect extends MobEffect {
 

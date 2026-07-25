@@ -3,6 +3,7 @@
     "package": "io.github.hunter1712.mobabilities.mixin",
     "compatibilityLevel": "JAVA_25",
     "mixins": [
+        "CursedWoundMixin",
         "LivingEntityMixin",
         "MobSpawnMixin",
         "SkeletonMixin"

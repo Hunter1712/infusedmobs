@@ -14,8 +14,8 @@ import net.minecraft.world.phys.Vec3;
  * to a random nearby position.
  *
  * <p>All tuning parameters are backed by static fields so
- * {@link com.example.config.ModConfig ModConfig} can push values at
- * initialisation time.
+ * {@link io.github.hunter1712.mobabilities.config.ModConfig ModConfig} can
+ * push values at initialisation time.
  */
 public final class ShadowstepEffect {
 
@@ -30,6 +30,9 @@ public final class ShadowstepEffect {
 
     /** Last tick when a dodge was attempted. Guarded by the mob's UUID. */
     private static final java.util.Map<java.util.UUID, Long> lastAttempt = new java.util.HashMap<>();
+
+    /** Counter used to trigger periodic cleanup of stale map entries. */
+    private static int invocationCounter = 0;
 
     private ShadowstepEffect() {
     }
@@ -51,6 +54,20 @@ public final class ShadowstepEffect {
     }
 
     // ================================================================
+    // Periodic cleanup
+    // ================================================================
+
+    /**
+     * Removes entries that are more than twice the cooldown period old.
+     * Called periodically from {@link #tryDodge} to prevent unbounded
+     * map growth as mobs despawn or die.
+     */
+    private static void cleanupStaleEntries(long currentGameTime) {
+        long cutoff = currentGameTime - cooldownTicks * 2L;
+        lastAttempt.values().removeIf(lastTime -> lastTime < cutoff);
+    }
+
+    // ================================================================
     // Core logic
     // ================================================================
 
@@ -65,8 +82,14 @@ public final class ShadowstepEffect {
     public static boolean tryDodge(LivingEntity mob, Level level) {
         if (!(level instanceof ServerLevel serverLevel)) return false;
 
-        // Cooldown check
         long gameTime = serverLevel.getGameTime();
+
+        // Periodic cleanup — every 100 invocations prune stale entries
+        if (++invocationCounter % 100 == 0) {
+            cleanupStaleEntries(gameTime);
+        }
+
+        // Cooldown check
         Long last = lastAttempt.get(mob.getUUID());
         if (last != null && (gameTime - last) < cooldownTicks) return false;
         lastAttempt.put(mob.getUUID(), gameTime);

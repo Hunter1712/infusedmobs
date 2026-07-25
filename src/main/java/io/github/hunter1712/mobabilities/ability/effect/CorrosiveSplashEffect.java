@@ -7,7 +7,7 @@ import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * Spawns an {@link AreaEffectCloud} that applies {@link com.example.effect.AcidEffect}
+ * Spawns an {@link AreaEffectCloud} that applies {@link io.github.hunter1712.mobabilities.effect.AcidEffect}
  * to any entity inside it.
  *
  * <p>Triggered when a Creeper with the Corrosive Splash ability dies.
