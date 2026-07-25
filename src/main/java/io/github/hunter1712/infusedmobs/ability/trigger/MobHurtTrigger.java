@@ -26,7 +26,12 @@ import java.util.UUID;
  */
 public final class MobHurtTrigger {
 
-    /** Tracks which mobs already announced their abilities (one-time per mob). */
+    /**
+     * One-time announcement tracking per mob UUID.
+     * Cleaned on mob death via {@link #removeAnnounced}.
+     * Despawned mobs (unloaded chunks) are NOT cleaned — an acceptably
+     * small leak (~16 bytes per unique mob encountered).
+     */
     private static final Set<UUID> ANNOUNCED = new HashSet<>();
 
     private MobHurtTrigger() {}
@@ -42,10 +47,11 @@ public final class MobHurtTrigger {
 
     private static void onAfterDamage(
             LivingEntity entity, DamageSource source,
-            float baseDamageTaken, float damageTaken, boolean blocked
+            float baseDamageTaken /* unused */, float damageTaken, boolean blocked
     ) {
         if (!(entity instanceof Player player)) return;
         if (!(source.getEntity() instanceof Mob mob)) return;
+        if (blocked) return;  // Shield block negates abilities
 
         MobTier tier = MobTierManager.getTier(mob);
         if (tier == null) return;

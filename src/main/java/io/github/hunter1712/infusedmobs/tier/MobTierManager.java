@@ -5,6 +5,7 @@ import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -43,7 +44,7 @@ public final class MobTierManager {
      * fully healed to its new max. Split copies are skipped entirely.
      */
     public static void assignTier(Mob mob) {
-        if (!(mob.level() instanceof net.minecraft.server.level.ServerLevel)) return;
+        if (!(mob.level() instanceof ServerLevel)) return;
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
         if (SPLIT_COPIES.contains(mob.getUUID())) return;
 

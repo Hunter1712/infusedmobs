@@ -25,6 +25,7 @@ import java.util.function.BiConsumer;
  */
 public final class AbilityRegistry {
 
+    private static final float COMBUST_POWER = 4.0f;
     private static final List<Ability> ALL_ABILITIES = new ArrayList<>();
 
     private AbilityRegistry() {}
@@ -97,12 +98,15 @@ public final class AbilityRegistry {
                 TriggerType.DEATH, (mob, target) -> {
                     if (mob.level() instanceof ServerLevel level) {
                         level.explode(mob, mob.getX(), mob.getY(), mob.getZ(),
-                                4.0f, Level.ExplosionInteraction.MOB);
+                                COMBUST_POWER, Level.ExplosionInteraction.MOB);
                     }
                 });
     }
 
-    /** Damages all 4 armor slots by 4 durability each. */
+    /**
+     * Damages all 4 armor slots by 4 durability each.
+     * {@code mob} param unused — required by {@code BiConsumer} signature.
+     */
     private static void damageArmor(LivingEntity mob, LivingEntity target) {
         if (!(target instanceof ServerPlayer player)) return;
         if (!(player.level() instanceof ServerLevel level)) return;

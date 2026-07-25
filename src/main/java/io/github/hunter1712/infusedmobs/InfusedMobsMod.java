@@ -11,17 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class InfusedMobsMod implements ModInitializer {
-	public static final String MOD_ID = "infusedmobs";
+    public static final String MOD_ID = "infusedmobs";
 
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	@Override
-	public void onInitialize() {
-		LOGGER.info("InfusedMobs initializing...");
+    @Override
+    public void onInitialize() {
+        LOGGER.info("InfusedMobs initializing...");
 
-		AbilityRegistry.registerAll();
-		MobTickTrigger.register();
-		MobHurtTrigger.register();
-		MobDeathTrigger.register();
-	}
+        AbilityRegistry.registerAll();
+        MobTickTrigger.register();
+        MobHurtTrigger.register();
+        MobDeathTrigger.register();
+    }
 }
