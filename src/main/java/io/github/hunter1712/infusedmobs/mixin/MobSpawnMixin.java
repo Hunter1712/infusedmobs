@@ -2,6 +2,7 @@ package io.github.hunter1712.infusedmobs.mixin;
 
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,14 +17,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Mob.class)
 public class MobSpawnMixin {
 
-    private boolean mobabilities$spawned = false;
+    private boolean infusedmobs$spawned = false;
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
-        if (mobabilities$spawned) return;
-        mobabilities$spawned = true;
+        if (infusedmobs$spawned) return;
+        infusedmobs$spawned = true;
         Mob self = (Mob) (Object) this;
-        if (self.level() instanceof net.minecraft.server.level.ServerLevel) {
+        if (self.level() instanceof ServerLevel) {
             MobTierManager.assignTier(self);
         }
     }

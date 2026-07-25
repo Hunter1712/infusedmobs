@@ -32,7 +32,6 @@ public enum MobTier {
     public int hurtAbilities() { return hurtAbilities; }
     public int tickAbilities() { return tickAbilities; }
     public int deathAbilities() { return deathAbilities; }
-    public int totalAbilities() { return hurtAbilities + tickAbilities + deathAbilities; }
     public double healthMultiplier() { return healthMultiplier; }
     public double xpMultiplier() { return xpMultiplier; }
 }

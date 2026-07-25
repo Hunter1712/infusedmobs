@@ -1,8 +1,9 @@
 package io.github.hunter1712.infusedmobs.trigger;
 
 /**
- * Thread-local context for passing damage amounts between triggers
- * and effect implementations.
+ * Simple static context for passing damage amounts between triggers
+ * and effect implementations. Minecraft's server thread is single-threaded,
+ * so no synchronisation is needed.
  *
  * <p>The {@link io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger}
  * stores the raw damage amount before dispatching to the ability registry,
