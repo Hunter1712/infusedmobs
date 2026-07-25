@@ -1,15 +1,15 @@
-package io.github.hunter1712.mobabilities.trigger;
+package io.github.hunter1712.infusedmobs.trigger;
 
 /**
  * Thread-local context for passing damage amounts between triggers
  * and effect implementations.
  *
- * <p>The {@link io.github.hunter1712.mobabilities.ability.trigger.MobHurtTrigger}
+ * <p>The {@link io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger}
  * stores the raw damage amount before dispatching to the ability registry,
  * and effects like Siphon read it via {@link #getAndClear()}.
  *
  * <p>This avoids changing the {@code BiConsumer<LivingEntity, LivingEntity>}
- * signature used by the {@link io.github.hunter1712.mobabilities.ability.Ability}
+ * signature used by the {@link io.github.hunter1712.infusedmobs.ability.Ability}
  * record, which would require updating all ability definitions.
  */
 public final class DamageContext {

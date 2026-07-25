@@ -1,4 +1,4 @@
-package io.github.hunter1712.mobabilities.ability;
+package io.github.hunter1712.infusedmobs.ability;
 
 /**
  * Enum representing when an ability triggers.

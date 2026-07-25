@@ -1,7 +1,7 @@
-package io.github.hunter1712.mobabilities.ability;
+package io.github.hunter1712.infusedmobs.ability;
 
-import io.github.hunter1712.mobabilities.ability.effect.SplitEffect;
-import io.github.hunter1712.mobabilities.trigger.DamageContext;
+import io.github.hunter1712.infusedmobs.ability.effect.SplitEffect;
+import io.github.hunter1712.infusedmobs.trigger.DamageContext;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,6 +9,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,24 +42,24 @@ public final class AbilityRegistry {
 
         all("venom",    "Venom",
                 TriggerType.HURT, (mob, target) ->
-                        target.addEffect(new MobEffectInstance(MobEffects.POISON, 60, 0)));
+                        target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1)));
 
         all("freeze",   "Freeze",
                 TriggerType.HURT, (mob, target) ->
-                        target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, 0)));
+                        target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 100, 2)));
 
         all("decay",    "Decay",
                 TriggerType.HURT, (mob, target) ->
-                        target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0)));
+                        target.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1)));
 
         all("inferno",  "Inferno",
                 TriggerType.HURT, (mob, target) ->
-                        target.igniteForSeconds(3));
+                        target.igniteForSeconds(5));
 
         all("siphon",   "Siphon",
                 TriggerType.HURT, (mob, target) -> {
                     float amount = DamageContext.getAndClear();
-                    if (amount > 0) mob.heal(amount * 0.5f);
+                    if (amount > 0) mob.heal(amount);
                 });
 
         all("acid",     "Acid",
@@ -66,41 +67,49 @@ public final class AbilityRegistry {
 
         all("hex",      "Hex",
                 TriggerType.HURT, (mob, target) ->
-                        target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 0)));
+                        target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 1)));
 
         // ---- TICK abilities (passive, refresh every 2 seconds while alive) ----
 
         all("fortify",  "Fortify",
                 TriggerType.TICK, (mob, target) ->
-                        mob.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 0)));
+                        mob.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 60, 1)));
 
         all("fury",     "Fury",
                 TriggerType.TICK, (mob, target) ->
-                        mob.addEffect(new MobEffectInstance(MobEffects.STRENGTH, 40, 0)));
+                        mob.addEffect(new MobEffectInstance(MobEffects.STRENGTH, 60, 1)));
 
         all("gust",     "Gust",
                 TriggerType.TICK, (mob, target) ->
-                        mob.addEffect(new MobEffectInstance(MobEffects.SPEED, 40, 0)));
+                        mob.addEffect(new MobEffectInstance(MobEffects.SPEED, 60, 1)));
 
         all("bloom",    "Bloom",
                 TriggerType.TICK, (mob, target) ->
-                        mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 0)));
+                        mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 1)));
 
         // ---- DEATH abilities ----
 
         all("fission",  "Fission",
                 TriggerType.DEATH, (mob, target) ->
                         SplitEffect.apply(mob));
+
+        all("combust",  "Combust",
+                TriggerType.DEATH, (mob, target) -> {
+                    if (mob.level() instanceof ServerLevel level) {
+                        level.explode(mob, mob.getX(), mob.getY(), mob.getZ(),
+                                4.0f, Level.ExplosionInteraction.MOB);
+                    }
+                });
     }
 
-    /** Damages all 4 armor slots by 2 durability each. */
+    /** Damages all 4 armor slots by 4 durability each. */
     private static void damageArmor(LivingEntity mob, LivingEntity target) {
         if (!(target instanceof ServerPlayer player)) return;
         if (!(player.level() instanceof ServerLevel level)) return;
-        player.getItemBySlot(EquipmentSlot.HEAD).hurtAndBreak(2, level, player, item -> {});
-        player.getItemBySlot(EquipmentSlot.CHEST).hurtAndBreak(2, level, player, item -> {});
-        player.getItemBySlot(EquipmentSlot.LEGS).hurtAndBreak(2, level, player, item -> {});
-        player.getItemBySlot(EquipmentSlot.FEET).hurtAndBreak(2, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.HEAD).hurtAndBreak(4, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.CHEST).hurtAndBreak(4, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.LEGS).hurtAndBreak(4, level, player, item -> {});
+        player.getItemBySlot(EquipmentSlot.FEET).hurtAndBreak(4, level, player, item -> {});
     }
 
     /** Convenience: builds and registers a single ability. */
@@ -114,16 +123,31 @@ public final class AbilityRegistry {
     // ========================================
 
     /**
-     * Returns {@code count} randomly selected abilities from the global pool.
-     * Abilities are shuffled uniformly (no weights).
+     * Returns a fixed set of abilities with the specified distribution
+     * of trigger types. Within each type, abilities are picked randomly.
      *
-     * @param count  how many abilities to pick
-     * @return a shuffled, non-modifiable list of size {@code min(count, pool size)}
+     * @return a shuffled, unmodifiable list
      */
-    public static List<Ability> getRandomAbilities(int count) {
-        List<Ability> pool = new ArrayList<>(ALL_ABILITIES);
-        Collections.shuffle(pool, ThreadLocalRandom.current());
-        return Collections.unmodifiableList(
-                pool.subList(0, Math.min(count, pool.size())));
+    public static List<Ability> getRandomAbilities(int hurt, int tick, int death) {
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
+        List<Ability> result = new ArrayList<>();
+
+        pickRandom(result, TriggerType.HURT, hurt, rng);
+        pickRandom(result, TriggerType.TICK, tick, rng);
+        pickRandom(result, TriggerType.DEATH, death, rng);
+
+        if (result.size() > 1) Collections.shuffle(result, rng);
+        return Collections.unmodifiableList(result);
+    }
+
+    /** Picks {@code count} random abilities of the given trigger type into target. */
+    private static void pickRandom(List<Ability> target, TriggerType type, int count, ThreadLocalRandom rng) {
+        if (count <= 0) return;
+        List<Ability> candidates = new ArrayList<>();
+        for (Ability a : ALL_ABILITIES) {
+            if (a.trigger() == type) candidates.add(a);
+        }
+        Collections.shuffle(candidates, rng);
+        target.addAll(candidates.subList(0, Math.min(count, candidates.size())));
     }
 }
