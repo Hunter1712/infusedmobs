@@ -1,4 +1,4 @@
-package io.github.hunter1712.mobabilities.ability;
+package io.github.hunter1712.infusedmobs.ability;
 
 import net.minecraft.world.entity.LivingEntity;
 import java.util.function.BiConsumer;

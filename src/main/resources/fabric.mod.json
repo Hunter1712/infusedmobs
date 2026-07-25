@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "mobabilities",
+	"id": "infusedmobs",
 	"version": "${version}",
-	"name": "MobAbilitiesMod",
-	"description": "A Fabric mod that gives vanilla hostile mobs randomized abilities triggered on hit, death, tick, spawn, and projectile hit.",
+	"name": "Infused Mobs",
+	"description": "Hostile mobs spawn with elemental-infused tiers (Ember/Surge/Tempest) and randomized abilities.",
 	"authors": [
 		"Me!"
 	],
@@ -12,15 +12,15 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/mobabilities/icon.png",
+	"icon": "assets/infusedmobs/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"io.github.hunter1712.mobabilities.MobAbilitiesMod"
+			"io.github.hunter1712.infusedmobs.InfusedMobsMod"
 		]
 	},
 	"mixins": [
-		"mobabilities.mixins.json"
+		"infusedmobs.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",

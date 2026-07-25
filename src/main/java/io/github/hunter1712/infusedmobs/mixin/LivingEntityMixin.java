@@ -1,7 +1,7 @@
-package io.github.hunter1712.mobabilities.mixin;
+package io.github.hunter1712.infusedmobs.mixin;
 
-import io.github.hunter1712.mobabilities.tier.MobTier;
-import io.github.hunter1712.mobabilities.tier.MobTierManager;
+import io.github.hunter1712.infusedmobs.tier.MobTier;
+import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;

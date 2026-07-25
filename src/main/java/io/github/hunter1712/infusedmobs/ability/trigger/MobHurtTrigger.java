@@ -1,10 +1,10 @@
-package io.github.hunter1712.mobabilities.ability.trigger;
+package io.github.hunter1712.infusedmobs.ability.trigger;
 
-import io.github.hunter1712.mobabilities.ability.Ability;
-import io.github.hunter1712.mobabilities.ability.TriggerType;
-import io.github.hunter1712.mobabilities.tier.MobTier;
-import io.github.hunter1712.mobabilities.tier.MobTierManager;
-import io.github.hunter1712.mobabilities.trigger.DamageContext;
+import io.github.hunter1712.infusedmobs.ability.Ability;
+import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.tier.MobTier;
+import io.github.hunter1712.infusedmobs.tier.MobTierManager;
+import io.github.hunter1712.infusedmobs.trigger.DamageContext;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.network.chat.Component;

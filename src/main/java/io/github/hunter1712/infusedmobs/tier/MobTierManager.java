@@ -1,8 +1,8 @@
-package io.github.hunter1712.mobabilities.tier;
+package io.github.hunter1712.infusedmobs.tier;
 
-import io.github.hunter1712.mobabilities.ability.Ability;
-import io.github.hunter1712.mobabilities.ability.AbilityRegistry;
-import io.github.hunter1712.mobabilities.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.ability.Ability;
+import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
+import io.github.hunter1712.infusedmobs.ability.TriggerType;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Mob;
@@ -52,19 +52,14 @@ public final class MobTierManager {
 
             TIERS.put(mob.getUUID(), tier);
 
-            int count = rollAbilityCount(tier, mob);
-            List<Ability> abilities = AbilityRegistry.getRandomAbilities(count);
+            List<Ability> abilities = AbilityRegistry.getRandomAbilities(
+                    tier.hurtAbilities(), tier.tickAbilities(), tier.deathAbilities());
             ABILITIES.put(mob.getUUID(), abilities);
 
             applyHealthMultiplier(mob, tier);
             setMobNameTag(mob, tier, abilities);
             return;
         }
-    }
-
-    private static int rollAbilityCount(MobTier tier, Mob mob) {
-        int range = tier.maxAbilities() - tier.minAbilities() + 1;
-        return tier.minAbilities() + mob.getRandom().nextInt(range);
     }
 
     private static void applyHealthMultiplier(Mob mob, MobTier tier) {
@@ -115,18 +110,29 @@ public final class MobTierManager {
         SPLIT_COPIES.add(uuid);
     }
 
+    /**
+     * Gives a split copy 1 random HURT ability and shows it in the nametag.
+     */
+    public static void assignSplitAbility(Mob mob) {
+        List<Ability> abilities = AbilityRegistry.getRandomAbilities(1, 0, 0);
+        ABILITIES.put(mob.getUUID(), abilities);
+        setMobNameTag(mob, "§7", abilities);
+    }
+
     // ========================================
     // Nametag helpers
     // ========================================
 
     private static void setMobNameTag(Mob mob, MobTier tier, List<Ability> abilities) {
-        // Tier colour: green → yellow → red
         String colour = switch (tier) {
             case EMBER -> "§a";
             case SURGE -> "§e";
             case TEMPEST -> "§c";
         };
+        setMobNameTag(mob, colour, abilities);
+    }
 
+    private static void setMobNameTag(Mob mob, String colour, List<Ability> abilities) {
         String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
         mob.setCustomName(Component.literal(colour + abilityList + " §f" + mob.getName().getString()));
         mob.setCustomNameVisible(true);
