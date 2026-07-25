@@ -3,6 +3,7 @@ package io.github.hunter1712.infusedmobs.tier;
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.config.ModConfig;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -32,6 +33,8 @@ public final class MobTierManager {
     /** UUIDs of mobs spawned by the Split ability — they get no tier. */
     private static final Set<UUID> SPLIT_COPIES = new HashSet<>();
 
+    private static final float SPLIT_HEALTH_FRACTION = 0.6f;
+
     private MobTierManager() {}
 
     // ========================================
@@ -48,26 +51,66 @@ public final class MobTierManager {
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
         if (SPLIT_COPIES.contains(mob.getUUID())) return;
 
+        ModConfig.Instance cfg = ModConfig.get();
+
         for (MobTier tier : MobTier.values()) {
-            if (!(mob.getRandom().nextDouble() < tier.spawnChance())) continue;
+            ModConfig.TierConfig tc = cfg.forTier(tier);
+            if (!(mob.getRandom().nextDouble() < tc.spawnChance())) continue;
 
             TIERS.put(mob.getUUID(), tier);
 
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(
-                    tier.hurtAbilities(), tier.tickAbilities(), tier.deathAbilities());
+                    tc.hurtAbilities(), tc.tickAbilities(), tc.deathAbilities());
             ABILITIES.put(mob.getUUID(), abilities);
 
-            applyHealthMultiplier(mob, tier);
-            setMobNameTag(mob, tier, abilities);
+            applyHealthMultiplier(mob, tc);
+            setTierNametag(mob, tier, abilities);
             return;
         }
     }
 
-    private static void applyHealthMultiplier(Mob mob, MobTier tier) {
+    private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tc) {
         var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
         if (attribute == null) return;
-        attribute.setBaseValue(attribute.getBaseValue() * tier.healthMultiplier());
+        attribute.setBaseValue(attribute.getBaseValue() * tc.healthMultiplier());
         mob.setHealth(mob.getMaxHealth());
+    }
+
+    // ========================================
+    // Split copy handling
+    // ========================================
+
+    /** Marks a mob as a split copy so it won't receive tier assignment. */
+    public static void markSplitCopy(UUID uuid) {
+        SPLIT_COPIES.add(uuid);
+    }
+
+    /**
+     * Applies full Ember-tier stats and abilities to a fission split copy:
+     * <ul>
+     *   <li>Ember health multiplier (3.0× base)</li>
+     *   <li>60% of boosted max health</li>
+     *   <li>1 random HURT ability (no Fission to prevent infinite recursion)</li>
+     *   <li>Greyscale nametag</li>
+     * </ul>
+     */
+    public static void applyEmberTierToSplitCopy(Mob copy) {
+        ModConfig.TierConfig ember = ModConfig.get().forTier(MobTier.EMBER);
+
+        var attribute = copy.getAttribute(Attributes.MAX_HEALTH);
+        if (attribute != null) {
+            attribute.setBaseValue(attribute.getBaseValue() * ember.healthMultiplier());
+            copy.setHealth(copy.getMaxHealth() * SPLIT_HEALTH_FRACTION);
+        }
+
+        List<Ability> abilities = AbilityRegistry.getRandomAbilities(
+                ember.hurtAbilities(), ember.tickAbilities(), ember.deathAbilities())
+                .stream()
+                .filter(a -> a.trigger() != TriggerType.DEATH)
+                .toList();
+
+        ABILITIES.put(copy.getUUID(), abilities);
+        setSplitCopyNametag(copy, abilities);
     }
 
     // ========================================
@@ -79,9 +122,7 @@ public final class MobTierManager {
         return TIERS.get(mob.getUUID());
     }
 
-    /**
-     * Returns abilities assigned to this mob matching the given trigger type.
-     */
+    /** Returns abilities assigned to this mob matching the given trigger type. */
     public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
         List<Ability> abilities = ABILITIES.get(mob.getUUID());
         if (abilities == null) return List.of();
@@ -90,50 +131,50 @@ public final class MobTierManager {
                 .toList();
     }
 
+    /** Returns all abilities assigned to this mob (empty list if none). */
+    public static List<Ability> getAllAbilities(Mob mob) {
+        return ABILITIES.getOrDefault(mob.getUUID(), List.of());
+    }
+
+    /**
+     * Returns all tracked mob UUIDs that have abilities assigned.
+     * Used by {@link io.github.hunter1712.infusedmobs.ability.trigger.MobTickTrigger}
+     * to iterate only mobs that actually have TICK abilities.
+     */
+    public static Set<UUID> getTrackedMobUUIDs() {
+        return ABILITIES.keySet();
+    }
+
     // ========================================
     // Cleanup
     // ========================================
 
     /** Removes all tracking for this mob (called on death). */
     public static void removeMob(Mob mob) {
-        TIERS.remove(mob.getUUID());
-        ABILITIES.remove(mob.getUUID());
-        SPLIT_COPIES.remove(mob.getUUID());
-    }
-
-    /** Returns all abilities assigned to this mob (empty list if none). */
-    public static List<Ability> getAllAbilities(Mob mob) {
-        return ABILITIES.getOrDefault(mob.getUUID(), List.of());
-    }
-
-    /** Marks a mob as a split copy so it won't receive tier assignment. */
-    public static void markSplitCopy(UUID uuid) {
-        SPLIT_COPIES.add(uuid);
-    }
-
-    /**
-     * Gives a split copy 1 random HURT ability and shows it in the nametag.
-     */
-    public static void assignSplitAbility(Mob mob) {
-        List<Ability> abilities = AbilityRegistry.getRandomAbilities(1, 0, 0);
-        ABILITIES.put(mob.getUUID(), abilities);
-        setMobNameTag(mob, "§7", abilities);
+        UUID uuid = mob.getUUID();
+        TIERS.remove(uuid);
+        ABILITIES.remove(uuid);
+        SPLIT_COPIES.remove(uuid);
     }
 
     // ========================================
     // Nametag helpers
     // ========================================
 
-    private static void setMobNameTag(Mob mob, MobTier tier, List<Ability> abilities) {
+    private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
         String colour = switch (tier) {
             case EMBER -> "§a";
             case SURGE -> "§e";
             case TEMPEST -> "§c";
         };
-        setMobNameTag(mob, colour, abilities);
+        setNametag(mob, colour, abilities);
     }
 
-    private static void setMobNameTag(Mob mob, String colour, List<Ability> abilities) {
+    private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
+        setNametag(mob, "§7", abilities);
+    }
+
+    private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
         String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
         mob.setCustomName(Component.literal(colour + abilityList + " §f" + mob.getName().getString()));
         mob.setCustomNameVisible(true);

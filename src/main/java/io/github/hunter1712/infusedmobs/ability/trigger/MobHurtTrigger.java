@@ -56,18 +56,24 @@ public final class MobHurtTrigger {
         MobTier tier = MobTierManager.getTier(mob);
         if (tier == null) return;
 
-        // One-time announcement of tier + all abilities
-        List<Ability> allAbilities = MobTierManager.getAllAbilities(mob);
-        if (!allAbilities.isEmpty() && ANNOUNCED.add(mob.getUUID())) {
-            player.sendSystemMessage(
-                    Component.literal("§e⚡ " + tier.name() + " "
-                            + mob.getName().getString() + " has: §f"
-                            + String.join("§7, §f",
-                                    allAbilities.stream().map(Ability::name).toList()))
-            );
-        }
+        announceIfFirstEncounter(player, mob, tier);
+        fireHurtAbilities(mob, player, damageTaken);
+    }
 
-        // Store damage for Siphon, then fire ALL HURT abilities
+    /** Sends a one-time announcement the first time a player is hit by this mob. */
+    private static void announceIfFirstEncounter(Player player, Mob mob, MobTier tier) {
+        List<Ability> allAbilities = MobTierManager.getAllAbilities(mob);
+        if (allAbilities.isEmpty() || !ANNOUNCED.add(mob.getUUID())) return;
+
+        String abilityNames = String.join("§7, §f",
+                allAbilities.stream().map(Ability::name).toList());
+        player.sendSystemMessage(Component.literal(
+                "§e⚡ " + tier.name() + " " + mob.getName().getString()
+                        + " has: §f" + abilityNames));
+    }
+
+    /** Stores damage for Siphon then fires all HURT abilities for the mob. */
+    private static void fireHurtAbilities(Mob mob, Player player, float damageTaken) {
         DamageContext.set(damageTaken);
         for (Ability ability : MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT)) {
             ability.effectLogic().accept(mob, player);

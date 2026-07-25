@@ -23,7 +23,7 @@ public class LivingEntityMixin {
         if ((Object) this instanceof Mob mob) {
             MobTier tier = MobTierManager.getTier(mob);
             if (tier != null) {
-                cir.setReturnValue((int) (cir.getReturnValue() * tier.xpMultiplier()));
+                cir.setReturnValue((int) Math.round(cir.getReturnValue() * tier.xpMultiplier()));
             }
         }
     }

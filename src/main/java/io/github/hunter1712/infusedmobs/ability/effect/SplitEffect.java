@@ -12,11 +12,13 @@ import net.minecraft.world.level.Level;
 
 /**
  * Spawns 2 copies of the dying mob's entity type at 60 % max health.
- * Each copy receives 1 random HURT ability but no full tier assignment
- * (flagged via {@link MobTierManager#markSplitCopy} to prevent
- * infinite recursion).
+ * Each copy receives full Ember-tier stats and abilities (1 HURT, no Fission
+ * to prevent infinite recursion).
  */
 public final class SplitEffect {
+
+    private static final int COPY_COUNT = 2;
+    private static final double COPY_OFFSET = 1.5;
 
     private SplitEffect() {}
 
@@ -31,20 +33,22 @@ public final class SplitEffect {
         if (!(rawLevel instanceof ServerLevel level)) return;
 
         EntityType<?> type = mob.getType();
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < COPY_COUNT; i++) {
             Entity raw = type.create(level, EntitySpawnReason.REINFORCEMENT);
             if (raw instanceof Mob copy) {
-                double offsetX = (i == 0) ? -1.5 : 1.5;
-                double offsetZ = (i == 0) ? -1.5 : 1.5;
-                copy.setPos(mob.getX() + offsetX, mob.getY(), mob.getZ() + offsetZ);
-                copy.setHealth(copy.getMaxHealth() * 0.6f);
-
-                // Flag so MobTierManager skips tier assignment, then give it 1 HURT ability
+                placeCopy(copy, mob, i);
                 MobTierManager.markSplitCopy(copy.getUUID());
-                MobTierManager.assignSplitAbility(copy);
-
+                MobTierManager.applyEmberTierToSplitCopy(copy);
                 level.addFreshEntity(copy);
             }
         }
+    }
+
+    /** Positions the copy at a diagonal offset from the original mob. */
+    private static void placeCopy(Mob copy, LivingEntity original, int index) {
+        double sign = (index == 0) ? -1.0 : 1.0;
+        copy.setPos(original.getX() + sign * COPY_OFFSET,
+                    original.getY(),
+                    original.getZ() + sign * COPY_OFFSET);
     }
 }

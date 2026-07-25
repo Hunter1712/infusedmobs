@@ -10,7 +10,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Handles the {@link TriggerType#DEATH} trigger.
@@ -38,8 +37,7 @@ public final class MobDeathTrigger {
         }
 
         // Clean up tracking
-        UUID uuid = mob.getUUID();
         MobTierManager.removeMob(mob);
-        MobHurtTrigger.removeAnnounced(uuid);
+        MobHurtTrigger.removeAnnounced(mob.getUUID());
     }
 }
