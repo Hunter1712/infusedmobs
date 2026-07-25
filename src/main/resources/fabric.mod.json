@@ -5,11 +5,12 @@
 	"name": "Infused Mobs",
 	"description": "Hostile mobs spawn with elemental-infused tiers (Ember/Surge/Tempest) and randomized abilities.",
 	"authors": [
-		"Me!"
+		"hunter1712"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/hunter1712/infusedmobs",
+		"sources": "https://github.com/hunter1712/infusedmobs",
+		"issues": "https://github.com/hunter1712/infusedmobs/issues"
 	},
 	"license": "ARR",
 	"icon": "assets/infusedmobs/icon.png",
