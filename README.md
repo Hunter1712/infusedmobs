@@ -1,42 +1,43 @@
 # Infused Mobs
 
-A Fabric mod for Minecraft 26.2 that gives vanilla hostile mobs elemental-infused
+A Fabric mod for Minecraft 26.2 that gives vanilla hostile mobs occult-infused
 tiers with randomized abilities.
 
 ## Tiers
 
 | Tier | Spawn Chance | Abilities | HP Multiplier | Colour |
 |------|-------------|-----------|---------------|--------|
-| **Ember** | 50% | 1 HURT | 3× | Green |
-| **Surge** | 30% | 1 HURT + 1 TICK | 5× | Yellow |
-| **Tempest** | 15% | 1 HURT + 1 TICK + 1 DEATH | 8× | Red |
+| **Cinder** | 10% | 1 HURT | 1.5× | Green |
+| **Shade** | 5% | 1 HURT + 1 TICK | 2× | Yellow |
+| **Doom** | 2.5% | 1 HURT + 1 TICK + 1 DEATH | 4× | Red |
 
 ## Abilities
 
 ### HURT (fire on melee hit)
 | Ability | Effect |
 |---------|--------|
-| Venom | Poison II, 5s |
-| Freeze | Slowness III, 5s |
+| Bane | Poison II, 5s |
+| Chill | Slowness III, 5s |
 | Decay | Wither II, 5s |
-| Inferno | Ignite 5s |
+| Hellfire | Ignite 5s |
 | Siphon | Heal 100% of damage dealt |
-| Acid | 4 durability to all armor |
+| Vitriol | 4 durability to all armor |
 | Hex | Weakness II, 5s |
 
 ### TICK (passive, refreshes every 2s)
 | Ability | Effect |
 |---------|--------|
-| Fortify | Resistance II |
-| Fury | Strength II |
-| Gust | Speed II |
-| Bloom | Regeneration II |
+| Ward | Resistance II |
+| Frenzy | Strength II |
+| Wraith | Speed II |
+| Blight | Regeneration II |
+| Thorns | Reflect 15% melee damage |
 
 ### DEATH (trigger on death)
 | Ability | Effect |
 |---------|--------|
-| Fission | Split into 2 copies at 60% HP, each with 1 random HURT ability |
-| Combust | Explosion (power 4.0) |
+| Rupture | Split into 2 copies at 60% HP, each with 1 random HURT ability |
+| Combust | Area damage + explosion sound (no particles / block damage) |
 
 ## License
 

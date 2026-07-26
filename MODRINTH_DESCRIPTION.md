@@ -10,9 +10,9 @@
 
 | Tier | Rarity | Health | XP | Abilities |
 |------|--------|--------|-----|-----------|
-| **🟢 Ember** | 10% | 1.5× | 1.5× | 1 HURT |
-| **🟡 Surge** | 5% | 2× | 2× | 1 HURT + 1 TICK |
-| **🔴 Tempest** | 2.5% | 4× | 4× | 1 HURT + 1 TICK + 1 DEATH |
+| **🟢 Cinder** | 10% | 1.5× | 1.5× | 1 HURT |
+| **🟡 Shade** | 5% | 2× | 2× | 1 HURT + 1 TICK |
+| **🔴 Doom** | 2.5% | 4× | 4× | 1 HURT + 1 TICK + 1 DEATH |
 
 > **~82.5% of hostile mobs remain vanilla** — infused mobs are rare and dangerous.
 
@@ -24,12 +24,12 @@
 
 | Ability | Effect | Duration | Amplifier |
 |---------|--------|----------|-----------|
-| **Venom** | Poison | 5s | I |
-| **Freeze** | Slowness | 5s | II |
+| **Bane** | Poison | 5s | I |
+| **Chill** | Slowness | 5s | II |
 | **Decay** | Wither | 5s | I |
-| **Inferno** | Sets target on fire | 5s | — |
+| **Hellfire** | Sets target on fire | 5s | — |
 | **Siphon** | Heals mob for damage dealt | — | — |
-| **Acid** | Damages all 4 armor slots (4 durability each) | — | — |
+| **Vitriol** | Damages all 4 armor slots (4 durability each) | — | — |
 | **Hex** | Weakness | 5s | I |
 
 > **Shield blocks negate all HURT abilities.**
@@ -40,10 +40,11 @@
 
 | Ability | Effect | Duration | Amplifier |
 |---------|--------|----------|-----------|
-| **Fortify** | Resistance | 3s | I |
-| **Fury** | Strength | 3s | I |
-| **Gust** | Speed | 3s | I |
-| **Bloom** | Regeneration | 3s | I |
+| **Ward** | Resistance | 3s | I |
+| **Frenzy** | Strength | 3s | I |
+| **Wraith** | Speed | 3s | I |
+| **Blight** | Regeneration | 3s | I |
+| **Thorns** | Reflects 15% melee damage | — | — |
 
 ---
 
@@ -51,8 +52,8 @@
 
 | Ability | Effect |
 |---------|--------|
-| **Fission** | Splits into **2 Ember-tier copies** at 60% health (each gets 1 random HURT ability, no DEATH abilities to prevent infinite recursion) |
-| **Combust** | Explodes at death (configurable power, default 4.0) |
+| **Rupture** | Splits into **2 Cinder-tier copies** at 60% health (each gets 1 random HURT ability, no DEATH abilities to prevent infinite recursion) |
+| **Combust** | Area damage + explosion sound at death (configurable radius, default 4.0) |
 
 ---
 
@@ -61,7 +62,7 @@
 The **first time** an infused mob hits you, a chat message announces its tier and all abilities:
 
 ```
-⚡ Tempest Zombie has: Venom, Fortify, Fission
+⚡ DOOM Zombie has: Bane, Ward, Rupture
 ```
 
 This only happens once per mob per player — no spam.
@@ -74,7 +75,7 @@ This only happens once per mob per player — no spam.
 
 ```json
 {
-  "ember": {
+  "cinder": {
     "spawnChance": 0.1,
     "hurtAbilities": 1,
     "tickAbilities": 0,
@@ -82,7 +83,7 @@ This only happens once per mob per player — no spam.
     "healthMultiplier": 1.5,
     "xpMultiplier": 1.5
   },
-  "surge": {
+  "shade": {
     "spawnChance": 0.05,
     "hurtAbilities": 1,
     "tickAbilities": 1,
@@ -90,7 +91,7 @@ This only happens once per mob per player — no spam.
     "healthMultiplier": 2.0,
     "xpMultiplier": 2.0
   },
-  "tempest": {
+  "doom": {
     "spawnChance": 0.025,
     "hurtAbilities": 1,
     "tickAbilities": 1,
@@ -159,7 +160,7 @@ This only happens once per mob per player — no spam.
 ## 🐛 Known Issues
 
 - **Despawned mobs** leave a tiny UUID leak (~16 bytes per unique mob) — negligible
-- **Split copies** from Fission are always Ember-tier (by design, to prevent infinite recursion)
+- **Split copies** from Rupture are always Cinder-tier (by design, to prevent infinite recursion)
 - **Nametags** use Minecraft color codes (§a, §e, §c, §7) — visible in vanilla
 
 ---

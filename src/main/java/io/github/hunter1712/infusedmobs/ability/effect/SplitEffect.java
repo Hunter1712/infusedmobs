@@ -12,7 +12,7 @@ import net.minecraft.world.level.Level;
 
 /**
  * Spawns 2 copies of the dying mob's entity type at 60 % max health.
- * Each copy receives full Ember-tier stats and abilities (1 HURT, no Fission
+ * Each copy receives full Cinder-tier stats and abilities (1 HURT, no Rupture
  * to prevent infinite recursion).
  */
 public final class SplitEffect {
@@ -38,7 +38,7 @@ public final class SplitEffect {
             if (raw instanceof Mob copy) {
                 placeCopy(copy, mob, i);
                 MobTierManager.markSplitCopy(copy.getUUID());
-                MobTierManager.applyEmberTierToSplitCopy(copy);
+                MobTierManager.applyCinderTierToSplitCopy(copy);
                 level.addFreshEntity(copy);
             }
         }
