@@ -34,10 +34,13 @@ class ModConfigTest {
     void defaultValueRanges() {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
 
-        // Tier spawn chances
-        assertTrue(defaults.cinder().spawnChance() > 0);
-        assertTrue(defaults.shade().spawnChance() > 0);
-        assertTrue(defaults.doom().spawnChance() > 0);
+        // Tier fields are positive
+        for (var tc : new ModConfig.TierConfig[]{defaults.cinder(), defaults.shade(), defaults.doom()}) {
+            assertTrue(tc.spawnChance() > 0, "spawnChance should be > 0");
+            assertTrue(tc.abilityCount() > 0, "abilityCount should be > 0");
+            assertTrue(tc.healthMultiplier() >= 1.0, "healthMultiplier should be >= 1.0");
+            assertTrue(tc.xpMultiplier() >= 1.0, "xpMultiplier should be >= 1.0");
+        }
 
         // Effect durations are positive
         assertTrue(defaults.hurtEffectDuration() > 0);
@@ -49,6 +52,40 @@ class ModConfigTest {
 
         // Explosion power is positive
         assertTrue(defaults.combustExplosionPower() > 0);
+    }
+
+    @Test
+    void isValidRejectsNullTierConfigs() {
+        var validTier = new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
+        var invalid = new ModConfig.Instance(
+                null, validTier, validTier,
+                60, 0, 60, 0, 5, 4, 4.0f);
+        assertFalse(invalid.isValid());
+    }
+
+    @Test
+    void isValidRejectsZeroAbilityCount() {
+        var badTier = new ModConfig.TierConfig(0.1, 0, 1.0, 1.0);
+        var validTier = new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
+        var invalid = new ModConfig.Instance(
+                badTier, validTier, validTier,
+                60, 0, 60, 0, 5, 4, 4.0f);
+        assertFalse(invalid.isValid());
+    }
+
+    @Test
+    void isValidRejectsZeroSpawnChance() {
+        var badTier = new ModConfig.TierConfig(0.0, 1, 1.0, 1.0);
+        var validTier = new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
+        var invalid = new ModConfig.Instance(
+                validTier, badTier, validTier,
+                60, 0, 60, 0, 5, 4, 4.0f);
+        assertFalse(invalid.isValid());
+    }
+
+    @Test
+    void isValidAcceptsValidDefaults() {
+        assertTrue(ModConfig.Instance.defaults().isValid());
     }
 
     @Test

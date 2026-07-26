@@ -16,9 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 
@@ -32,7 +30,6 @@ import java.util.function.BiConsumer;
 public final class AbilityRegistry {
 
     private static final List<Ability> ALL_ABILITIES = new ArrayList<>();
-    private static final Map<TriggerType, List<Ability>> BY_TRIGGER = new EnumMap<>(TriggerType.class);
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
@@ -137,9 +134,7 @@ public final class AbilityRegistry {
     /** Convenience: builds and registers a single ability. */
     private static void all(String id, String name, TriggerType trigger,
                             BiConsumer<LivingEntity, LivingEntity> effect) {
-        Ability ability = new Ability(id, name, trigger, effect);
-        ALL_ABILITIES.add(ability);
-        BY_TRIGGER.computeIfAbsent(trigger, t -> new ArrayList<>()).add(ability);
+        ALL_ABILITIES.add(new Ability(id, name, trigger, effect));
     }
 
     // ========================================
