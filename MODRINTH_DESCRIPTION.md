@@ -10,11 +10,11 @@
 
 | Tier | Rarity | Health | XP | Abilities |
 |------|--------|--------|-----|-----------|
-| **🟢 Cinder** | 10% | 1.5× | 1.5× | 1 HURT |
-| **🟡 Shade** | 5% | 2× | 2× | 1 HURT + 1 TICK |
-| **🔴 Doom** | 2.5% | 4× | 4× | 1 HURT + 1 TICK + 1 DEATH |
+| **🟢 Cinder** | 40% | 1.5× | 1.5× | 1 (any type) |
+| **🟡 Shade** | 20% | 2× | 2× | 2 (any type) |
+| **🔴 Doom** | 10% | 4× | 4× | 3 (any type) |
 
-> **~82.5% of hostile mobs remain vanilla** — infused mobs are rare and dangerous.
+> **~30% of hostile mobs remain vanilla** — infused mobs are common but weaker.
 
 ---
 
@@ -24,13 +24,13 @@
 
 | Ability | Effect | Duration | Amplifier |
 |---------|--------|----------|-----------|
-| **Bane** | Poison | 5s | I |
-| **Chill** | Slowness | 5s | II |
-| **Decay** | Wither | 5s | I |
-| **Hellfire** | Sets target on fire | 5s | — |
+| **Bane** | Poison | 3s | I |
+| **Chill** | Slowness | 3s | I |
+| **Decay** | Wither | 3s | I |
+| **Hellfire** | Sets target on fire | 3s | — |
 | **Siphon** | Heals mob for damage dealt | — | — |
 | **Vitriol** | Damages all 4 armor slots (4 durability each) | — | — |
-| **Hex** | Weakness | 5s | I |
+| **Hex** | Weakness | 3s | I |
 
 > **Shield blocks negate all HURT abilities.**
 
@@ -76,26 +76,20 @@ This only happens once per mob per player — no spam.
 ```json
 {
   "cinder": {
-    "spawnChance": 0.1,
-    "hurtAbilities": 1,
-    "tickAbilities": 0,
-    "deathAbilities": 0,
+    "spawnChance": 0.4,
+    "abilityCount": 1,
     "healthMultiplier": 1.5,
     "xpMultiplier": 1.5
   },
   "shade": {
-    "spawnChance": 0.05,
-    "hurtAbilities": 1,
-    "tickAbilities": 1,
-    "deathAbilities": 0,
+    "spawnChance": 0.2,
+    "abilityCount": 2,
     "healthMultiplier": 2.0,
     "xpMultiplier": 2.0
   },
   "doom": {
-    "spawnChance": 0.025,
-    "hurtAbilities": 1,
-    "tickAbilities": 1,
-    "deathAbilities": 1,
+    "spawnChance": 0.1,
+    "abilityCount": 3,
     "healthMultiplier": 4.0,
     "xpMultiplier": 4.0
   },

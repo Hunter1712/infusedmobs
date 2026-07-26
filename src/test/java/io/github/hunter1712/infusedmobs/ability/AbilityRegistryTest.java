@@ -17,23 +17,22 @@ class AbilityRegistryTest {
 
     @Test
     void getRandomAbilitiesReturnsEmptyWhenAllCountsZero() {
-        List<Ability> result = AbilityRegistry.getRandomAbilities(0, 0, 0);
+        List<Ability> result = AbilityRegistry.getRandomAbilities(0);
         assertTrue(result.isEmpty());
     }
 
     @Test
-    void getRandomAbilitiesRespectsCountsWhenRegistryIsEmpty() {
+    void getRandomAbilitiesReturnsEmptyWhenRegistryIsEmpty() {
         // With an empty registry, requesting any count > 0 should return
-        // fewer items (or empty), but never throw.
-        List<Ability> result = AbilityRegistry.getRandomAbilities(3, 2, 1);
+        // an empty list, but never throw.
+        List<Ability> result = AbilityRegistry.getRandomAbilities(5);
         assertNotNull(result);
-        // Since the registry is empty, we expect all requests to come back empty
         assertTrue(result.isEmpty());
     }
 
     @Test
     void getRandomAbilitiesReturnsUnmodifiableList() {
-        List<Ability> result = AbilityRegistry.getRandomAbilities(0, 0, 0);
+        List<Ability> result = AbilityRegistry.getRandomAbilities(0);
         assertThrows(UnsupportedOperationException.class, () -> result.add(null));
     }
 }

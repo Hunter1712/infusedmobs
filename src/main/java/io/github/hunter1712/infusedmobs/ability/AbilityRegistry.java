@@ -53,7 +53,7 @@ public final class AbilityRegistry {
         // ---- HURT abilities (fire when the mob melee-hits a player) ----
 
         registerHurtEffect("venom",  "Bane",   MobEffects.POISON,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
-        registerHurtEffect("freeze", "Chill",  MobEffects.SLOWNESS, cfg.hurtEffectDuration(), 2);
+        registerHurtEffect("freeze", "Chill", MobEffects.SLOWNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
         registerHurtEffect("decay",  "Decay",  MobEffects.WITHER,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
         registerHurtEffect("hex",    "Hex",    MobEffects.WEAKNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
 
@@ -147,32 +147,20 @@ public final class AbilityRegistry {
     // ========================================
 
     /**
-     * Returns a fixed set of abilities with the specified distribution
-     * of trigger types. Within each type, abilities are picked randomly.
+     * Returns {@code count} random abilities drawn from the unified
+     * ability pool (all trigger types mixed together).
      *
      * @return a shuffled, unmodifiable list
      */
-    public static List<Ability> getRandomAbilities(int hurt, int tick, int death) {
-        ThreadLocalRandom rng = ThreadLocalRandom.current();
-        List<Ability> result = new ArrayList<>(hurt + tick + death);
+    public static List<Ability> getRandomAbilities(int count) {
+        if (count <= 0 || ALL_ABILITIES.isEmpty()) return List.of();
 
-        pickRandom(result, TriggerType.HURT, hurt, rng);
-        pickRandom(result, TriggerType.TICK, tick, rng);
-        pickRandom(result, TriggerType.DEATH, death, rng);
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
+        List<Ability> pool = new ArrayList<>(ALL_ABILITIES);
+        Collections.shuffle(pool, rng);
+        List<Ability> result = pool.subList(0, Math.min(count, pool.size()));
 
         if (result.size() > 1) Collections.shuffle(result, rng);
         return Collections.unmodifiableList(result);
-    }
-
-    /** Picks {@code count} random abilities of the given trigger type into target. */
-    private static void pickRandom(List<Ability> target, TriggerType type, int count, ThreadLocalRandom rng) {
-        if (count <= 0) return;
-        List<Ability> candidates = BY_TRIGGER.get(type);
-        if (candidates == null || candidates.isEmpty()) return;
-
-        // Copy so we don't permanently shuffle the cached index
-        List<Ability> pool = new ArrayList<>(candidates);
-        Collections.shuffle(pool, rng);
-        target.addAll(pool.subList(0, Math.min(count, pool.size())));
     }
 }

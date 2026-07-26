@@ -7,9 +7,9 @@ tiers with randomized abilities.
 
 | Tier | Spawn Chance | Abilities | HP Multiplier | Colour |
 |------|-------------|-----------|---------------|--------|
-| **Cinder** | 10% | 1 HURT | 1.5× | Green |
-| **Shade** | 5% | 1 HURT + 1 TICK | 2× | Yellow |
-| **Doom** | 2.5% | 1 HURT + 1 TICK + 1 DEATH | 4× | Red |
+| **Cinder** | 40% | 1 (any type) | 1.5× | Green |
+| **Shade** | 20% | 2 (any type) | 2× | Yellow |
+| **Doom** | 10% | 3 (any type) | 4× | Red |
 
 ## Abilities
 
