@@ -38,8 +38,11 @@ public final class ModConfig {
         if (Files.exists(configPath)) {
             try {
                 String json = Files.readString(configPath);
-                instance = new Gson().fromJson(json, Instance.class);
-                return;
+                Instance parsed = new Gson().fromJson(json, Instance.class);
+                if (parsed.isValid()) {
+                    instance = parsed;
+                    return;
+                }
             } catch (IOException e) {
                 // Fall through to defaults
             }
@@ -80,9 +83,9 @@ public final class ModConfig {
 
     /** Root config object serialised to / from JSON. */
     public record Instance(
-            TierConfig ember,
-            TierConfig surge,
-            TierConfig tempest,
+            TierConfig cinder,
+            TierConfig shade,
+            TierConfig doom,
             int hurtEffectDuration,
             int hurtEffectAmplifier,
             int tickEffectDuration,
@@ -91,12 +94,20 @@ public final class ModConfig {
             int acidArmorDamage,
             float combustExplosionPower
     ) {
+        /** Returns true if all fields deserialised with valid values. */
+        boolean isValid() {
+            return cinder != null && shade != null && doom != null
+                    && hurtEffectDuration > 0 && tickEffectDuration > 0
+                    && infernoFireSeconds > 0 && acidArmorDamage > 0
+                    && combustExplosionPower > 0;
+        }
+
         /** Returns the tier config matching the given enum member. */
         public TierConfig forTier(MobTier tier) {
             return switch (tier) {
-                case EMBER -> ember;
-                case SURGE -> surge;
-                case TEMPEST -> tempest;
+                case CINDER -> cinder;
+                case SHADE -> shade;
+                case DOOM -> doom;
             };
         }
 

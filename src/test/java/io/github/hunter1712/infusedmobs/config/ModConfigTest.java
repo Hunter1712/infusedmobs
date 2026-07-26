@@ -17,17 +17,17 @@ class ModConfigTest {
     @Test
     void defaultsHaveAllTiersConfigured() {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
-        assertNotNull(defaults.ember());
-        assertNotNull(defaults.surge());
-        assertNotNull(defaults.tempest());
+        assertNotNull(defaults.cinder());
+        assertNotNull(defaults.shade());
+        assertNotNull(defaults.doom());
     }
 
     @Test
     void forTierReturnsCorrectConfig() {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
-        assertEquals(defaults.ember(), defaults.forTier(MobTier.EMBER));
-        assertEquals(defaults.surge(), defaults.forTier(MobTier.SURGE));
-        assertEquals(defaults.tempest(), defaults.forTier(MobTier.TEMPEST));
+        assertEquals(defaults.cinder(), defaults.forTier(MobTier.CINDER));
+        assertEquals(defaults.shade(), defaults.forTier(MobTier.SHADE));
+        assertEquals(defaults.doom(), defaults.forTier(MobTier.DOOM));
     }
 
     @Test
@@ -35,9 +35,9 @@ class ModConfigTest {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
 
         // Tier spawn chances
-        assertTrue(defaults.ember().spawnChance() > 0);
-        assertTrue(defaults.surge().spawnChance() > 0);
-        assertTrue(defaults.tempest().spawnChance() > 0);
+        assertTrue(defaults.cinder().spawnChance() > 0);
+        assertTrue(defaults.shade().spawnChance() > 0);
+        assertTrue(defaults.doom().spawnChance() > 0);
 
         // Effect durations are positive
         assertTrue(defaults.hurtEffectDuration() > 0);

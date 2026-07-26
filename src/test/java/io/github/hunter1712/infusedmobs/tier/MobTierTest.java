@@ -43,27 +43,27 @@ class MobTierTest {
     }
 
     @Test
-    void tierOrderIsEmberSurgeTempest() {
+    void tierOrderIsCinderShadeDoom() {
         MobTier[] values = MobTier.values();
         assertEquals(3, values.length);
-        assertEquals(MobTier.EMBER, values[0]);
-        assertEquals(MobTier.SURGE, values[1]);
-        assertEquals(MobTier.TEMPEST, values[2]);
+        assertEquals(MobTier.CINDER, values[0]);
+        assertEquals(MobTier.SHADE, values[1]);
+        assertEquals(MobTier.DOOM, values[2]);
     }
 
     @Test
     void strongerTiersAreRarer() {
-        assertTrue(MobTier.EMBER.spawnChance() >= MobTier.SURGE.spawnChance(),
-                "EMBER should be at least as common as SURGE");
-        assertTrue(MobTier.SURGE.spawnChance() >= MobTier.TEMPEST.spawnChance(),
-                "SURGE should be at least as common as TEMPEST");
+        assertTrue(MobTier.CINDER.spawnChance() >= MobTier.SHADE.spawnChance(),
+                "CINDER should be at least as common as SHADE");
+        assertTrue(MobTier.SHADE.spawnChance() >= MobTier.DOOM.spawnChance(),
+                "SHADE should be at least as common as DOOM");
     }
 
     @Test
     void strongerTiersHaveHigherHealthMultiplier() {
-        assertTrue(MobTier.EMBER.healthMultiplier() <= MobTier.SURGE.healthMultiplier(),
-                "EMBER healthMultiplier should not exceed SURGE");
-        assertTrue(MobTier.SURGE.healthMultiplier() <= MobTier.TEMPEST.healthMultiplier(),
-                "SURGE healthMultiplier should not exceed TEMPEST");
+        assertTrue(MobTier.CINDER.healthMultiplier() <= MobTier.SHADE.healthMultiplier(),
+                "CINDER healthMultiplier should not exceed SHADE");
+        assertTrue(MobTier.SHADE.healthMultiplier() <= MobTier.DOOM.healthMultiplier(),
+                "SHADE healthMultiplier should not exceed DOOM");
     }
 }

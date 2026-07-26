@@ -34,10 +34,17 @@ public final class MobHurtTrigger {
      */
     private static final Set<UUID> ANNOUNCED = new HashSet<>();
 
+    /**
+     * Prevents recursive HURT-ability firing when Thorns reflection
+     * triggers a nested {@code AFTER_DAMAGE} event.
+     */
+    private static final ThreadLocal<Boolean> REFLECTING = ThreadLocal.withInitial(() -> false);
+
     private MobHurtTrigger() {}
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DAMAGE.register(MobHurtTrigger::onAfterDamage);
+        ServerLivingEntityEvents.AFTER_DAMAGE.register(MobHurtTrigger::onThornsReflect);
     }
 
     /** Clean up announcement tracking when a mob dies. */
@@ -49,6 +56,7 @@ public final class MobHurtTrigger {
             LivingEntity entity, DamageSource source,
             float baseDamageTaken /* unused */, float damageTaken, boolean blocked
     ) {
+        if (REFLECTING.get()) return;  // Prevent recursive HURT firing from Thorns
         if (!(entity instanceof Player player)) return;
         if (!(source.getEntity() instanceof Mob mob)) return;
         if (blocked) return;  // Shield block negates abilities
@@ -78,6 +86,30 @@ public final class MobHurtTrigger {
         DamageContext.set(damageTaken);
         for (Ability ability : MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT)) {
             ability.effectLogic().accept(mob, player);
+        }
+    }
+
+    /**
+     * Reflects 15 % of melee damage back at the attacker when a player
+     * hits a tiered mob that has the Thorns ability.
+     */
+    private static void onThornsReflect(
+            LivingEntity entity, DamageSource source,
+            float baseDamageTaken /* unused */, float damageTaken, boolean blocked
+    ) {
+        if (blocked) return;
+        if (!(entity instanceof Mob mob)) return;
+        if (!(source.getEntity() instanceof Player player)) return;
+        if (!MobTierManager.hasAbility(mob, "thorns")) return;
+
+        float reflected = damageTaken * 0.15f;
+        if (reflected > 0.0f) {
+            REFLECTING.set(true);
+            try {
+                player.hurt(player.damageSources().thorns(mob), reflected);
+            } finally {
+                REFLECTING.set(false);
+            }
         }
     }
 }

@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Handles the {@link TriggerType#DEATH} trigger.
  * <p>
- * Fires all DEATH abilities (Split) when the mob dies,
+ * Fires all DEATH abilities (Rupture) when the mob dies,
  * then cleans up tier tracking to prevent memory leaks.
  */
 public final class MobDeathTrigger {

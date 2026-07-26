@@ -7,11 +7,12 @@ import io.github.hunter1712.infusedmobs.trigger.DamageContext;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,12 +52,12 @@ public final class AbilityRegistry {
 
         // ---- HURT abilities (fire when the mob melee-hits a player) ----
 
-        registerHurtEffect("venom",  "Venom",  MobEffects.POISON,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
-        registerHurtEffect("freeze", "Freeze", MobEffects.SLOWNESS, cfg.hurtEffectDuration(), 2);
+        registerHurtEffect("venom",  "Bane",   MobEffects.POISON,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
+        registerHurtEffect("freeze", "Chill",  MobEffects.SLOWNESS, cfg.hurtEffectDuration(), 2);
         registerHurtEffect("decay",  "Decay",  MobEffects.WITHER,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
         registerHurtEffect("hex",    "Hex",    MobEffects.WEAKNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
 
-        all("inferno", "Inferno", TriggerType.HURT, (mob, target) ->
+        all("inferno", "Hellfire", TriggerType.HURT, (mob, target) ->
                 target.igniteForSeconds(cfg.infernoFireSeconds()));
 
         all("siphon", "Siphon", TriggerType.HURT, (mob, target) -> {
@@ -64,18 +65,21 @@ public final class AbilityRegistry {
             if (amount > 0) mob.heal(amount);
         });
 
-        all("acid", "Acid", TriggerType.HURT, AbilityRegistry::damageArmor);
+        all("acid", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
 
         // ---- TICK abilities (passive, refresh every 2 seconds while alive) ----
 
-        registerTickEffect("fortify", "Fortify", MobEffects.RESISTANCE,   cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
-        registerTickEffect("fury",    "Fury",    MobEffects.STRENGTH,     cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
-        registerTickEffect("gust",    "Gust",    MobEffects.SPEED,        cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
-        registerTickEffect("bloom",   "Bloom",   MobEffects.REGENERATION, cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("fortify", "Ward",  MobEffects.RESISTANCE,   cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("fury",    "Frenzy", MobEffects.STRENGTH,    cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("gust",    "Wraith", MobEffects.SPEED,       cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("bloom",   "Blight", MobEffects.REGENERATION, cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+
+        // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
+        all("thorns", "Thorns", TriggerType.TICK, (mob, target) -> {});
 
         // ---- DEATH abilities ----
 
-        all("fission", "Fission", TriggerType.DEATH, (mob, target) -> SplitEffect.apply(mob));
+        all("fission", "Rupture", TriggerType.DEATH, (mob, target) -> SplitEffect.apply(mob));
 
         all("combust", "Combust", TriggerType.DEATH, (mob, target) -> {
             if (mob.level() instanceof ServerLevel level) {
@@ -91,6 +95,9 @@ public final class AbilityRegistry {
                         }
                     }
                 }
+                // Explosion sound without particles or block damage
+                level.playSound(null, mob.getX(), mob.getY(), mob.getZ(),
+                        SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0f, 1.0f);
             }
         });
     }

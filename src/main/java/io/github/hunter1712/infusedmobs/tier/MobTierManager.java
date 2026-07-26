@@ -30,7 +30,7 @@ public final class MobTierManager {
     private static final Map<UUID, MobTier> TIERS = new HashMap<>();
     private static final Map<UUID, List<Ability>> ABILITIES = new HashMap<>();
 
-    /** UUIDs of mobs spawned by the Split ability — they get no tier. */
+    /** UUIDs of mobs spawned by the Rupture ability — they get no tier. */
     private static final Set<UUID> SPLIT_COPIES = new HashSet<>();
 
     private static final float SPLIT_HEALTH_FRACTION = 0.6f;
@@ -44,7 +44,7 @@ public final class MobTierManager {
     /**
      * Rolls for a tier and assigns it to the mob. If a tier is assigned,
      * random abilities are selected, health is multiplied, and the mob is
-     * fully healed to its new max. Split copies are skipped entirely.
+     * fully healed to its new max. Rupture copies are skipped entirely.
      * <p>
      * Results are persisted to disk via {@link TierSavedData} so that
      * the same mob (same UUID) gets the same result on world reload.
@@ -113,34 +113,34 @@ public final class MobTierManager {
     }
 
     // ========================================
-    // Split copy handling
+    // Rupture copy handling
     // ========================================
 
-    /** Marks a mob as a split copy so it won't receive tier assignment. */
+    /** Marks a mob as a Rupture copy so it won't receive tier assignment. */
     public static void markSplitCopy(UUID uuid) {
         SPLIT_COPIES.add(uuid);
     }
 
     /**
-     * Applies full Ember-tier stats and abilities to a fission split copy:
+     * Applies full Cinder-tier stats and abilities to a Rupture split copy:
      * <ul>
-     *   <li>Ember health multiplier (3.0× base)</li>
+     *   <li>Cinder health multiplier (1.5× base)</li>
      *   <li>60% of boosted max health</li>
-     *   <li>1 random HURT ability (no Fission to prevent infinite recursion)</li>
+     *   <li>1 random HURT ability (no Rupture to prevent infinite recursion)</li>
      *   <li>Greyscale nametag</li>
      * </ul>
      */
-    public static void applyEmberTierToSplitCopy(Mob copy) {
-        ModConfig.TierConfig ember = ModConfig.get().forTier(MobTier.EMBER);
+    public static void applyCinderTierToSplitCopy(Mob copy) {
+        ModConfig.TierConfig cinder = ModConfig.get().forTier(MobTier.CINDER);
 
         var attribute = copy.getAttribute(Attributes.MAX_HEALTH);
         if (attribute != null) {
-            attribute.setBaseValue(attribute.getBaseValue() * ember.healthMultiplier());
+            attribute.setBaseValue(attribute.getBaseValue() * cinder.healthMultiplier());
             copy.setHealth(copy.getMaxHealth() * SPLIT_HEALTH_FRACTION);
         }
 
         List<Ability> abilities = AbilityRegistry.getRandomAbilities(
-                ember.hurtAbilities(), ember.tickAbilities(), ember.deathAbilities())
+                cinder.hurtAbilities(), cinder.tickAbilities(), cinder.deathAbilities())
                 .stream()
                 .filter(a -> a.trigger() != TriggerType.DEATH)
                 .toList();
@@ -170,6 +170,16 @@ public final class MobTierManager {
     /** Returns all abilities assigned to this mob (empty list if none). */
     public static List<Ability> getAllAbilities(Mob mob) {
         return ABILITIES.getOrDefault(mob.getUUID(), List.of());
+    }
+
+    /** Returns true if this mob has an ability with the given id. */
+    public static boolean hasAbility(Mob mob, String id) {
+        List<Ability> abilities = ABILITIES.get(mob.getUUID());
+        if (abilities == null) return false;
+        for (Ability ability : abilities) {
+            if (ability.id().equals(id)) return true;
+        }
+        return false;
     }
 
     /**
@@ -204,9 +214,9 @@ public final class MobTierManager {
 
     private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
         String colour = switch (tier) {
-            case EMBER -> "§a";
-            case SURGE -> "§e";
-            case TEMPEST -> "§c";
+            case CINDER -> "§a";
+            case SHADE -> "§e";
+            case DOOM -> "§c";
         };
         setNametag(mob, colour, abilities);
     }

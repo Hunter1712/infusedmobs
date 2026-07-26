@@ -10,7 +10,7 @@ import java.util.function.BiConsumer;
  * for when it activates, and the effect logic that executes when triggered.
  *
  * @param id           unique identifier (e.g., "venom")
- * @param name         display name (e.g., "Venom")
+ * @param name         display name (e.g., "Bane")
  * @param trigger      when this ability activates
  * @param effectLogic  the effect to execute — first LivingEntity is the mob,
  *                     second is the target (player)
