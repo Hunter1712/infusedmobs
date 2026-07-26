@@ -155,7 +155,6 @@ public final class AbilityRegistry {
         Collections.shuffle(pool, rng);
         List<Ability> result = pool.subList(0, Math.min(count, pool.size()));
 
-        if (result.size() > 1) Collections.shuffle(result, rng);
         return Collections.unmodifiableList(result);
     }
 }
