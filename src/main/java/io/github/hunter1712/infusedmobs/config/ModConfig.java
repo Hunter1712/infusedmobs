@@ -74,9 +74,7 @@ public final class ModConfig {
     /** Per-tier overrides matching {@link MobTier} enum members. */
     public record TierConfig(
             double spawnChance,
-            int hurtAbilities,
-            int tickAbilities,
-            int deathAbilities,
+            int abilityCount,
             double healthMultiplier,
             double xpMultiplier
     ) {}
@@ -111,17 +109,17 @@ public final class ModConfig {
             };
         }
 
-        /** Sensible default values that match the original hardcoded behaviour. */
+        /** Sensible default values. */
         public static Instance defaults() {
             return new Instance(
-                    new TierConfig(0.1, 1, 0, 0, 1.5, 1.5),
-                    new TierConfig(0.05, 1, 1, 0, 2.0, 2.0),
-                    new TierConfig(0.025, 1, 1, 1, 4.0, 4.0),
-                    100, 1,
-                    60, 1,
-                    5,
-                    4,
-                    4.0f
+                    new TierConfig(0.4, 1, 1.5, 1.5),
+                    new TierConfig(0.2, 2, 2.0, 2.0),
+                    new TierConfig(0.1, 3, 4.0, 4.0),
+                    60, 0,   // hurt: 3s, level I
+                    60, 0,   // tick: 3s, level I
+                    5,       // infernoFireSeconds
+                    4,       // acidArmorDamage
+                    4.0f     // combustExplosionPower
             );
         }
     }

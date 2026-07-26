@@ -76,8 +76,7 @@ public final class MobTierManager {
             TIERS.put(uuid, tier);
             savedData.setTier(uuid, tier);
 
-            List<Ability> abilities = AbilityRegistry.getRandomAbilities(
-                    tc.hurtAbilities(), tc.tickAbilities(), tc.deathAbilities());
+            List<Ability> abilities = AbilityRegistry.getRandomAbilities(tc.abilityCount());
             ABILITIES.put(uuid, abilities);
 
             applyHealthMultiplier(mob, tc);
@@ -97,8 +96,7 @@ public final class MobTierManager {
         TIERS.put(uuid, tier);
 
         ModConfig.TierConfig tc = ModConfig.get().forTier(tier);
-        List<Ability> abilities = AbilityRegistry.getRandomAbilities(
-                tc.hurtAbilities(), tc.tickAbilities(), tc.deathAbilities());
+        List<Ability> abilities = AbilityRegistry.getRandomAbilities(tc.abilityCount());
         ABILITIES.put(uuid, abilities);
 
         applyHealthMultiplier(mob, tc);
@@ -139,8 +137,9 @@ public final class MobTierManager {
             copy.setHealth(copy.getMaxHealth() * SPLIT_HEALTH_FRACTION);
         }
 
-        List<Ability> abilities = AbilityRegistry.getRandomAbilities(
-                cinder.hurtAbilities(), cinder.tickAbilities(), cinder.deathAbilities())
+        // Draw 1 ability from the unified pool, then filter out DEATH
+        // to prevent infinite recursion from Rupture.
+        List<Ability> abilities = AbilityRegistry.getRandomAbilities(1)
                 .stream()
                 .filter(a -> a.trigger() != TriggerType.DEATH)
                 .toList();

@@ -34,11 +34,9 @@ class MobTierTest {
     }
 
     @Test
-    void allTiersHaveNonNegativeAbilityCounts() {
+    void allTiersHavePositiveAbilityCount() {
         for (MobTier tier : MobTier.values()) {
-            assertTrue(tier.hurtAbilities() >= 0, () -> tier + " hurtAbilities should be >= 0");
-            assertTrue(tier.tickAbilities() >= 0, () -> tier + " tickAbilities should be >= 0");
-            assertTrue(tier.deathAbilities() >= 0, () -> tier + " deathAbilities should be >= 0");
+            assertTrue(tier.abilityCount() > 0, () -> tier + " abilityCount should be > 0");
         }
     }
 
@@ -53,17 +51,25 @@ class MobTierTest {
 
     @Test
     void strongerTiersAreRarer() {
-        assertTrue(MobTier.CINDER.spawnChance() >= MobTier.SHADE.spawnChance(),
-                "CINDER should be at least as common as SHADE");
-        assertTrue(MobTier.SHADE.spawnChance() >= MobTier.DOOM.spawnChance(),
-                "SHADE should be at least as common as DOOM");
+        assertTrue(MobTier.CINDER.spawnChance() > MobTier.SHADE.spawnChance(),
+                "CINDER should be more common than SHADE");
+        assertTrue(MobTier.SHADE.spawnChance() > MobTier.DOOM.spawnChance(),
+                "SHADE should be more common than DOOM");
+    }
+
+    @Test
+    void strongerTiersHaveMoreAbilities() {
+        assertTrue(MobTier.CINDER.abilityCount() <= MobTier.SHADE.abilityCount(),
+                "CINDER abilityCount should not exceed SHADE");
+        assertTrue(MobTier.SHADE.abilityCount() <= MobTier.DOOM.abilityCount(),
+                "SHADE abilityCount should not exceed DOOM");
     }
 
     @Test
     void strongerTiersHaveHigherHealthMultiplier() {
-        assertTrue(MobTier.CINDER.healthMultiplier() <= MobTier.SHADE.healthMultiplier(),
-                "CINDER healthMultiplier should not exceed SHADE");
-        assertTrue(MobTier.SHADE.healthMultiplier() <= MobTier.DOOM.healthMultiplier(),
-                "SHADE healthMultiplier should not exceed DOOM");
+        assertTrue(MobTier.CINDER.healthMultiplier() < MobTier.SHADE.healthMultiplier(),
+                "CINDER healthMultiplier should be less than SHADE");
+        assertTrue(MobTier.SHADE.healthMultiplier() < MobTier.DOOM.healthMultiplier(),
+                "SHADE healthMultiplier should be less than DOOM");
     }
 }
