@@ -45,11 +45,27 @@ public final class MobTierManager {
      * Rolls for a tier and assigns it to the mob. If a tier is assigned,
      * random abilities are selected, health is multiplied, and the mob is
      * fully healed to its new max. Split copies are skipped entirely.
+     * <p>
+     * Results are persisted to disk via {@link TierSavedData} so that
+     * the same mob (same UUID) gets the same result on world reload.
      */
     public static void assignTier(Mob mob) {
-        if (!(mob.level() instanceof ServerLevel)) return;
+        if (!(mob.level() instanceof ServerLevel serverLevel)) return;
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
         if (SPLIT_COPIES.contains(mob.getUUID())) return;
+        if (TIERS.containsKey(mob.getUUID())) return;  // Already assigned — prevents stacking on world reload
+
+        TierSavedData savedData = serverLevel.getDataStorage().computeIfAbsent(TierSavedData.TYPE);
+        UUID uuid = mob.getUUID();
+
+        // If this UUID already rolled in a previous session, restore that result
+        if (savedData.hasRolled(uuid)) {
+            MobTier existingTier = savedData.getTier(uuid);
+            if (existingTier != null) {
+                restoreTier(mob, uuid, existingTier);
+            }
+            return;
+        }
 
         ModConfig.Instance cfg = ModConfig.get();
 
@@ -57,16 +73,36 @@ public final class MobTierManager {
             ModConfig.TierConfig tc = cfg.forTier(tier);
             if (!(mob.getRandom().nextDouble() < tc.spawnChance())) continue;
 
-            TIERS.put(mob.getUUID(), tier);
+            TIERS.put(uuid, tier);
+            savedData.setTier(uuid, tier);
 
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(
                     tc.hurtAbilities(), tc.tickAbilities(), tc.deathAbilities());
-            ABILITIES.put(mob.getUUID(), abilities);
+            ABILITIES.put(uuid, abilities);
 
             applyHealthMultiplier(mob, tc);
             setTierNametag(mob, tier, abilities);
             return;
         }
+
+        // Rolled nothing — persist so we never roll again for this UUID
+        savedData.markRolledNothing(uuid);
+    }
+
+    /**
+     * Re-applies tier effects from persistent state when a mob loads
+     * into the world after a chunk reload.
+     */
+    private static void restoreTier(Mob mob, UUID uuid, MobTier tier) {
+        TIERS.put(uuid, tier);
+
+        ModConfig.TierConfig tc = ModConfig.get().forTier(tier);
+        List<Ability> abilities = AbilityRegistry.getRandomAbilities(
+                tc.hurtAbilities(), tc.tickAbilities(), tc.deathAbilities());
+        ABILITIES.put(uuid, abilities);
+
+        applyHealthMultiplier(mob, tc);
+        setTierNametag(mob, tier, abilities);
     }
 
     private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tc) {
@@ -155,6 +191,11 @@ public final class MobTierManager {
         TIERS.remove(uuid);
         ABILITIES.remove(uuid);
         SPLIT_COPIES.remove(uuid);
+
+        // Clean up persistent state so it doesn't grow unboundedly
+        if (mob.level() instanceof ServerLevel serverLevel) {
+            serverLevel.getDataStorage().computeIfAbsent(TierSavedData.TYPE).remove(uuid);
+        }
     }
 
     // ========================================
@@ -176,7 +217,10 @@ public final class MobTierManager {
 
     private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
         String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
-        mob.setCustomName(Component.literal(colour + abilityList + " §f" + mob.getName().getString()));
+        // Use the entity type name (e.g. "Parched") rather than getName(),
+        // which would return any previously-set custom name and cause duplication.
+        String entityName = mob.getType().getDescription().getString();
+        mob.setCustomName(Component.literal(colour + abilityList + " §f" + entityName));
         mob.setCustomNameVisible(true);
     }
 }

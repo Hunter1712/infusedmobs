@@ -65,10 +65,11 @@ public final class MobHurtTrigger {
         List<Ability> allAbilities = MobTierManager.getAllAbilities(mob);
         if (allAbilities.isEmpty() || !ANNOUNCED.add(mob.getUUID())) return;
 
+        String entityName = mob.getType().getDescription().getString();
         String abilityNames = String.join("§7, §f",
                 allAbilities.stream().map(Ability::name).toList());
         player.sendSystemMessage(Component.literal(
-                "§e⚡ " + tier.name() + " " + mob.getName().getString()
+                "§e⚡ " + tier.name() + " " + entityName
                         + " has: §f" + abilityNames));
     }
 

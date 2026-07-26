@@ -103,9 +103,9 @@ public final class ModConfig {
         /** Sensible default values that match the original hardcoded behaviour. */
         public static Instance defaults() {
             return new Instance(
-                    new TierConfig(0.5, 1, 0, 0, 3.0, 3.0),
-                    new TierConfig(0.3, 1, 1, 0, 5.0, 5.0),
-                    new TierConfig(0.15, 1, 1, 1, 8.0, 8.0),
+                    new TierConfig(0.1, 1, 0, 0, 1.5, 1.5),
+                    new TierConfig(0.05, 1, 1, 0, 2.0, 2.0),
+                    new TierConfig(0.025, 1, 1, 1, 4.0, 4.0),
                     100, 1,
                     60, 1,
                     5,
