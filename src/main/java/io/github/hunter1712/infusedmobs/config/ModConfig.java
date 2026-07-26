@@ -95,9 +95,17 @@ public final class ModConfig {
         /** Returns true if all fields deserialised with valid values. */
         boolean isValid() {
             return cinder != null && shade != null && doom != null
+                    && isTierValid(cinder) && isTierValid(shade) && isTierValid(doom)
                     && hurtEffectDuration > 0 && tickEffectDuration > 0
                     && infernoFireSeconds > 0 && acidArmorDamage > 0
                     && combustExplosionPower > 0;
+        }
+
+        private static boolean isTierValid(TierConfig tc) {
+            return tc.spawnChance() > 0
+                    && tc.abilityCount() > 0
+                    && tc.healthMultiplier() >= 1.0
+                    && tc.xpMultiplier() >= 1.0;
         }
 
         /** Returns the tier config matching the given enum member. */

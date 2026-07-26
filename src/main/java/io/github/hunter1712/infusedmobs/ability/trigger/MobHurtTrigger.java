@@ -28,9 +28,8 @@ public final class MobHurtTrigger {
 
     /**
      * One-time announcement tracking per mob UUID.
-     * Cleaned on mob death via {@link #removeAnnounced}.
-     * Despawned mobs (unloaded chunks) are NOT cleaned — an acceptably
-     * small leak (~16 bytes per unique mob encountered).
+     * Cleaned on death via {@link #removeAnnounced}
+     * and on despawn via {@link io.github.hunter1712.infusedmobs.mixin.EntityRemoveMixin}.
      */
     private static final Set<UUID> ANNOUNCED = new HashSet<>();
 
