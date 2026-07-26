@@ -3,6 +3,7 @@
     "package": "io.github.hunter1712.infusedmobs.mixin",
     "compatibilityLevel": "JAVA_25",
     "mixins": [
+        "EntityRemoveMixin",
         "LivingEntityMixin",
         "MobSpawnMixin"
     ],

@@ -79,8 +79,18 @@ public final class AbilityRegistry {
 
         all("combust", "Combust", TriggerType.DEATH, (mob, target) -> {
             if (mob.level() instanceof ServerLevel level) {
-                level.explode(mob, mob.getX(), mob.getY(), mob.getZ(),
-                        cfg.combustExplosionPower(), Level.ExplosionInteraction.MOB);
+                double radius = cfg.combustExplosionPower() * 2.0;
+                var entities = level.getEntities(mob, mob.getBoundingBox().inflate(radius));
+                var dmgSource = level.damageSources().explosion(null, null);
+                for (var entity : entities) {
+                    if (entity instanceof LivingEntity living && entity != mob) {
+                        double dist = entity.distanceTo(mob);
+                        if (dist <= radius) {
+                            float damage = (float) (4.0 * (1.0 - dist / radius));
+                            living.hurt(dmgSource, Math.max(damage, 1.0f));
+                        }
+                    }
+                }
             }
         });
     }
@@ -100,7 +110,7 @@ public final class AbilityRegistry {
     private static void registerTickEffect(String id, String name, Holder<net.minecraft.world.effect.MobEffect> effect,
                                            int duration, int amplifier) {
         all(id, name, TriggerType.TICK, (mob, target) ->
-                mob.addEffect(new MobEffectInstance(effect, duration, amplifier)));
+                mob.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false)));
     }
 
     /**
@@ -109,7 +119,8 @@ public final class AbilityRegistry {
      */
     private static void damageArmor(LivingEntity mob, LivingEntity target) {
         if (!(target instanceof ServerPlayer player)) return;
-        if (!(player.level() instanceof ServerLevel level)) return;
+        // instanceof already verified ServerPlayer, so cast is safe
+        ServerLevel level = (ServerLevel) player.level();
         int dmg = ModConfig.get().acidArmorDamage();
         for (EquipmentSlot slot : ARMOR_SLOTS) {
             player.getItemBySlot(slot).hurtAndBreak(dmg, level, player, item -> {});

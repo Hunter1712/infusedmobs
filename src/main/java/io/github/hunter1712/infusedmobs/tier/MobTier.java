@@ -1,5 +1,7 @@
 package io.github.hunter1712.infusedmobs.tier;
 
+import com.mojang.serialization.Codec;
+
 /**
  * Elemental-themed tiers that a hostile mob can spawn with.
  * Each tier defines its spawn probability, how many abilities of
@@ -7,9 +9,12 @@ package io.github.hunter1712.infusedmobs.tier;
  */
 public enum MobTier {
 
-    EMBER(0.5,   1, 0, 0, 3.0, 3.0),
-    SURGE(0.3,   1, 1, 0, 5.0, 5.0),
-    TEMPEST(0.15, 1, 1, 1, 8.0, 8.0);
+    EMBER(0.1,   1, 0, 0, 1.5, 1.5),
+    SURGE(0.05,  1, 1, 0, 2.0, 2.0),
+    TEMPEST(0.025, 1, 1, 1, 4.0, 4.0);
+
+    /** Codec for serialising tier values to / from disk. */
+    public static final Codec<MobTier> CODEC = Codec.STRING.xmap(MobTier::valueOf, MobTier::name);
 
     private final double spawnChance;
     private final int hurtAbilities;
