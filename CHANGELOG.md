@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-07-27
+
+### Added
+- **26 unit tests** (up from 21) — new config validation tests for `abilityCount`, `spawnChance`, null tiers
+- **Config validation hardened** — `isValid()` now checks all tier fields; old configs fall back to defaults
+
+### Changed
+- **Unified ability pool** — abilities drawn from all trigger types mixed together
+  - Cinder: 1 ability, Shade: 2, Doom: 3 (was per-type HURT/TICK/DEATH counts)
+- **Spawn rates increased** — Cinder 40%, Shade 20%, Doom 10% (was 10%/5%/2.5%)
+- **Debuff pass** — all HURT/TICK effects are level I, 3s duration (was II–III, 5s)
+  - Chill no longer hardcoded to level III — uses config amplifier like everything else
+- **Version bump to 2.5.0**
+
+### Removed
+- `BY_TRIGGER` index (dead code — populated but never read since unified pool)
+- Redundant shuffle in `getRandomAbilities`
+- Stale metadata (fabric.mod.json still referenced Ember/Surge/Tempest)
+
+### Fixed
+- Config validation missing `abilityCount` check — old configs silently got 0 abilities
+
 ## [2.4.0] - 2026-07-26
 
 ### Added
