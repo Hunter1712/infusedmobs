@@ -1,6 +1,175 @@
 All Rights Reserved
 
-Copyright (c) 2026 hunter1712
+Copyright © 2026 hunter1712
 
-Permission is not granted to copy, modify, distribute, or use this software
-or its source code without explicit written permission from the author.
+Downloading, installing, or using this software constitutes
+complete and unconditional acceptance of these terms.
+
+Permission is not granted to copy, modify, distribute, or use
+this software or its source code except as expressly stated below.
+The author reserves all rights not explicitly granted.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+0.  DEFINITIONS
+
+    "MOD"          — This software, in source or compiled form, including
+                     all associated assets, configurations, and metadata.
+
+    "AUTHOR"       — hunter1712, the original creator and copyright holder.
+
+    "USER"         — Any person who downloads, installs, or runs the MOD.
+
+    "MODPACK"      — A curated collection of mods distributed together as
+                     a single pack, including but not limited to those on
+                     CurseForge, Modrinth, or other launcher platforms.
+
+    "MODIFICATION" — Any alteration to the MOD's source code, compiled
+                     classes, assets, or configuration beyond normal use.
+
+    "DERIVATIVE"   — A work based on or incorporating the MOD, including
+                     modified versions, forks, ports, or partial extracts.
+
+    "DISTRIBUTION" — Making the MOD available to others by any means,
+                     including uploads, mirrors, rehosting, or bundling.
+
+    "COMMERCIAL"   — Any use intended for or resulting in monetary gain,
+                     including but not limited to sales, paid access,
+                     paywalled content, ad revenue, or crowdfunding.
+
+1.  LIABILITY
+
+    THE MOD IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+
+    IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+    LIABILITY ARISING FROM THE USE OR MISUSE OF THE MOD. THE USER ASSUMES
+    ALL RISK ASSOCIATED WITH INSTALLING AND RUNNING THE MOD, INCLUDING
+    BUT NOT LIMITED TO WORLD CORRUPTION, DATA LOSS, OR SERVER INSTABILITY.
+
+2.  PERSONAL USE
+
+    The USER may download and install the MOD for personal, non-commercial
+    use on privately-owned or administered Minecraft instances and servers.
+    This includes single-player worlds, private multiplayer servers, and
+    LAN sessions.
+
+3.  MODPACK INCLUSION
+
+    Including the MOD in a MODPACK is permitted under the following
+    conditions:
+
+    a)  The MODPACK is distributed exclusively through CurseForge,
+        Modrinth, or an official launcher with which the AUTHOR has
+        an active distribution agreement. Distribution on third-party
+        mod-hosting sites, "mod repost" sites, or direct download links
+        is expressly forbidden unless the AUTHOR has given written
+        permission.
+
+    b)  The USER must provide clear and prominent credit to the AUTHOR
+        in the MODPACK description, including:
+            i)   The MOD's name ("Infused Mobs")
+            ii)  The AUTHOR's name ("hunter1712")
+            iii) An easily accessible link to the MOD's official project
+                 page on CurseForge or Modrinth.
+
+    c)  The MODPACK's name and description must not be easily confused
+        with the MOD's own name or branding.
+
+    d)  Monetization of the MODPACK is permitted only through the
+        standard monetization systems provided by CurseForge or Modrinth
+        (e.g., sponsored links, banner ads on the project page). Any other
+        form of monetization, including paywalled access, requires explicit
+        written permission from the AUTHOR.
+
+    e)  These permissions are non-transferrable, revocable at the AUTHOR's
+        discretion, and apply only to the specific MODPACK for which they
+        are exercised.
+
+4.  CONTENT CREATION AND STREAMING
+
+    The USER may create videos, streams, screenshots, reviews, and
+    spotlights featuring the MOD and monetize that content through
+    platform-standard means (e.g., YouTube ads, Twitch subscriptions,
+    donations). Credit to the AUTHOR is appreciated but not required
+    for content creation.
+
+5.  RESTRICTIONS
+
+    The following actions are strictly prohibited without the AUTHOR's
+    explicit written permission:
+
+    a)  REDISTRIBUTION — Uploading, mirroring, rehosting, or otherwise
+        making the MOD available for download on any website, platform,
+        or service not listed in Section 3(a). This includes file-sharing
+        sites, Discord servers, "mod repost" websites, and direct
+        download links.
+
+    b)  MODIFICATION — Decompiling, reverse-engineering, modifying,
+        or creating DERIVATIVES of the MOD's source code or compiled
+        classes, except as permitted for private use under Section 7.
+
+    c)  COMMERCIAL EXPLOITATION — Selling the MOD, charging for access,
+        paywalling features, or otherwise deriving revenue from the MOD
+        itself (as distinct from MODPACK monetization under Section 3(d)
+        or content creation under Section 4).
+
+    d)  FORK RELEASE — Creating, distributing, or publishing any FORK,
+        port, patch, or DERIVATIVE of the MOD to any public platform,
+        repository, or distribution channel.
+
+    e)  ASSET EXTRACTION — Extracting, reusing, or repurposing the MOD's
+        assets (textures, models, sounds, configurations, or other
+        bundled resources) in any other project, mod, or modpack without
+        prior written permission from the AUTHOR.
+
+6.  SOURCE CODE
+
+    The source code of the MOD is made publicly available on GitHub for
+    reference, transparency, and collaboration purposes only. This does
+    not constitute an implied license to use, copy, modify, or distribute
+    the code beyond the terms stated herein. The AUTHOR retains full
+    copyright ownership of all source code.
+
+    Contributions (pull requests, patches, or suggestions) submitted to
+    the AUTHOR's official repository are accepted under the understanding
+    that they become subject to this license, and the contributor grants
+    the AUTHOR a perpetual, irrevocable, worldwide, royalty-free license
+    to use, modify, and distribute those contributions as part of the MOD.
+
+7.  PRIVATE MODIFICATION
+
+    The USER may decompile and modify the MOD for private, personal use
+    (e.g., adjusting balance values, fixing local issues on a private
+    server) without requesting permission. The USER may not distribute
+    any modified version under any circumstances, including within a
+    MODPACK. Modified private copies must remain accessible only to
+    persons under the USER's direct control.
+
+8.  TERMINATION
+
+    Any violation of these terms automatically terminates all permissions
+    granted under this license. Upon termination, the USER must cease all
+    use of the MOD and delete all copies in their possession.
+
+    The AUTHOR reserves the right to update or modify these terms at any
+    time without prior notice. Continued use of the MOD following such
+    changes constitutes acceptance of the revised terms.
+
+    If any provision of this license is found to be unenforceable or
+    invalid under applicable law, that provision shall be modified to
+    the minimum extent necessary to make it enforceable, and the
+    remaining provisions shall remain in full force and effect.
+
+9.  CONTACT
+
+    For questions about these terms, requests for exceptions, or
+    other inquiries, contact the AUTHOR through the official project
+    page or issue tracker:
+
+        GitHub:   https://github.com/hunter1712/infusedmobs
+        CurseForge / Modrinth:   See official project pages
+
+    (Unapproved) redistribution, modification, or use outside of the
+    permissions above is a violation of copyright law.
