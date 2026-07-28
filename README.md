@@ -76,4 +76,5 @@ See [MODRINTH_DESCRIPTION.md](MODRINTH_DESCRIPTION.md) for full config reference
 
 ## License
 
-ARR — All Rights Reserved
+All Rights Reserved — see [LICENSE](LICENSE) for full terms.
+Modpack inclusion with credit is permitted; redistribution and derivatives require permission.
