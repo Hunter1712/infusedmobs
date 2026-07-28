@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-07-28
+
+### Added
+- **Command tree** — `/infusedmobs` with `help`, `nametag [on|off]`, `info [target]`, `summon <tier> [entity]`, `reload` subcommands (gamemaster-level permission)
+- **Global nametag toggle** — `showNametags` field in config, toggled via `/infusedmobs nametag`
+- **Config reload** — `/infusedmobs reload` re-reads `config/infusedmobs.json` at runtime without restart
+- **Projectile HURT trigger** — projectiles fired by infused mobs (arrows, fire charges, etc.) now trigger their HURT abilities
+- **`MobTier.colourCode()`** — consolidated colour mapping as single source of truth
+
+### Changed
+- **`hurt()` → `hurtServer()`** — fixed deprecated method call in Combust and Thorns
+- **Removed duplicate `findMob`** — `MobTickTrigger` now uses shared `MobTierManager.findMob`
+- **Tier colours consolidated** — all colour lookups go through `MobTier.colourCode()` instead of duplicated switches
+
+### Fixed
+- **Stale comment** — AbilityRegistry TICK timer said "2 seconds" (corrected to "1 second")
+- **Unused imports** — cleaned up in `MobTickTrigger`
+
 ## [2.5.0] - 2026-07-27
 
 ### Added

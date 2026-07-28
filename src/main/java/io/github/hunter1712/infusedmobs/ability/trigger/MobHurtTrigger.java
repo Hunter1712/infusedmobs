@@ -11,7 +11,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,10 +21,11 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Handles the {@link TriggerType#HURT} trigger.
+ * Handles the {@link TriggerType#HURT} trigger for both melee and projectile
+ * attacks from tiered mobs.
  * <p>
- * Fires ALL HURT abilities assigned to the attacking mob simultaneously
- * when a player takes damage from a hostile mob.
+ * When a player takes damage — whether from a mob's melee hit or from a
+ * projectile fired by a mob — the mob's HURT abilities are applied.
  */
 public final class MobHurtTrigger {
 
@@ -55,16 +58,31 @@ public final class MobHurtTrigger {
             LivingEntity entity, DamageSource source,
             float baseDamageTaken /* unused */, float damageTaken, boolean blocked
     ) {
-        if (REFLECTING.get()) return;  // Prevent recursive HURT firing from Thorns
+        if (REFLECTING.get()) return;  // Prevent recursive firing from Thorns reflection
+        if (blocked) return;            // Shield block negates abilities
         if (!(entity instanceof Player player)) return;
-        if (!(source.getEntity() instanceof Mob mob)) return;
-        if (blocked) return;  // Shield block negates abilities
+
+        Mob mob = findAttackingMob(source);
+        if (mob == null) return;
 
         MobTier tier = MobTierManager.getTier(mob);
         if (tier == null) return;
 
         announceIfFirstEncounter(player, mob, tier);
         fireHurtAbilities(mob, player, damageTaken);
+    }
+
+    /**
+     * Resolves the attacking mob from a damage source, accounting for both
+     * direct melee hits and projectile attacks (arrows, tridents, fireballs).
+     */
+    private static Mob findAttackingMob(DamageSource source) {
+        // Direct melee hit
+        if (source.getEntity() instanceof Mob mob) return mob;
+        // Projectile from a mob (arrow, trident, fire charge, etc.)
+        if (source.getEntity() instanceof Projectile projectile
+                && projectile.getOwner() instanceof Mob mob) return mob;
+        return null;
     }
 
     /** Sends a one-time announcement the first time a player is hit by this mob. */
@@ -105,7 +123,8 @@ public final class MobHurtTrigger {
         if (reflected > 0.0f) {
             REFLECTING.set(true);
             try {
-                player.hurt(player.damageSources().thorns(mob), reflected);
+                ServerLevel level = (ServerLevel) player.level();
+                player.hurtServer(level, player.damageSources().thorns(mob), reflected);
             } finally {
                 REFLECTING.set(false);
             }

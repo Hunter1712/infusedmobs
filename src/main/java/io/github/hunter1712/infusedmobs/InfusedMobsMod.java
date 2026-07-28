@@ -4,6 +4,7 @@ import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.trigger.MobDeathTrigger;
 import io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger;
 import io.github.hunter1712.infusedmobs.ability.trigger.MobTickTrigger;
+import io.github.hunter1712.infusedmobs.command.InfusedMobsCommand;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 
 import net.fabricmc.api.ModInitializer;
@@ -25,5 +26,6 @@ public class InfusedMobsMod implements ModInitializer {
         MobTickTrigger.register();
         MobHurtTrigger.register();
         MobDeathTrigger.register();
+        InfusedMobsCommand.register();
     }
 }
