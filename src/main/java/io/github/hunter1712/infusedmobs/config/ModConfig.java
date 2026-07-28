@@ -15,8 +15,9 @@ import java.nio.file.Path;
  * JSON-driven config loaded from {@code config/infusedmobs.json}.
  * <p>
  * Auto-creates with defaults on first run. All values are readable
- * at any time via {@link #get()}. The config is loaded once during
- * mod initialisation and is immutable thereafter.
+ * at any time via {@link #get()}. The config is loaded during mod
+ * initialisation and can be reloaded at runtime via {@link #load()}
+ * or mutated via {@link #swapInstance(Instance)}.
  */
 public final class ModConfig {
 
@@ -57,6 +58,27 @@ public final class ModConfig {
         return instance;
     }
 
+    /**
+     * Atomically swaps the in-memory instance and persists to disk.
+     * Used by runtime commands to modify live config values.
+     */
+    public static void swapInstance(Instance newInstance) {
+        instance = newInstance;
+        save();
+    }
+
+    /** Persists the current config to disk. */
+    public static void save() {
+        Path configPath = FabricLoader.getInstance().getConfigDir().resolve("infusedmobs.json");
+        try {
+            Files.createDirectories(configPath.getParent());
+            String json = new GsonBuilder().setPrettyPrinting().create().toJson(instance);
+            Files.writeString(configPath, json);
+        } catch (IOException e) {
+            // Non-critical — in-memory config is still correct
+        }
+    }
+
     private static void writeDefaults(Path path) {
         try {
             Files.createDirectories(path.getParent());
@@ -90,7 +112,8 @@ public final class ModConfig {
             int tickEffectAmplifier,
             int infernoFireSeconds,
             int acidArmorDamage,
-            float combustExplosionPower
+            float combustExplosionPower,
+            boolean showNametags
     ) {
         /** Returns true if all fields deserialised with valid values. */
         boolean isValid() {
@@ -106,6 +129,17 @@ public final class ModConfig {
                     && tc.abilityCount() > 0
                     && tc.healthMultiplier() >= 1.0
                     && tc.xpMultiplier() >= 1.0;
+        }
+
+        /** Returns a copy with a new showNametags value. */
+        public Instance withShowNametags(boolean show) {
+            return new Instance(
+                    cinder, shade, doom,
+                    hurtEffectDuration, hurtEffectAmplifier,
+                    tickEffectDuration, tickEffectAmplifier,
+                    infernoFireSeconds, acidArmorDamage,
+                    combustExplosionPower, show
+            );
         }
 
         /** Returns the tier config matching the given enum member. */
@@ -127,7 +161,8 @@ public final class ModConfig {
                     60, 0,   // tick: 3s, level I
                     5,       // infernoFireSeconds
                     4,       // acidArmorDamage
-                    4.0f     // combustExplosionPower
+                    4.0f,    // combustExplosionPower
+                    true     // showNametags
             );
         }
     }

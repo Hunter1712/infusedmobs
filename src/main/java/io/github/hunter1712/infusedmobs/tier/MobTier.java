@@ -33,4 +33,13 @@ public enum MobTier {
     public int abilityCount() { return abilityCount; }
     public double healthMultiplier() { return healthMultiplier; }
     public double xpMultiplier() { return xpMultiplier; }
+
+    /** Returns the Minecraft colour code used for this tier's nametag and UI. */
+    public String colourCode() {
+        return switch (this) {
+            case CINDER -> "§a";
+            case SHADE -> "§e";
+            case DOOM -> "§c";
+        };
+    }
 }

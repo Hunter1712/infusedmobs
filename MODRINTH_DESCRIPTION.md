@@ -22,7 +22,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 
 ## ⚔️ Ability Types
 
-### HURT (fire on melee hit, blocked by shields)
+### HURT (fire on melee hit or projectile hit, blocked by shields)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -34,7 +34,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
 
-> **Shield blocks negate all HURT abilities.**
+> **Shield blocks negate all HURT abilities.** Projectiles (arrows, fire charges, etc.) fired by infused mobs also trigger their HURT abilities on hit.
 
 ---
 
@@ -71,6 +71,20 @@ This only happens once per mob per player — no spam.
 
 ---
 
+## 🎮 Commands
+
+All commands require **gamemaster-level permission** (level 2 ops).
+
+| Command | Description |
+|---------|-------------|
+| `/infusedmobs help` | List all available subcommands |
+| `/infusedmobs nametag [on\|off]` | Toggle tier nametags globally (persisted in config) |
+| `/infusedmobs info [target]` | Show the tier and abilities of a specific infused mob |
+| `/infusedmobs summon <tier> [entity]` | Spawn an infused mob of the given tier (defaults to zombie) |
+| `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
+
+---
+
 ## ⚙️ Configuration
 
 **File:** `config/infusedmobs.json` (auto-generated on first run)
@@ -95,6 +109,7 @@ This only happens once per mob per player — no spam.
     "healthMultiplier": 4.0,
     "xpMultiplier": 4.0
   },
+  "showNametags": true,
   "hurtEffectDuration": 60,
   "hurtEffectAmplifier": 0,
   "tickEffectDuration": 60,
@@ -109,6 +124,7 @@ This only happens once per mob per player — no spam.
 
 | Setting | Description |
 |---------|-------------|
+| `showNametags` | Whether tier nametags are shown on infused mobs (toggleable in-game) |
 | `spawnChance` | Probability for this tier (0.0–1.0) |
 | `abilityCount` | How many abilities the tier draws from the unified pool |
 | `healthMultiplier` / `xpMultiplier` | Stat scaling per tier |
@@ -141,7 +157,7 @@ This only happens once per mob per player — no spam.
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 26.2
 2. Install [Fabric API](https://modrinth.com/mod/fabric-api) (required)
-3. Drop `infusedmobs-2.5.0.jar` into your `mods` folder
+3. Drop `infusedmobs-2.6.0.jar` into your `mods` folder
 4. Launch — config generates at `config/infusedmobs.json`
 
 ---
@@ -166,6 +182,13 @@ This only happens once per mob per player — no spam.
 ## 📝 Changelog
 
 See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/main/CHANGELOG.md) for full history.
+
+### v2.6.0 Highlights
+- **Command system** — `/infusedmobs` with `help`, `nametag`, `info`, `summon`, and `reload` subcommands
+- **Nametag toggle** — `showNametags` config field, toggleable in-game via `/infusedmobs nametag`
+- **Projectile support** — projectiles fired by infused mobs now trigger their HURT abilities
+- **Config reload** — `/infusedmobs reload` re-reads config at runtime
+- **Internal cleanup** — `hurt()` → `hurtServer()`, colour mapping consolidated, 28 tests
 
 ### v2.5.0 Highlights
 - **Unified ability pool** — abilities drawn from all trigger types mixed together (Cinder 1, Shade 2, Doom 3)

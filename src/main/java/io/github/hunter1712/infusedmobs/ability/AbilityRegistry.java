@@ -64,7 +64,7 @@ public final class AbilityRegistry {
 
         all("acid", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
 
-        // ---- TICK abilities (passive, refresh every 2 seconds while alive) ----
+        // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
         registerTickEffect("fortify", "Ward",  MobEffects.RESISTANCE,   cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
         registerTickEffect("fury",    "Frenzy", MobEffects.STRENGTH,    cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
@@ -88,7 +88,7 @@ public final class AbilityRegistry {
                         double dist = entity.distanceTo(mob);
                         if (dist <= radius) {
                             float damage = (float) (4.0 * (1.0 - dist / radius));
-                            living.hurt(dmgSource, Math.max(damage, 1.0f));
+                            living.hurtServer(level, dmgSource, Math.max(damage, 1.0f));
                         }
                     }
                 }

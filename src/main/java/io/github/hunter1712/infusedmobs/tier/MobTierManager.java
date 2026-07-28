@@ -6,6 +6,7 @@ import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
@@ -212,12 +213,7 @@ public final class MobTierManager {
     // ========================================
 
     private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
-        String colour = switch (tier) {
-            case CINDER -> "§a";
-            case SHADE -> "§e";
-            case DOOM -> "§c";
-        };
-        setNametag(mob, colour, abilities);
+        setNametag(mob, tier.colourCode(), abilities);
     }
 
     private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
@@ -225,11 +221,55 @@ public final class MobTierManager {
     }
 
     private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
+        if (!ModConfig.get().showNametags()) return;
         String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
         // Use the entity type name (e.g. "Parched") rather than getName(),
         // which would return any previously-set custom name and cause duplication.
         String entityName = mob.getType().getDescription().getString();
         mob.setCustomName(Component.literal(colour + abilityList + " §f" + entityName));
         mob.setCustomNameVisible(true);
+    }
+
+    /**
+     * Looks up a mob by UUID across all loaded server levels.
+     * Returns null if the mob is not found or dead.
+     */
+    public static Mob findMob(MinecraftServer server, UUID uuid) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.getEntity(uuid) instanceof Mob mob && mob.isAlive()) {
+                return mob;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Applies or removes nametags for all tracked mobs based on the
+     * current {@link ModConfig.Instance#showNametags()} setting.
+     * Called when the toggle changes via command.
+     */
+    public static void refreshNametags(MinecraftServer server) {
+        boolean show = ModConfig.get().showNametags();
+        for (UUID uuid : ABILITIES.keySet()) {
+            Mob mob = findMob(server, uuid);
+            if (mob == null) continue;
+
+            if (show) {
+                List<Ability> abilities = ABILITIES.get(uuid);
+                if (abilities == null || abilities.isEmpty()) continue;
+
+                if (SPLIT_COPIES.contains(uuid)) {
+                    setSplitCopyNametag(mob, abilities);
+                } else {
+                    MobTier tier = TIERS.get(uuid);
+                    if (tier != null) {
+                        setTierNametag(mob, tier, abilities);
+                    }
+                }
+            } else {
+                mob.setCustomName(null);
+                mob.setCustomNameVisible(false);
+            }
+        }
     }
 }

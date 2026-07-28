@@ -59,7 +59,7 @@ class ModConfigTest {
         var validTier = new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
         var invalid = new ModConfig.Instance(
                 null, validTier, validTier,
-                60, 0, 60, 0, 5, 4, 4.0f);
+                60, 0, 60, 0, 5, 4, 4.0f, true);
         assertFalse(invalid.isValid());
     }
 
@@ -69,7 +69,7 @@ class ModConfigTest {
         var validTier = new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
         var invalid = new ModConfig.Instance(
                 badTier, validTier, validTier,
-                60, 0, 60, 0, 5, 4, 4.0f);
+                60, 0, 60, 0, 5, 4, 4.0f, true);
         assertFalse(invalid.isValid());
     }
 
@@ -79,7 +79,7 @@ class ModConfigTest {
         var validTier = new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
         var invalid = new ModConfig.Instance(
                 validTier, badTier, validTier,
-                60, 0, 60, 0, 5, 4, 4.0f);
+                60, 0, 60, 0, 5, 4, 4.0f, true);
         assertFalse(invalid.isValid());
     }
 
@@ -99,5 +99,20 @@ class ModConfigTest {
 
         // Inferno should be a reasonable number of seconds
         assertTrue(defaults.infernoFireSeconds() >= 1 && defaults.infernoFireSeconds() <= 30);
+    }
+
+    @Test
+    void showNametagsDefaultsToTrue() {
+        assertTrue(ModConfig.Instance.defaults().showNametags());
+    }
+
+    @Test
+    void withShowNametagsCreatesCopy() {
+        ModConfig.Instance original = ModConfig.Instance.defaults();
+        assertTrue(original.showNametags());
+
+        ModConfig.Instance toggled = original.withShowNametags(false);
+        assertFalse(toggled.showNametags());
+        assertEquals(original.cinder(), toggled.cinder());
     }
 }

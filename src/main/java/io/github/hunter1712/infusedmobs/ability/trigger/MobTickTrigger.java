@@ -5,8 +5,6 @@ import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 
 import java.util.List;
@@ -37,8 +35,8 @@ public final class MobTickTrigger {
             if (tracked.isEmpty()) return;
 
             for (UUID uuid : tracked) {
-                Mob mob = findMob(server, uuid);
-                if (mob == null || !mob.isAlive()) continue;
+                Mob mob = MobTierManager.findMob(server, uuid);
+                if (mob == null) continue;
 
                 List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.TICK);
                 for (Ability ability : abilities) {
@@ -46,15 +44,5 @@ public final class MobTickTrigger {
                 }
             }
         });
-    }
-
-    /** Looks up a mob by UUID across all loaded server levels. */
-    private static Mob findMob(MinecraftServer server, UUID uuid) {
-        for (ServerLevel level : server.getAllLevels()) {
-            if (level.getEntity(uuid) instanceof Mob mob) {
-                return mob;
-            }
-        }
-        return null;
     }
 }

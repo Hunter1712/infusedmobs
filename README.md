@@ -44,6 +44,30 @@ tiers with randomized abilities — fully configurable via JSON.
 | **Rupture** | Split into 2 Cinder-tier copies at 60% HP (each gets 1 random ability, no DEATH abilities to prevent recursion) |
 | **Combust** | Area damage + explosion sound (no particles / block damage, radius configurable) |
 
+## Commands
+
+All commands require **gamemaster-level permission** (level 2 ops).
+
+| Command | Description |
+|---------|-------------|
+| `/infusedmobs help` | List all available subcommands |
+| `/infusedmobs nametag [on\|off]` | Toggle tier nametags globally (persisted in config) |
+| `/infusedmobs info [target]` | Show the tier and abilities of a specific infused mob |
+| `/infusedmobs summon <tier> [entity]` | Spawn an infused mob of the given tier (defaults to zombie) |
+| `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
+
+### Nametag Toggle
+
+Tier nametags can be hidden globally via the config file or the in-game command:
+
+```json
+{
+  "showNametags": false
+}
+```
+
+When disabled, infused mobs appear with their vanilla names — abilities still apply, you just won't see the tier tag.
+
 ## Configuration
 
 File: `config/infusedmobs.json` (auto-generated on first run)
