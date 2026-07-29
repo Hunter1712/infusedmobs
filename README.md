@@ -76,5 +76,5 @@ See [MODRINTH_DESCRIPTION.md](MODRINTH_DESCRIPTION.md) for full config reference
 
 ## License
 
-All Rights Reserved — see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/main/LICENSE) for full terms.
+All Rights Reserved — see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/master/LICENSE) for full terms.
 Modpack inclusion with credit is permitted; redistribution and derivatives require permission.

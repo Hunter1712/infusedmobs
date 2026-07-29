@@ -164,7 +164,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 
 ## 🔧 Modpack Authors
 
-- **License:** All Rights Reserved — modpack inclusion with credit is allowed (see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/main/LICENSE))
+- **License:** All Rights Reserved — modpack inclusion with credit is allowed (see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/master/LICENSE))
 - **Config-driven** — no code changes needed for balance tweaks
 - **No hard dependencies** beyond Fabric API
 - **Tested on:** Fabric 0.19.3+, MC 26.2
@@ -181,7 +181,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 
 ## 📝 Changelog
 
-See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/main/CHANGELOG.md) for full history.
+See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/master/CHANGELOG.md) for full history.
 
 ### v2.6.0 Highlights
 - **Command system** — `/infusedmobs` with `help`, `nametag`, `list`, `summon`, and `reload` subcommands
@@ -219,7 +219,7 @@ See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/main/CHANGELOG
 
 ## 📜 License
 
-**All Rights Reserved** — see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/main/LICENSE) for full terms.  
+**All Rights Reserved** — see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/master/LICENSE) for full terms.  
 Modpack inclusion with credit is permitted; redistribution and derivatives require permission.
 
 ---
