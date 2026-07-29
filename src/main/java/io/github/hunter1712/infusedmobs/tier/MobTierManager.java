@@ -90,6 +90,23 @@ public final class MobTierManager {
     }
 
     /**
+     * Assigns a specific tier and ability list to a mob, bypassing random rolls.
+     * Used by the summon command where the player chooses the tier and abilities.
+     * <p>
+     * Skips the MONSTER category restriction so any summoned mob can receive a tier.
+     * Also skips the "already assigned" check since this is for fresh command-spawned mobs.
+     */
+    public static void assignSpecificTier(Mob mob, MobTier tier, List<Ability> abilities) {
+        UUID uuid = mob.getUUID();
+        TIERS.put(uuid, tier);
+        ABILITIES.put(uuid, abilities);
+
+        ModConfig.TierConfig tc = ModConfig.get().forTier(tier);
+        applyHealthMultiplier(mob, tc);
+        setTierNametag(mob, tier, abilities);
+    }
+
+    /**
      * Re-applies tier effects from persistent state when a mob loads
      * into the world after a chunk reload.
      */
@@ -125,7 +142,7 @@ public final class MobTierManager {
      * <ul>
      *   <li>Cinder health multiplier (1.5× base)</li>
      *   <li>60% of boosted max health</li>
-     *   <li>1 random HURT ability (no Rupture to prevent infinite recursion)</li>
+     *   <li>1 random non-DEATH ability (prevents infinite Rupture recursion)</li>
      *   <li>Greyscale nametag</li>
      * </ul>
      */
@@ -138,15 +155,23 @@ public final class MobTierManager {
             copy.setHealth(copy.getMaxHealth() * SPLIT_HEALTH_FRACTION);
         }
 
-        // Draw 1 ability from the unified pool, then filter out DEATH
-        // to prevent infinite recursion from Rupture.
-        List<Ability> abilities = AbilityRegistry.getRandomAbilities(1)
-                .stream()
-                .filter(a -> a.trigger() != TriggerType.DEATH)
-                .toList();
+        // Draw 1 non-DEATH ability from the unified pool.
+        // Retry if DEATH is drawn (prevents empty-ability split copies).
+        List<Ability> abilities = drawNonDeathAbility();
+        if (abilities.isEmpty()) {
+            abilities = drawNonDeathAbility(); // one more try — 0.3% chance both are DEATH
+        }
 
         ABILITIES.put(copy.getUUID(), abilities);
         setSplitCopyNametag(copy, abilities);
+    }
+
+    /** Draws 1 ability, filtering out DEATH trigger types. */
+    private static List<Ability> drawNonDeathAbility() {
+        return AbilityRegistry.getRandomAbilities(1)
+                .stream()
+                .filter(a -> a.trigger() != TriggerType.DEATH)
+                .toList();
     }
 
     // ========================================

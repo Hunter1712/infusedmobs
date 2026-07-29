@@ -5,23 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.6.0] - 2026-07-28
+## [2.6.0] - 2026-07-29
 
 ### Added
-- **Command tree** — `/infusedmobs` with `help`, `nametag [on|off]`, `info [target]`, `summon <tier> [entity]`, `reload` subcommands (gamemaster-level permission)
+- **Command tree** — `/infusedmobs` with `help`, `nametag [on|off]`, `list`, `summon <tier> [entity] [abilities]`, `reload` subcommands (gamemaster-level permission)
+- **Entity tab-completions** — `/infusedmobs summon` now suggests only MONSTER-category entities
+- **Ability tab-completions** — space-separated, prefix-filtered, skips already-picked abilities, trailing-space detection for multi-word suggestions
+- **Ability validation with fuzzy matching** — unknown ability IDs show "Did you mean?" suggestions via Levenshtein distance
+- **Crosshair spawn** — `/infusedmobs summon` spawns at the block the player is looking at (10-block raycast)
+- **`/infusedmobs list`** — lists all hostile mob types that can receive a tier
 - **Global nametag toggle** — `showNametags` field in config, toggled via `/infusedmobs nametag`
 - **Config reload** — `/infusedmobs reload` re-reads `config/infusedmobs.json` at runtime without restart
 - **Projectile HURT trigger** — projectiles fired by infused mobs (arrows, fire charges, etc.) now trigger their HURT abilities
 - **`MobTier.colourCode()`** — consolidated colour mapping as single source of truth
+- **Random ability fallback** — summoning without abilities draws random ones per tier config
 
 ### Changed
+- **Ability IDs aligned to display names** — `venom`→`bane`, `freeze`→`chill`, `inferno`→`hellfire`, `acid`→`vitriol`, `fortify`→`ward`, `fury`→`frenzy`, `gust`→`wraith`, `bloom`→`blight` (also renamed `fission`→`rupture` in earlier 2.6.0)
+- **Simplified summon syntax** — removed `[pos]` argument; always spawns at crosshair; eliminated command priority conflicts with greedyString
+- **Improved input validation** — `parseAbilities` now shows fuzzy-matched "Did you mean?" for unknown IDs
 - **`hurt()` → `hurtServer()`** — fixed deprecated method call in Combust and Thorns
 - **Removed duplicate `findMob`** — `MobTickTrigger` now uses shared `MobTierManager.findMob`
 - **Tier colours consolidated** — all colour lookups go through `MobTier.colourCode()` instead of duplicated switches
+- **Removed `/infusedmobs info`** — replaced by nametag toggle and `/infusedmobs list`
+- **Ability suggestions use spaces** — comma-separated → space-separated (e.g., `bane thorns`)
+- **Cached Gson instances** — `ModConfig` reuses static GSON and GSON_PRETTY instead of creating new ones each read/write
+- **Split copy ability draw** — retries if a DEATH ability is drawn, preventing empty-ability split copies
 
 ### Fixed
-- **Stale comment** — AbilityRegistry TICK timer said "2 seconds" (corrected to "1 second")
-- **Unused imports** — cleaned up in `MobTickTrigger`
+- **Entity default fallback bug** — `BuiltInRegistries.ENTITY_TYPE.getValue()` returns default (PIG) for unknown keys; switched to `getOptional()`
+- **Tier re-roll bug** — summon command's tier argument was cosmetic; tier was re-rolled by `assignTier()` until `assignSpecificTier()` was added
+- **Stale comments** — AbilityRegistry TICK timer said "2 seconds" (corrected to "1 second"); docs refreshed across README + MODRINTH_DESCRIPTION
+- **Tab-completion trailing space** — pressing space after an ability now shows remaining abilities instead of `<abilities>` hint
+- **Unused imports** — cleaned up in `MobTickTrigger`, `InfusedMobsCommand` (duplicate ArrayList/List)
 
 ## [2.5.0] - 2026-07-27
 

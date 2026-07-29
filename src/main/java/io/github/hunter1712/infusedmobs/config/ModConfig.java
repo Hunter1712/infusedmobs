@@ -22,6 +22,8 @@ import java.nio.file.Path;
 public final class ModConfig {
 
     private static Instance instance;
+    private static final Gson GSON_PRETTY = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new Gson();
 
     private ModConfig() {}
 
@@ -39,7 +41,7 @@ public final class ModConfig {
         if (Files.exists(configPath)) {
             try {
                 String json = Files.readString(configPath);
-                Instance parsed = new Gson().fromJson(json, Instance.class);
+                Instance parsed = GSON.fromJson(json, Instance.class);
                 if (parsed.isValid()) {
                     instance = parsed;
                     return;
@@ -72,7 +74,7 @@ public final class ModConfig {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("infusedmobs.json");
         try {
             Files.createDirectories(configPath.getParent());
-            String json = new GsonBuilder().setPrettyPrinting().create().toJson(instance);
+            String json = GSON_PRETTY.toJson(instance);
             Files.writeString(configPath, json);
         } catch (IOException e) {
             // Non-critical — in-memory config is still correct
@@ -82,7 +84,7 @@ public final class ModConfig {
     private static void writeDefaults(Path path) {
         try {
             Files.createDirectories(path.getParent());
-            String json = new GsonBuilder().setPrettyPrinting().create().toJson(Instance.defaults());
+            String json = GSON_PRETTY.toJson(Instance.defaults());
             Files.writeString(path, json);
         } catch (IOException e) {
             // Defaults are already set in memory — file is non-critical

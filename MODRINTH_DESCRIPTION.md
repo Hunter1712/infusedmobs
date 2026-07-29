@@ -38,7 +38,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 
 ---
 
-### TICK (passive, refreshes every 2s, no particles)
+### TICK (passive, refreshes every 1s, no particles)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -79,8 +79,8 @@ All commands require **gamemaster-level permission** (level 2 ops).
 |---------|-------------|
 | `/infusedmobs help` | List all available subcommands |
 | `/infusedmobs nametag [on\|off]` | Toggle tier nametags globally (persisted in config) |
-| `/infusedmobs info [target]` | Show the tier and abilities of a specific infused mob |
-| `/infusedmobs summon <tier> [entity]` | Spawn an infused mob of the given tier (defaults to zombie) |
+| `/infusedmobs list` | List all hostile mob types that can be infused |
+| `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an infused mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
 
 ---
@@ -184,11 +184,14 @@ All commands require **gamemaster-level permission** (level 2 ops).
 See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/main/CHANGELOG.md) for full history.
 
 ### v2.6.0 Highlights
-- **Command system** — `/infusedmobs` with `help`, `nametag`, `info`, `summon`, and `reload` subcommands
+- **Command system** — `/infusedmobs` with `help`, `nametag`, `list`, `summon`, and `reload` subcommands
+- **Summon improvements** — crosshair spawn position, entity tab-completions, ability tab-completions, fuzzy-match validation of ability IDs
+- **Ability IDs aligned to display names** — `venom`→`bane`, `freeze`→`chill`, `inferno`→`hellfire`, `acid`→`vitriol`, `fortify`→`ward`, `fury`→`frenzy`, `gust`→`wraith`, `bloom`→`blight`
+- **Simplified summon syntax** — removed `[pos]` argument; always spawns at crosshair; no more command priority conflicts
 - **Nametag toggle** — `showNametags` config field, toggleable in-game via `/infusedmobs nametag`
 - **Projectile support** — projectiles fired by infused mobs now trigger their HURT abilities
 - **Config reload** — `/infusedmobs reload` re-reads config at runtime
-- **Internal cleanup** — `hurt()` → `hurtServer()`, colour mapping consolidated, 28 tests
+- **Internal cleanup** — `hurt()`→`hurtServer()`, colour mapping consolidated, cached Gson instances, 28 tests
 
 ### v2.5.0 Highlights
 - **Unified ability pool** — abilities drawn from all trigger types mixed together (Cinder 1, Shade 2, Doom 3)

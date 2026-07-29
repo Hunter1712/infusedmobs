@@ -8,12 +8,11 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.level.Level;
 
 /**
- * Spawns 2 copies of the dying mob's entity type at 60 % max health.
- * Each copy receives full Cinder-tier stats and abilities (1 HURT, no Rupture
- * to prevent infinite recursion).
+ * Spawns 2 copies of the dying mob's entity type at 60% max health.
+ * Each copy receives Cinder-tier stats and 1 random non-DEATH ability
+ * (Rupture is excluded to prevent infinite recursion).
  */
 public final class SplitEffect {
 
@@ -29,8 +28,7 @@ public final class SplitEffect {
      * @param mob the dying mob
      */
     public static void apply(LivingEntity mob) {
-        Level rawLevel = mob.level();
-        if (!(rawLevel instanceof ServerLevel level)) return;
+        if (!(mob.level() instanceof ServerLevel level)) return;
 
         EntityType<?> type = mob.getType();
         for (int i = 0; i < COPY_COUNT; i++) {
