@@ -9,7 +9,7 @@ import java.util.function.BiConsumer;
  * Each ability has a unique identifier, a display name, a trigger type
  * for when it activates, and the effect logic that executes when triggered.
  *
- * @param id           unique identifier (e.g., "venom")
+ * @param id           unique identifier (e.g., "bane")
  * @param name         display name (e.g., "Bane")
  * @param trigger      when this ability activates
  * @param effectLogic  the effect to execute — first LivingEntity is the mob,

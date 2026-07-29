@@ -107,7 +107,7 @@ public final class MobHurtTrigger {
     }
 
     /**
-     * Reflects 15 % of melee damage back at the attacker when a player
+     * Reflects 15% of melee damage back at the attacker when a player
      * hits a tiered mob that has the Thorns ability.
      */
     private static void onThornsReflect(
@@ -120,10 +120,9 @@ public final class MobHurtTrigger {
         if (!MobTierManager.hasAbility(mob, "thorns")) return;
 
         float reflected = damageTaken * 0.15f;
-        if (reflected > 0.0f) {
+        if (reflected > 0.0f && player.level() instanceof ServerLevel level) {
             REFLECTING.set(true);
             try {
-                ServerLevel level = (ServerLevel) player.level();
                 player.hurtServer(level, player.damageSources().thorns(mob), reflected);
             } finally {
                 REFLECTING.set(false);

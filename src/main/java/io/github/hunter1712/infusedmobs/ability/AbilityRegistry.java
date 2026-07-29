@@ -16,7 +16,9 @@ import net.minecraft.world.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 
@@ -24,8 +26,7 @@ import java.util.function.BiConsumer;
  * Central registry containing the global mob ability pool.
  * <p>
  * Abilities are stored in a flat list and randomly sampled when a mob
- * is assigned a tier on spawn. Abilities are also indexed by trigger
- * type for fast filtering during tier assignment.
+ * is assigned a tier on spawn.
  */
 public final class AbilityRegistry {
 
@@ -47,14 +48,14 @@ public final class AbilityRegistry {
     public static void registerAll() {
         ModConfig.Instance cfg = ModConfig.get();
 
-        // ---- HURT abilities (fire when the mob melee-hits a player) ----
+        // ---- HURT abilities (fire when the mob hits a player — melee or projectile) ----
 
-        registerHurtEffect("venom",  "Bane",   MobEffects.POISON,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
-        registerHurtEffect("freeze", "Chill", MobEffects.SLOWNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
-        registerHurtEffect("decay",  "Decay",  MobEffects.WITHER,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
-        registerHurtEffect("hex",    "Hex",    MobEffects.WEAKNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
+        registerHurtEffect("bane",     "Bane",     MobEffects.POISON,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
+        registerHurtEffect("chill",    "Chill",    MobEffects.SLOWNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
+        registerHurtEffect("decay",    "Decay",    MobEffects.WITHER,   cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
+        registerHurtEffect("hex",      "Hex",      MobEffects.WEAKNESS, cfg.hurtEffectDuration(), cfg.hurtEffectAmplifier());
 
-        all("inferno", "Hellfire", TriggerType.HURT, (mob, target) ->
+        all("hellfire", "Hellfire", TriggerType.HURT, (mob, target) ->
                 target.igniteForSeconds(cfg.infernoFireSeconds()));
 
         all("siphon", "Siphon", TriggerType.HURT, (mob, target) -> {
@@ -62,21 +63,21 @@ public final class AbilityRegistry {
             if (amount > 0) mob.heal(amount);
         });
 
-        all("acid", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
+        all("vitriol", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
 
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
-        registerTickEffect("fortify", "Ward",  MobEffects.RESISTANCE,   cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
-        registerTickEffect("fury",    "Frenzy", MobEffects.STRENGTH,    cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
-        registerTickEffect("gust",    "Wraith", MobEffects.SPEED,       cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
-        registerTickEffect("bloom",   "Blight", MobEffects.REGENERATION, cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("ward",    "Ward",    MobEffects.RESISTANCE,   cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("frenzy",   "Frenzy",  MobEffects.STRENGTH,    cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("wraith",   "Wraith",  MobEffects.SPEED,       cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
+        registerTickEffect("blight",   "Blight",  MobEffects.REGENERATION, cfg.tickEffectDuration(), cfg.tickEffectAmplifier());
 
         // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
         all("thorns", "Thorns", TriggerType.TICK, (mob, target) -> {});
 
         // ---- DEATH abilities ----
 
-        all("fission", "Rupture", TriggerType.DEATH, (mob, target) -> SplitEffect.apply(mob));
+        all("rupture", "Rupture", TriggerType.DEATH, (mob, target) -> SplitEffect.apply(mob));
 
         all("combust", "Combust", TriggerType.DEATH, (mob, target) -> {
             if (mob.level() instanceof ServerLevel level) {
@@ -123,7 +124,6 @@ public final class AbilityRegistry {
      */
     private static void damageArmor(LivingEntity mob, LivingEntity target) {
         if (!(target instanceof ServerPlayer player)) return;
-        // instanceof already verified ServerPlayer, so cast is safe
         ServerLevel level = (ServerLevel) player.level();
         int dmg = ModConfig.get().acidArmorDamage();
         for (EquipmentSlot slot : ARMOR_SLOTS) {
@@ -156,5 +156,32 @@ public final class AbilityRegistry {
         List<Ability> result = pool.subList(0, Math.min(count, pool.size()));
 
         return Collections.unmodifiableList(result);
+    }
+
+    /**
+     * Looks up abilities by their unique ID from the global pool.
+     *
+     * @param ids the ability IDs to look up
+     * @return list of matching abilities (skips unknown IDs)
+     */
+    public static List<Ability> getAbilitiesByIds(List<String> ids) {
+        Set<String> idSet = new HashSet<>(ids);
+        List<Ability> result = new ArrayList<>();
+        for (Ability ability : ALL_ABILITIES) {
+            if (idSet.contains(ability.id())) {
+                result.add(ability);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns all registered ability IDs (e.g., "bane", "thorns", "rupture").
+     * Useful for command tab-completions.
+     */
+    public static List<String> getAllAbilityIds() {
+        return ALL_ABILITIES.stream()
+                .map(Ability::id)
+                .toList();
     }
 }

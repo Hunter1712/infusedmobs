@@ -27,7 +27,7 @@ tiers with randomized abilities — fully configurable via JSON.
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
 
-### TICK (passive, refreshes every 2s, no particles)
+### TICK (passive, refreshes every 1s, no particles)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -52,8 +52,8 @@ All commands require **gamemaster-level permission** (level 2 ops).
 |---------|-------------|
 | `/infusedmobs help` | List all available subcommands |
 | `/infusedmobs nametag [on\|off]` | Toggle tier nametags globally (persisted in config) |
-| `/infusedmobs info [target]` | Show the tier and abilities of a specific infused mob |
-| `/infusedmobs summon <tier> [entity]` | Spawn an infused mob of the given tier (defaults to zombie) |
+| `/infusedmobs list` | List all hostile mob types that can be infused |
+| `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an infused mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
 
 ### Nametag Toggle
