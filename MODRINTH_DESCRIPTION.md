@@ -157,7 +157,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 26.2
 2. Install [Fabric API](https://modrinth.com/mod/fabric-api) (required)
-3. Drop `infusedmobs-2.6.0.jar` into your `mods` folder
+3. Drop `infusedmobs-2.7.0.jar` into your `mods` folder
 4. Launch — config generates at `config/infusedmobs.json`
 
 ---
@@ -182,6 +182,12 @@ All commands require **gamemaster-level permission** (level 2 ops).
 ## 📝 Changelog
 
 See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/master/CHANGELOG.md) for full history.
+
+### v2.7.0 Highlights
+- **World blacklist** — `worldBlacklist` config field disables the mod in specific dimensions; manage at runtime via `/infusedmobs world add|remove|list` (tab-completes dimension IDs)
+- **Announcement toggle** — `showAnnouncements` config field + `/infusedmobs announce [on|off]` hide the first-encounter chat message while abilities still fire
+- **Summon respects blacklist** — `/infusedmobs summon` refuses in blacklisted worlds
+- **Config backfill on upgrade** — pre-2.7.0 configs upgrade automatically, preserving tier settings
 
 ### v2.6.0 Highlights
 - **Command system** — `/infusedmobs` with `help`, `nametag`, `list`, `summon`, and `reload` subcommands
