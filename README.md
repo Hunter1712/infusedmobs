@@ -52,6 +52,10 @@ All commands require **gamemaster-level permission** (level 2 ops).
 |---------|-------------|
 | `/infusedmobs help` | List all available subcommands |
 | `/infusedmobs nametag [on\|off]` | Toggle tier nametags globally (persisted in config) |
+| `/infusedmobs announce [on\|off]` | Toggle chat announcements globally (persisted in config) |
+| `/infusedmobs world add <world>` | Add a world to the blacklist (disables the mod there) |
+| `/infusedmobs world remove <world>` | Remove a world from the blacklist |
+| `/infusedmobs world list` | Show all blacklisted worlds |
 | `/infusedmobs list` | List all hostile mob types that can be infused |
 | `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an infused mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
@@ -67,6 +71,30 @@ Tier nametags can be hidden globally via the config file or the in-game command:
 ```
 
 When disabled, infused mobs appear with their vanilla names — abilities still apply, you just won't see the tier tag.
+
+### Announcement Toggle
+
+The first time an infused mob hits you, a chat message announces its tier and abilities. This can be disabled globally:
+
+```json
+{
+  "showAnnouncements": false
+}
+```
+
+When disabled, abilities still fire — you just won't see the announcement in chat. Toggle in-game with `/infusedmobs announce [on|off]`.
+
+### World Blacklist
+
+Disable the mod in specific worlds (dimensions) via a blacklist. In blacklisted worlds, mobs spawn as vanilla — no tiers, no abilities, no nametags, and `/infusedmobs summon` is refused.
+
+```json
+{
+  "worldBlacklist": ["minecraft:overworld"]
+}
+```
+
+Manage at runtime with `/infusedmobs world add|remove <world>` (tab-completes loaded dimension ids; the `minecraft:` namespace is optional, e.g. `overworld` = `minecraft:overworld`). The blacklist is persisted to `config/infusedmobs.json`.
 
 ## Configuration
 

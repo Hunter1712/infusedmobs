@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -71,6 +72,28 @@ public final class InfusedMobsCommand {
                         .then(Commands.literal("off")
                                 .executes(ctx -> setNametags(ctx, false)))
                         .executes(InfusedMobsCommand::showNametagStatus))
+
+                // --- announce ---
+                .then(Commands.literal("announce")
+                        .then(Commands.literal("on")
+                                .executes(ctx -> setAnnouncements(ctx, true)))
+                        .then(Commands.literal("off")
+                                .executes(ctx -> setAnnouncements(ctx, false)))
+                        .executes(InfusedMobsCommand::showAnnouncementStatus))
+
+                // --- world ---
+                .then(Commands.literal("world")
+                        .then(Commands.literal("add")
+                                .then(Commands.argument("world", IdentifierArgument.id())
+                                        .suggests(InfusedMobsCommand::suggestWorldIds)
+                                        .executes(InfusedMobsCommand::worldAdd)))
+                        .then(Commands.literal("remove")
+                                .then(Commands.argument("world", IdentifierArgument.id())
+                                        .suggests(InfusedMobsCommand::suggestWorldIds)
+                                        .executes(InfusedMobsCommand::worldRemove)))
+                        .then(Commands.literal("list")
+                                .executes(InfusedMobsCommand::worldList))
+                        .executes(InfusedMobsCommand::worldList))
 
                 // --- reload ---
                 .then(Commands.literal("reload")
@@ -139,6 +162,12 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs nametag [on|off] §7— show or set nametag visibility"));
         source.sendSystemMessage(Component.literal(
+                "§f/infusedmobs announce [on|off] §7— show or set chat announcements"));
+        source.sendSystemMessage(Component.literal(
+                "§f/infusedmobs world add|remove <world> §7— blacklist a world (disables the mod there)"));
+        source.sendSystemMessage(Component.literal(
+                "§f/infusedmobs world list §7— show blacklisted worlds"));
+        source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs reload §7— reload config from disk"));
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs list §7— list all hostile mob types that can be infused"));
@@ -171,6 +200,115 @@ public final class InfusedMobsCommand {
         source.sendSuccess(() -> Component.literal(
                 "§eNametags turned " + (show ? "§aON" : "§cOFF")), true);
         return 1;
+    }
+
+    // ========================================
+    // /infusedmobs announce [on|off]
+    // ========================================
+
+    /** Reports the current announcement setting. */
+    private static int showAnnouncementStatus(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        boolean current = ModConfig.get().showAnnouncements();
+        source.sendSuccess(() -> Component.literal(
+                "§eChat announcements are currently §f" + (current ? "§aON" : "§cOFF")), false);
+        return 1;
+    }
+
+    /** Toggles chat announcements on/off and persists to config. */
+    private static int setAnnouncements(CommandContext<CommandSourceStack> ctx, boolean show) {
+        CommandSourceStack source = ctx.getSource();
+        ModConfig.Instance updated = ModConfig.get().withShowAnnouncements(show);
+        ModConfig.swapInstance(updated);
+        source.sendSuccess(() -> Component.literal(
+                "§eChat announcements turned " + (show ? "§aON" : "§cOFF")), true);
+        return 1;
+    }
+
+    // ========================================
+    // /infusedmobs world add|remove <world> | list
+    // ========================================
+
+    /** Adds a world to the blacklist and persists. */
+    private static int worldAdd(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        String worldId = IdentifierArgument.getId(ctx, "world").toString();
+
+        ModConfig.Instance current = ModConfig.get();
+        if (current.isWorldBlacklisted(worldId)) {
+            source.sendSuccess(() -> Component.literal(
+                    "§eWorld §f" + worldId + " §eis already on the blacklist."), false);
+            return 1;
+        }
+
+        List<String> updated = new ArrayList<>(current.worldBlacklist());
+        updated.add(worldId);
+        ModConfig.swapInstance(current.withWorldBlacklist(updated));
+
+        source.sendSuccess(() -> Component.literal(
+                "§eAdded §f" + worldId + " §eto the blacklist. "
+                        + "The mod is now disabled there."), true);
+        return 1;
+    }
+
+    /** Removes a world from the blacklist and persists. */
+    private static int worldRemove(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        String worldId = IdentifierArgument.getId(ctx, "world").toString();
+
+        ModConfig.Instance current = ModConfig.get();
+        if (!current.isWorldBlacklisted(worldId)) {
+            source.sendFailure(Component.literal(
+                    "§cWorld §f" + worldId + " §cis not on the blacklist."));
+            return 0;
+        }
+
+        List<String> updated = new ArrayList<>(current.worldBlacklist());
+        updated.removeIf(worldId::equals);
+        ModConfig.swapInstance(current.withWorldBlacklist(updated));
+
+        source.sendSuccess(() -> Component.literal(
+                "§eRemoved §f" + worldId + " §efrom the blacklist. "
+                        + "The mod is now active there."), true);
+        return 1;
+    }
+
+    /** Lists all worlds currently on the blacklist. */
+    private static int worldList(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        List<String> blacklist = ModConfig.get().worldBlacklist();
+
+        if (blacklist.isEmpty()) {
+            source.sendSuccess(() -> Component.literal(
+                    "§eThe world blacklist is empty — the mod is active in all worlds."), false);
+            return 1;
+        }
+
+        source.sendSuccess(() -> Component.literal(
+                "§eBlacklisted worlds (" + blacklist.size() + "):"), false);
+        for (String world : blacklist) {
+            source.sendSystemMessage(Component.literal("§f - " + world));
+        }
+        return 1;
+    }
+
+    /** Tab-completion provider suggesting loaded world dimension ids + the current world. */
+    private static CompletableFuture<Suggestions> suggestWorldIds(
+            CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        CommandSourceStack source = ctx.getSource();
+
+        // Always suggest the world the caller is standing in first.
+        String currentWorld = source.getLevel().dimension().identifier().toString();
+        builder.suggest(currentWorld);
+
+        // Then suggest every other loaded level's dimension id.
+        for (ServerLevel level : source.getServer().getAllLevels()) {
+            String id = level.dimension().identifier().toString();
+            if (!id.equals(currentWorld)) {
+                builder.suggest(id);
+            }
+        }
+        return builder.buildFuture();
     }
 
     // ========================================
@@ -239,6 +377,15 @@ public final class InfusedMobsCommand {
 
         Vec3 spawnPos = resolveSpawnPosition(source);
         ServerLevel level = source.getLevel();
+
+        // Refuse to summon in blacklisted worlds — the blacklist is authoritative.
+        if (MobTierManager.isWorldBlacklisted(level)) {
+            source.sendFailure(Component.literal(
+                    "§cThis world is on the infused-mobs blacklist. "
+                            + "Remove it with §f/infusedmobs world remove "
+                            + level.dimension().identifier() + "§c to summon here."));
+            return 0;
+        }
 
         Entity raw = entityType.create(level, EntitySpawnReason.COMMAND);
         if (!(raw instanceof Mob mob)) {

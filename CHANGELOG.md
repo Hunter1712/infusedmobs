@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-08-01
+
+### Added
+- **World blacklist** — `worldBlacklist` config field (list of dimension IDs, e.g. `"minecraft:overworld"`). In blacklisted worlds mobs spawn as vanilla — no tiers, no abilities, no nametags. Managed at runtime via `/infusedmobs world add|remove <world>` and `/infusedmobs world list` (with tab-completion of loaded dimension IDs)
+- **Announcement toggle** — `showAnnouncements` config field (default `true`) disables the first-encounter chat announcement ("⚡ DOOM Zombie has: ...") while abilities still fire. Toggled via `/infusedmobs announce [on|off]`
+- **Config backfill on upgrade** — new fields are backfilled from defaults when loading a pre-2.7.0 config, preserving existing tier/effect settings (prevents announcements silently disabling after upgrade)
+
+### Changed
+- **`/infusedmobs summon` respects the blacklist** — refuses to summon in blacklisted worlds with a clear failure message
+- **`assignSpecificTier()` returns boolean** — `false` (no modification) when the level is blacklisted, guarding against future callers
+
+### Fixed
+- **Gson null blacklist** — a config file missing `worldBlacklist` is accepted and backfilled to empty instead of being rejected
+- **`/infusedmobs world add|remove` parse error** — dimension IDs like `minecraft:overworld` failed with "Expected whitespace to end one argument" because the `string()` argument type rejects `:`. Now uses `IdentifierArgument`, so unquoted resource IDs parse correctly (and `overworld` shorthand defaults to `minecraft:overworld`); tab-completion highlighting works too
+
 ## [2.6.0] - 2026-07-29
 
 ### Added
