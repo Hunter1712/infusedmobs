@@ -49,10 +49,14 @@ public final class MobTierManager {
      * <p>
      * Results are persisted to disk via {@link TierSavedData} so that
      * the same mob (same UUID) gets the same result on world reload.
+     * <p>
+     * Worlds on the config blacklist are skipped entirely — no tier,
+     * no abilities, no nametag. The mod is effectively disabled there.
      */
     public static void assignTier(Mob mob) {
         if (!(mob.level() instanceof ServerLevel serverLevel)) return;
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
+        if (isWorldBlacklisted(serverLevel)) return;
         if (SPLIT_COPIES.contains(mob.getUUID())) return;
         if (TIERS.containsKey(mob.getUUID())) return;  // Already assigned — prevents stacking on world reload
 
@@ -95,8 +99,15 @@ public final class MobTierManager {
      * <p>
      * Skips the MONSTER category restriction so any summoned mob can receive a tier.
      * Also skips the "already assigned" check since this is for fresh command-spawned mobs.
+     * <p>
+     * Returns {@code false} (without modifying the mob) if the mob's level is on
+     * the world blacklist — the summon command checks this beforehand and shows
+     * a clear failure message, but this guard protects against any future callers.
      */
-    public static void assignSpecificTier(Mob mob, MobTier tier, List<Ability> abilities) {
+    public static boolean assignSpecificTier(Mob mob, MobTier tier, List<Ability> abilities) {
+        if (mob.level() instanceof ServerLevel serverLevel && isWorldBlacklisted(serverLevel)) {
+            return false;
+        }
         UUID uuid = mob.getUUID();
         TIERS.put(uuid, tier);
         ABILITIES.put(uuid, abilities);
@@ -104,6 +115,7 @@ public final class MobTierManager {
         ModConfig.TierConfig tc = ModConfig.get().forTier(tier);
         applyHealthMultiplier(mob, tc);
         setTierNametag(mob, tier, abilities);
+        return true;
     }
 
     /**
@@ -214,6 +226,15 @@ public final class MobTierManager {
      */
     public static Set<UUID> getTrackedMobUUIDs() {
         return ABILITIES.keySet();
+    }
+
+    /**
+     * Returns true if the given server level is on the config world blacklist.
+     * Uses the level's dimension resource location (e.g. "minecraft:overworld")
+     * matched against {@link ModConfig.Instance#isWorldBlacklisted(String)}.
+     */
+    public static boolean isWorldBlacklisted(ServerLevel level) {
+        return ModConfig.get().isWorldBlacklisted(level.dimension().identifier().toString());
     }
 
     // ========================================

@@ -2,6 +2,7 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 import io.github.hunter1712.infusedmobs.trigger.DamageContext;
@@ -87,6 +88,7 @@ public final class MobHurtTrigger {
 
     /** Sends a one-time announcement the first time a player is hit by this mob. */
     private static void announceIfFirstEncounter(Player player, Mob mob, MobTier tier) {
+        if (!ModConfig.get().showAnnouncements()) return;  // announcements disabled in config
         List<Ability> allAbilities = MobTierManager.getAllAbilities(mob);
         if (allAbilities.isEmpty() || !ANNOUNCED.add(mob.getUUID())) return;
 

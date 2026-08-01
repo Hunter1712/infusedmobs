@@ -67,7 +67,7 @@ The **first time** an infused mob hits you, a chat message announces its tier an
 ⚡ DOOM Zombie has: Bane, Ward, Rupture
 ```
 
-This only happens once per mob per player — no spam.
+This only happens once per mob per player — no spam. Disable globally with `/infusedmobs announce off` or `"showAnnouncements": false` in config.
 
 ---
 
