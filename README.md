@@ -22,7 +22,7 @@ tiers with randomized abilities — fully configurable via JSON.
 | **Bane** | Poison I | 3s |
 | **Chill** | Slowness I | 3s |
 | **Decay** | Wither I | 3s |
-| **Hellfire** | Ignite | 3s |
+| **Hellfire** | Ignite | 5s |
 | **Siphon** | Heal 100% of damage dealt | — |
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |

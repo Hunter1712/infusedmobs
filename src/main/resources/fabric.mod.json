@@ -3,7 +3,7 @@
 	"id": "infusedmobs",
 	"version": "${version}",
 	"name": "Infused Mobs",
-	"description": "Hostile mobs spawn with occult-infused tiers (Cinder/Shade/Doom) and randomized abilities. Includes commands, configurable nametags, and config reload.",
+	"description": "Hostile mobs spawn with occult-infused tiers (Cinder/Shade/Doom) and randomized abilities. Includes commands, a world blacklist, per-world gamerule control, configurable nametags, and config reload.",
 	"authors": [
 		"hunter1712"
 	],
