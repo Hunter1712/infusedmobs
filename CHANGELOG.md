@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.1] - 2026-08-02
+
 ### Added
 - **Gamerule** — `infusedmobs:enabled` (default `true`) fully disables the mod in a world (no tiers, abilities, or nametags; `/infusedmobs summon` refused). Persists in the world save, survives restarts, works in world-creation gamerule screens, and can be set at launch by modpack makers (datapacks / gamerule-modifying mods). Combined with the config settings: the mod is active unless blacklisted **or** `enabled` is off
 - **Gamerule registration** — `ModGameRules` registers the rule into `BuiltInRegistries.GAME_RULE` during mod init (26.2 registry-based gamerule system) with null-safe reads that fall back to the rule default when a world save has no stored value

@@ -162,7 +162,7 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 26.2
 2. Install [Fabric API](https://modrinth.com/mod/fabric-api) (required)
-3. Drop `infusedmobs-2.7.0.jar` into your `mods` folder
+3. Drop `infusedmobs-2.7.1.jar` into your `mods` folder
 4. Launch — config generates at `config/infusedmobs.json`
 
 ---
@@ -189,9 +189,13 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 
 See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/master/CHANGELOG.md) for full history.
 
-### Unreleased Highlights
+### v2.7.1 Highlights
 - **Gamerule** — `infusedmobs:enabled` disables the mod per world (blacklist parity for modpack makers); persists in the world save and combines with the config blacklist
 - **Announcements removed** — the first-encounter chat message and its config/gamerule toggles have been removed entirely
+- **Split copies roll anything except Rupture** — a Rupture copy's ability can now be any ability (including Combust); only Rupture itself is excluded (it would split forever)
+- **Summoned mobs persist** — `/infusedmobs summon` results survive chunk reloads and restarts exactly as chosen (no re-roll)
+- **Reload-proof copies** — split copies keep their Cinder-tier health across chunk reloads
+- **Crash-proof saves** — corrupted tier data degrades to vanilla instead of failing world load
 
 ### v2.7.0 Highlights
 - **World blacklist** — `worldBlacklist` config field disables the mod in specific dimensions; manage at runtime via `/infusedmobs world add|remove|list` (tab-completes dimension IDs)
