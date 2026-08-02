@@ -1,5 +1,6 @@
 package io.github.hunter1712.infusedmobs.mixin;
 
+import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
@@ -23,7 +24,10 @@ public class LivingEntityMixin {
         if ((Object) this instanceof Mob mob) {
             MobTier tier = MobTierManager.getTier(mob);
             if (tier != null) {
-                cir.setReturnValue((int) Math.round(cir.getReturnValue() * tier.xpMultiplier()));
+                // Use the config multiplier (not the enum constant) so pack
+                // makers' tier edits apply to XP too.
+                double multiplier = ModConfig.get().forTier(tier).xpMultiplier();
+                cir.setReturnValue((int) Math.round(cir.getReturnValue() * multiplier));
             }
         }
     }

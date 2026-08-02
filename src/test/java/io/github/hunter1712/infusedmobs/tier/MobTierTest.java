@@ -1,5 +1,6 @@
 package io.github.hunter1712.infusedmobs.tier;
 
+import io.github.hunter1712.infusedmobs.config.ModConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,5 +72,30 @@ class MobTierTest {
                 "CINDER healthMultiplier should be less than SHADE");
         assertTrue(MobTier.SHADE.healthMultiplier() < MobTier.DOOM.healthMultiplier(),
                 "SHADE healthMultiplier should be less than DOOM");
+    }
+
+    @Test
+    void defaultConfigMatchesEnumValues() {
+        // Guards the single-source-of-truth contract between MobTier and ModConfig.
+        for (MobTier tier : MobTier.values()) {
+            ModConfig.TierConfig defaults = tier.defaultConfig();
+            assertEquals(tier.spawnChance(), defaults.spawnChance(),
+                    () -> tier + " spawnChance drift");
+            assertEquals(tier.abilityCount(), defaults.abilityCount(),
+                    () -> tier + " abilityCount drift");
+            assertEquals(tier.healthMultiplier(), defaults.healthMultiplier(),
+                    () -> tier + " healthMultiplier drift");
+            assertEquals(tier.xpMultiplier(), defaults.xpMultiplier(),
+                    () -> tier + " xpMultiplier drift");
+        }
+    }
+
+    @Test
+    void configDefaultsAreDerivedFromEnum() {
+        ModConfig.Instance defaults = ModConfig.Instance.defaults();
+        for (MobTier tier : MobTier.values()) {
+            assertEquals(tier.defaultConfig(), defaults.forTier(tier),
+                    () -> "defaults().forTier(" + tier + ") should equal the enum defaults");
+        }
     }
 }

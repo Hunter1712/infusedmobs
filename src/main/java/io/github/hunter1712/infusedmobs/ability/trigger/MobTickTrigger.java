@@ -14,9 +14,10 @@ import java.util.UUID;
 /**
  * Handles the {@link TriggerType#TICK} trigger.
  * <p>
- * Every second, looks up each tracked mob by UUID across server levels
+ * Every second, looks up each tick-capable mob by UUID across server levels
  * and applies its TICK abilities (Resistance, Strength, Speed, Regen).
- * Only mobs that actually have TICK abilities are processed.
+ * Only mobs that actually have TICK abilities are processed — see
+ * {@link MobTierManager#getTickMobUUIDs()}.
  */
 public final class MobTickTrigger {
 
@@ -31,7 +32,7 @@ public final class MobTickTrigger {
             tickCounter = (tickCounter + 1) % TICK_INTERVAL;
             if (tickCounter != 0) return;
 
-            Set<UUID> tracked = MobTierManager.getTrackedMobUUIDs();
+            Set<UUID> tracked = MobTierManager.getTickMobUUIDs();
             if (tracked.isEmpty()) return;
 
             for (UUID uuid : tracked) {
@@ -40,7 +41,7 @@ public final class MobTickTrigger {
 
                 List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.TICK);
                 for (Ability ability : abilities) {
-                    ability.effectLogic().accept(mob, null);
+                    ability.effect().apply(mob, null, 0f);
                 }
             }
         });

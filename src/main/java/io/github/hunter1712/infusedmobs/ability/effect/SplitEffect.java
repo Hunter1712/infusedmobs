@@ -11,8 +11,8 @@ import net.minecraft.world.entity.Mob;
 
 /**
  * Spawns 2 copies of the dying mob's entity type at 60% max health.
- * Each copy receives Cinder-tier stats and 1 random non-DEATH ability
- * (Rupture is excluded to prevent infinite recursion).
+ * Each copy receives Cinder-tier stats and 1 random ability — Rupture
+ * itself is excluded (any other, including Combust, is fair game).
  */
 public final class SplitEffect {
 
@@ -35,7 +35,8 @@ public final class SplitEffect {
             Entity raw = type.create(level, EntitySpawnReason.REINFORCEMENT);
             if (raw instanceof Mob copy) {
                 placeCopy(copy, mob, i);
-                MobTierManager.markSplitCopy(copy.getUUID());
+                // Registers the copy (tier-null entry) BEFORE it enters the
+                // world, so the spawn handler won't roll a tier for it.
                 MobTierManager.applyCinderTierToSplitCopy(copy);
                 level.addFreshEntity(copy);
             }

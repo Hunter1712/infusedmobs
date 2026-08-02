@@ -54,20 +54,8 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 
 | Ability | Effect |
 |---------|--------|
-| **Rupture** | Splits into **2 Cinder-tier copies** at 60% health (each gets 1 random ability from the unified pool, DEATH abilities filtered to prevent recursion) |
+| **Rupture** | Splits into **2 Cinder-tier copies** at 60% health (each gets 1 random ability — any except Rupture itself, preventing recursion) |
 | **Combust** | Area damage + explosion sound at death (configurable power, default 4.0 — TNT = 4.0) |
-
----
-
-## 🎯 Announcements
-
-The **first time** an infused mob hits you, a chat message announces its tier and all abilities:
-
-```
-⚡ DOOM Zombie has: Bane, Ward, Rupture
-```
-
-This only happens once per mob per player — no spam. Disable globally with `/infusedmobs announce off` or `"showAnnouncements": false` in config.
 
 ---
 
@@ -82,6 +70,23 @@ All commands require **gamemaster-level permission** (level 2 ops).
 | `/infusedmobs list` | List all hostile mob types that can be infused |
 | `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an infused mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
+| `/infusedmobs world add\|remove <world>` | Blacklist/unblacklist a world dimension (disables the mod there) |
+| `/infusedmobs world list` | Show all blacklisted worlds |
+| `/gamerule infusedmobs:enabled` | Enable/disable the mod in the current world (default `true`) |
+
+### 🎮 Gamerules
+
+The mod ships one gamerule for per-world control at launch — set it with any gamerule-modifying mod, a datapack, or in-game. It persists in the world save and survives restarts:
+
+| Gamerule | Default | When `false` |
+|----------|---------|--------------|
+| `infusedmobs:enabled` | `true` | Mod fully disabled in this world — vanilla mobs, no tiers/abilities/nametags, `/infusedmobs summon` refused |
+
+The gamerule is ANDed with the config settings: the mod is active unless the world is blacklisted **or** `infusedmobs:enabled` is `false`.
+
+```mcfunction
+/gamerule infusedmobs:enabled false
+```
 
 ---
 
@@ -146,7 +151,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 |------------|-----------|------|------------|
 | Fabric | 26.2 | 21+ | 0.158.0+ |
 
-- **Client-side:** Required (for announcements, nametags)
+- **Client-side:** Required (for nametags)
 - **Server-side:** Required (all logic runs server-side)
 - **No custom status effects** — uses only vanilla effects
 - **No world gen / block / item additions** — safe to add/remove mid-save
@@ -166,6 +171,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 
 - **License:** All Rights Reserved — modpack inclusion with credit is allowed (see [LICENSE](https://github.com/hunter1712/infusedmobs/blob/master/LICENSE))
 - **Config-driven** — no code changes needed for balance tweaks
+- **Gamerule-driven** — the `infusedmobs:enabled` gamerule lets pack makers disable the mod per world at launch
 - **No hard dependencies** beyond Fabric API
 - **Tested on:** Fabric 0.19.3+, MC 26.2
 
@@ -173,7 +179,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 
 ## 🐛 Known Issues
 
-- **Split copies** from Rupture are always Cinder-tier (by design, to prevent recursion)
+- **Split copies** from Rupture are always Cinder-tier (by design), and never roll Rupture again (recursion guard)
 - **Nametags** use Minecraft color codes (§a, §e, §c, §7) — visible in vanilla
 - **Old configs** (pre-2.5.0) must be deleted; the new `abilityCount` field is required
 
@@ -182,6 +188,10 @@ All commands require **gamemaster-level permission** (level 2 ops).
 ## 📝 Changelog
 
 See [CHANGELOG.md](https://github.com/hunter1712/infusedmobs/blob/master/CHANGELOG.md) for full history.
+
+### Unreleased Highlights
+- **Gamerule** — `infusedmobs:enabled` disables the mod per world (blacklist parity for modpack makers); persists in the world save and combines with the config blacklist
+- **Announcements removed** — the first-encounter chat message and its config/gamerule toggles have been removed entirely
 
 ### v2.7.0 Highlights
 - **World blacklist** — `worldBlacklist` config field disables the mod in specific dimensions; manage at runtime via `/infusedmobs world add|remove|list` (tab-completes dimension IDs)

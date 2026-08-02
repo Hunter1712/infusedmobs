@@ -7,6 +7,9 @@ import com.google.gson.GsonBuilder;
 
 import net.fabricmc.loader.api.FabricLoader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +27,7 @@ import java.util.List;
 public final class ModConfig {
 
     private static Instance instance;
+    private static final Logger LOGGER = LoggerFactory.getLogger("infusedmobs");
     private static final Gson GSON_PRETTY = new GsonBuilder().setPrettyPrinting().create();
     private static final Gson GSON = new Gson();
 
@@ -52,8 +56,9 @@ public final class ModConfig {
                     instance = parsed.backfillFromDefaults();
                     return;
                 }
+                LOGGER.warn("Config file {} is invalid — rewriting with defaults.", configPath);
             } catch (IOException e) {
-                // Fall through to defaults
+                LOGGER.warn("Could not read config file {} — rewriting with defaults.", configPath, e);
             }
         }
 
@@ -83,7 +88,9 @@ public final class ModConfig {
             String json = GSON_PRETTY.toJson(instance);
             Files.writeString(configPath, json);
         } catch (IOException e) {
-            // Non-critical — in-memory config is still correct
+            // Non-critical — in-memory config is still correct, but log so
+            // silent disk failures are diagnosable.
+            LOGGER.warn("Could not write config file {} — in-memory values remain active.", configPath, e);
         }
     }
 
@@ -93,7 +100,8 @@ public final class ModConfig {
             String json = GSON_PRETTY.toJson(Instance.defaults());
             Files.writeString(path, json);
         } catch (IOException e) {
-            // Defaults are already set in memory — file is non-critical
+            // Defaults are already set in memory — file is non-critical, but log.
+            LOGGER.warn("Could not write default config file {}.", path, e);
         }
     }
 
@@ -101,7 +109,10 @@ public final class ModConfig {
     // Config data records
     // ========================================
 
-    /** Per-tier overrides matching {@link MobTier} enum members. */
+    /**
+     * Per-tier tunables. Defaults derive from the matching {@link MobTier}
+     * enum member — the enum is the single source of truth for the numbers.
+     */
     public record TierConfig(
             double spawnChance,
             int abilityCount,
@@ -122,12 +133,11 @@ public final class ModConfig {
             int acidArmorDamage,
             float combustExplosionPower,
             boolean showNametags,
-            boolean showAnnouncements,
             List<String> worldBlacklist,
             int configVersion
     ) {
-        /** Bump when new config fields are added so {@link #backfillFromDefaults()} knows to fill them. */
-        private static final int CURRENT_CONFIG_VERSION = 2;  // v1 = 2.6.0, v2 = 2.7.0 (added showAnnouncements, worldBlacklist)
+        /** Bump when config fields change so {@link #backfillFromDefaults()} knows what to fill. */
+        private static final int CURRENT_CONFIG_VERSION = 3;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed
 
         /** Returns true if all fields deserialised with valid values. */
         boolean isValid() {
@@ -170,19 +180,7 @@ public final class ModConfig {
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
                     combustExplosionPower, show,
-                    showAnnouncements, worldBlacklist, configVersion
-            );
-        }
-
-        /** Returns a copy with a new showAnnouncements value. */
-        public Instance withShowAnnouncements(boolean show) {
-            return new Instance(
-                    cinder, shade, doom,
-                    hurtEffectDuration, hurtEffectAmplifier,
-                    tickEffectDuration, tickEffectAmplifier,
-                    infernoFireSeconds, acidArmorDamage,
-                    combustExplosionPower, showNametags,
-                    show, worldBlacklist, configVersion
+                    worldBlacklist, configVersion
             );
         }
 
@@ -198,7 +196,7 @@ public final class ModConfig {
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
                     combustExplosionPower, showNametags,
-                    showAnnouncements, normaliseBlacklist(blacklist), configVersion
+                    normaliseBlacklist(blacklist), configVersion
             );
         }
 
@@ -226,19 +224,18 @@ public final class ModConfig {
             };
         }
 
-        /** Sensible default values. */
+        /** Sensible default values — per-tier numbers come from {@link MobTier}. */
         public static Instance defaults() {
             return new Instance(
-                    new TierConfig(0.4, 1, 1.5, 1.5),
-                    new TierConfig(0.2, 2, 2.0, 2.0),
-                    new TierConfig(0.1, 3, 4.0, 4.0),
+                    MobTier.CINDER.defaultConfig(),
+                    MobTier.SHADE.defaultConfig(),
+                    MobTier.DOOM.defaultConfig(),
                     60, 0,   // hurt: 3s, level I
                     60, 0,   // tick: 3s, level I
                     5,       // infernoFireSeconds
                     4,       // acidArmorDamage
                     4.0f,    // combustExplosionPower
                     true,    // showNametags
-                    true,    // showAnnouncements
                     List.of(),// worldBlacklist — empty by default (mod active everywhere)
                     CURRENT_CONFIG_VERSION
             );
@@ -249,9 +246,10 @@ public final class ModConfig {
          * with their default values, preserving all existing tier/effect
          * settings. Called after a successful {@link #isValid()} check.
          * <p>
-         * Without this, upgrading from 2.6.0 would silently disable
-         * announcements (Gson defaults missing booleans to {@code false})
-         * and leave {@code worldBlacklist} null.
+         * Without this, upgrading from 2.6.0 would leave
+         * {@code worldBlacklist} null. Older files may also carry a
+         * {@code showAnnouncements} field — Gson ignores unknown fields,
+         * so the removed field is simply dropped.
          */
         Instance backfillFromDefaults() {
             if (configVersion >= CURRENT_CONFIG_VERSION) {
@@ -261,7 +259,6 @@ public final class ModConfig {
                         : this;
             }
             // Older config — fill in the new fields with defaults.
-            boolean backfilledAnnouncements = (configVersion < 2) ? true : showAnnouncements;
             List<String> backfilledBlacklist = (worldBlacklist == null) ? List.of() : normaliseBlacklist(worldBlacklist);
             return new Instance(
                     cinder, shade, doom,
@@ -269,7 +266,7 @@ public final class ModConfig {
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
                     combustExplosionPower, showNametags,
-                    backfilledAnnouncements, backfilledBlacklist,
+                    backfilledBlacklist,
                     CURRENT_CONFIG_VERSION
             );
         }
