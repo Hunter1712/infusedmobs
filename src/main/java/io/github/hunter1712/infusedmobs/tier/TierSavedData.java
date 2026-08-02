@@ -30,7 +30,7 @@ public final class TierSavedData extends SavedData {
      * <ul>
      *   <li>{@link Tiered} — the mob rolled a tier; abilities are stored by id
      *       so the exact set is restored (no re-roll on reload).</li>
-     *   <li>{@link Split} — a Rupture split copy; it keeps a tier-null roll so
+     *   <li>{@link Split} — a Rupture split copy; its own distinct variant so
      *       it is never re-rolled into a regular tiered mob (which could gain
      *       DEATH abilities and recurse).</li>
      *   <li>{@link Nothing} — the mob rolled nothing and must never roll again.</li>
