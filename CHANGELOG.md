@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Gamerule** — `infusedmobs:enabled` (default `true`) fully disables the mod in a world (no tiers, abilities, or nametags; `/infusedmobs summon` refused). Persists in the world save, survives restarts, works in world-creation gamerule screens, and can be set at launch by modpack makers (datapacks / gamerule-modifying mods). Combined with the config settings: the mod is active unless blacklisted **or** `enabled` is off
+- **Gamerule registration** — `ModGameRules` registers the rule into `BuiltInRegistries.GAME_RULE` during mod init (26.2 registry-based gamerule system) with null-safe reads that fall back to the rule default when a world save has no stored value
+
+### Removed
+- **Announcements scrapped entirely** — the first-encounter chat message ("⚡ DOOM Zombie has: ..."), the `showAnnouncements` config field, the `/infusedmobs announce` command, and the `infusedmobs:announcements` gamerule are all gone. Config version bumped to 3; old configs upgrade automatically (the stale field is ignored)
+
+### Changed
+- **`/infusedmobs summon` respects gamerules** — refuses with a clear message when `infusedmobs:enabled` is off (distinct from the blacklist message)
+- **`/infusedmobs help`** — documents the gamerule
+- **Rupture split copies draw any ability except Rupture** — a copy's random ability can now be anything (including Combust); only Rupture itself is excluded, since it would split forever. Previously all DEATH abilities were filtered out
+- **Internal refactor** — sealed persistence model (`Tiered` / `Split` / `Nothing`) in the world save, id-based ability-draw exclusions, single hurt handler with a thorns-damage guard (no reentrancy state), extracted testable command helpers
+
+### Fixed
+- **`/infusedmobs summon` persistence** — summoned mobs now save their tier + abilities to the world save; on chunk reload or world restart the exact summon is restored instead of being silently re-rolled
+- **Split copies keep their Cinder HP across chunk reloads** — restored copies re-apply the 1.5× health multiplier and 60% spawn health
+- **Corrupted saved tier data degrades safely** — an unknown tier value in `infusedmobs_tiers.dat` no longer fails world load; the mob falls back to vanilla (codec reports errors instead of throwing)
+- **Config write failures are logged** — silent disk errors when saving `infusedmobs.json` now produce a warning instead of failing invisibly
+
 ## [2.7.0] - 2026-08-01
 
 ### Added

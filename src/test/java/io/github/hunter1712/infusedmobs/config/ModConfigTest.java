@@ -69,7 +69,7 @@ class ModConfigTest {
     void isValidRejectsNullTierConfigs() {
         var invalid = new ModConfig.Instance(
                 null, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, List.of(), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(), 2);
         assertFalse(invalid.isValid());
     }
 
@@ -78,7 +78,7 @@ class ModConfigTest {
         var badTier = new ModConfig.TierConfig(0.1, 0, 1.0, 1.0);
         var invalid = new ModConfig.Instance(
                 badTier, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, List.of(), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(), 2);
         assertFalse(invalid.isValid());
     }
 
@@ -87,7 +87,7 @@ class ModConfigTest {
         var badTier = new ModConfig.TierConfig(0.0, 1, 1.0, 1.0);
         var invalid = new ModConfig.Instance(
                 VALID_TIER, badTier, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, List.of(), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(), 2);
         assertFalse(invalid.isValid());
     }
 
@@ -125,35 +125,6 @@ class ModConfigTest {
     }
 
     // ========================================
-    // showAnnouncements
-    // ========================================
-
-    @Test
-    void showAnnouncementsDefaultsToTrue() {
-        assertTrue(ModConfig.Instance.defaults().showAnnouncements());
-    }
-
-    @Test
-    void withShowAnnouncementsCreatesCopy() {
-        ModConfig.Instance original = ModConfig.Instance.defaults();
-        assertTrue(original.showAnnouncements());
-
-        ModConfig.Instance toggled = original.withShowAnnouncements(false);
-        assertFalse(toggled.showAnnouncements());
-        // Other fields preserved
-        assertEquals(original.cinder(), toggled.cinder());
-        assertEquals(original.showNametags(), toggled.showNametags());
-        assertEquals(original.worldBlacklist(), toggled.worldBlacklist());
-    }
-
-    @Test
-    void withShowAnnouncementsDoesNotMutateOriginal() {
-        ModConfig.Instance original = ModConfig.Instance.defaults();
-        original.withShowAnnouncements(false);
-        assertTrue(original.showAnnouncements(), "original should be unchanged");
-    }
-
-    // ========================================
     // worldBlacklist
     // ========================================
 
@@ -170,7 +141,7 @@ class ModConfigTest {
         // isValid() must accept this so the config can be backfilled rather than discarded.
         var valid = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, null, 1);
+                60, 0, 60, 0, 5, 4, 4.0f, true, null, 1);
         assertTrue(valid.isValid());
     }
 
@@ -179,25 +150,25 @@ class ModConfigTest {
         // Missing colon → not a valid resource id
         var noColon = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, List.of("overworld"), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, List.of("overworld"), 2);
         assertFalse(noColon.isValid());
 
         // Colon at start → empty namespace
         var emptyNs = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, List.of(":overworld"), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(":overworld"), 2);
         assertFalse(emptyNs.isValid());
 
         // Colon at end → empty path
         var emptyPath = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, List.of("minecraft:"), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, List.of("minecraft:"), 2);
         assertFalse(emptyPath.isValid());
 
         // Null entry in the list — Arrays.asList allows nulls (List.of throws).
         var nullEntry = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, Arrays.asList((String) null), 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, Arrays.asList((String) null), 2);
         assertFalse(nullEntry.isValid());
     }
 
@@ -205,7 +176,7 @@ class ModConfigTest {
     void isValidAcceptsValidWorldBlacklist() {
         var valid = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true,
+                60, 0, 60, 0, 5, 4, 4.0f, true,
                 List.of("minecraft:overworld", "minecraft:the_nether"), 2);
         assertTrue(valid.isValid());
     }
@@ -263,7 +234,6 @@ class ModConfigTest {
         ModConfig.Instance updated = original.withWorldBlacklist(List.of("minecraft:overworld"));
         assertEquals(original.cinder(), updated.cinder());
         assertEquals(original.showNametags(), updated.showNametags());
-        assertEquals(original.showAnnouncements(), updated.showAnnouncements());
     }
 
     @Test
@@ -280,20 +250,17 @@ class ModConfigTest {
 
     @Test
     void backfillFromDefaultsUpgradesOldConfig() {
-        // Simulate a 2.6.0 config: configVersion=1, no showAnnouncements (false),
-        // no worldBlacklist (null). Gson would deserialise missing boolean as false.
+        // Simulate a 2.6.0 config: configVersion=1, no worldBlacklist (null).
         var oldConfig = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, false, null, 1);
+                60, 0, 60, 0, 5, 4, 4.0f, true, null, 1);
 
         assertTrue(oldConfig.isValid(), "old config should still be valid");
 
         ModConfig.Instance upgraded = oldConfig.backfillFromDefaults();
-        assertTrue(upgraded.showAnnouncements(),
-                "upgraded config should have showAnnouncements=true (the 2.6.0 default)");
         assertNotNull(upgraded.worldBlacklist());
         assertTrue(upgraded.worldBlacklist().isEmpty());
-        assertEquals(2, upgraded.configVersion());
+        assertEquals(3, upgraded.configVersion());
         // Tier settings preserved
         assertEquals(VALID_TIER, upgraded.cinder());
     }
@@ -302,13 +269,11 @@ class ModConfigTest {
     void backfillFromDefaultsPreservesCurrentConfig() {
         // A current-version config should pass through unchanged (except null blacklist → empty).
         ModConfig.Instance current = ModConfig.Instance.defaults()
-                .withShowAnnouncements(false)
                 .withWorldBlacklist(List.of("minecraft:overworld"));
 
         ModConfig.Instance backfilled = current.backfillFromDefaults();
-        assertFalse(backfilled.showAnnouncements(), "explicit false should be preserved");
         assertEquals(List.of("minecraft:overworld"), backfilled.worldBlacklist());
-        assertEquals(2, backfilled.configVersion());
+        assertEquals(3, backfilled.configVersion());
     }
 
     @Test
@@ -317,7 +282,7 @@ class ModConfigTest {
         // (e.g. hand-edited JSON missing the field). Should be filled to empty.
         var cfg = new ModConfig.Instance(
                 VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, true, null, 2);
+                60, 0, 60, 0, 5, 4, 4.0f, true, null, 3);
 
         ModConfig.Instance backfilled = cfg.backfillFromDefaults();
         assertNotNull(backfilled.worldBlacklist());

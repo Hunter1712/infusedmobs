@@ -33,11 +33,10 @@ public final class MobDeathTrigger {
         // Fire ALL DEATH abilities
         List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.DEATH);
         for (Ability ability : abilities) {
-            ability.effectLogic().accept(mob, killer);
+            ability.effect().apply(mob, killer, 0f);
         }
 
         // Clean up tracking
         MobTierManager.removeMob(mob);
-        MobHurtTrigger.removeAnnounced(mob.getUUID());
     }
 }

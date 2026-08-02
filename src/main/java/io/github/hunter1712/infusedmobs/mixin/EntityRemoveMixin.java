@@ -1,6 +1,5 @@
 package io.github.hunter1712.infusedmobs.mixin;
 
-import io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.minecraft.server.level.ServerLevel;
@@ -28,6 +27,5 @@ public class EntityRemoveMixin {
         if (!(mob.level() instanceof ServerLevel)) return;
 
         MobTierManager.removeMob(mob);
-        MobHurtTrigger.removeAnnounced(mob.getUUID());
     }
 }

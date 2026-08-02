@@ -34,7 +34,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -63,7 +65,6 @@ public final class InfusedMobsCommand {
                 // --- help ---
                 .then(Commands.literal("help")
                         .executes(InfusedMobsCommand::executeHelp))
-                .executes(InfusedMobsCommand::executeHelp)
 
                 // --- nametag ---
                 .then(Commands.literal("nametag")
@@ -72,14 +73,6 @@ public final class InfusedMobsCommand {
                         .then(Commands.literal("off")
                                 .executes(ctx -> setNametags(ctx, false)))
                         .executes(InfusedMobsCommand::showNametagStatus))
-
-                // --- announce ---
-                .then(Commands.literal("announce")
-                        .then(Commands.literal("on")
-                                .executes(ctx -> setAnnouncements(ctx, true)))
-                        .then(Commands.literal("off")
-                                .executes(ctx -> setAnnouncements(ctx, false)))
-                        .executes(InfusedMobsCommand::showAnnouncementStatus))
 
                 // --- world ---
                 .then(Commands.literal("world")
@@ -107,9 +100,9 @@ public final class InfusedMobsCommand {
                 .then(Commands.literal("summon")
                         .then(Commands.argument("tier", StringArgumentType.word())
                                 .suggests((ctx, builder) -> {
-                                    builder.suggest("cinder");
-                                    builder.suggest("shade");
-                                    builder.suggest("doom");
+                                    for (MobTier tier : MobTier.values()) {
+                                        builder.suggest(tier.name().toLowerCase());
+                                    }
                                     return builder.buildFuture();
                                 })
                                 .executes(ctx -> summon(ctx,
@@ -119,8 +112,7 @@ public final class InfusedMobsCommand {
                                                 ResourceArgument.resource(buildContext, Registries.ENTITY_TYPE))
                                         .suggests((ctx, builder) -> {
                                             for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-                                                if (type.canSummon()
-                                                        && type.getCategory() == MobCategory.MONSTER) {
+                                                if (isInfusable(type)) {
                                                     Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
                                                     if (id != null) {
                                                         builder.suggest(id.toString());
@@ -135,15 +127,19 @@ public final class InfusedMobsCommand {
                                                         .value()))
                                         .then(Commands.argument("abilities",
                                                          StringArgumentType.greedyString())
-                                                 .suggests(InfusedMobsCommand::suggestAbilityIds)
+                                                 .suggests(AbilitySuggestions::suggest)
                                                  .executes(ctx -> {
-                                                     List<Ability> abils = parseAbilities(ctx);
-                                                     if (abils == null) return 0;
+                                                     AbilityParse parsed = parseAbilities(
+                                                             StringArgumentType.getString(ctx, "abilities"));
+                                                     if (!parsed.unknown().isEmpty()) {
+                                                         sendUnknownAbilities(ctx, parsed.unknown());
+                                                         return 0;
+                                                     }
                                                      return summon(ctx,
                                                              StringArgumentType.getString(ctx, "tier"),
                                                              ResourceArgument.getSummonableEntityType(ctx, "entity")
                                                                      .value(),
-                                                             abils);
+                                                             parsed.abilities());
                                                   })))))
         );
     }
@@ -155,6 +151,10 @@ public final class InfusedMobsCommand {
     /** Shows available commands. */
     private static int executeHelp(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
+        String tierNames = String.join(", ",
+                Arrays.stream(MobTier.values())
+                        .map(t -> t.name().toLowerCase(Locale.ROOT))
+                        .toList());
         source.sendSystemMessage(Component.literal(
                 "§e--- InfusedMobs Commands ---"));
         source.sendSystemMessage(Component.literal(
@@ -162,11 +162,11 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs nametag [on|off] §7— show or set nametag visibility"));
         source.sendSystemMessage(Component.literal(
-                "§f/infusedmobs announce [on|off] §7— show or set chat announcements"));
-        source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs world add|remove <world> §7— blacklist a world (disables the mod there)"));
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs world list §7— show blacklisted worlds"));
+        source.sendSystemMessage(Component.literal(
+                "§f/gamerule infusedmobs:enabled [true|false] §7— enable/disable the mod in this world"));
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs reload §7— reload config from disk"));
         source.sendSystemMessage(Component.literal(
@@ -174,7 +174,7 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs summon <tier> [entity] [abilities] §7— spawn a tiered mob at crosshair"));
         source.sendSystemMessage(Component.literal(
-                "§8Tiers: cinder, shade, doom §8| Abilities: space-separated IDs (e.g., bane thorns)"));
+                "§8Tiers: " + tierNames + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
         return 1;
     }
 
@@ -199,29 +199,6 @@ public final class InfusedMobsCommand {
         MobTierManager.refreshNametags(source.getServer());
         source.sendSuccess(() -> Component.literal(
                 "§eNametags turned " + (show ? "§aON" : "§cOFF")), true);
-        return 1;
-    }
-
-    // ========================================
-    // /infusedmobs announce [on|off]
-    // ========================================
-
-    /** Reports the current announcement setting. */
-    private static int showAnnouncementStatus(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack source = ctx.getSource();
-        boolean current = ModConfig.get().showAnnouncements();
-        source.sendSuccess(() -> Component.literal(
-                "§eChat announcements are currently §f" + (current ? "§aON" : "§cOFF")), false);
-        return 1;
-    }
-
-    /** Toggles chat announcements on/off and persists to config. */
-    private static int setAnnouncements(CommandContext<CommandSourceStack> ctx, boolean show) {
-        CommandSourceStack source = ctx.getSource();
-        ModConfig.Instance updated = ModConfig.get().withShowAnnouncements(show);
-        ModConfig.swapInstance(updated);
-        source.sendSuccess(() -> Component.literal(
-                "§eChat announcements turned " + (show ? "§aON" : "§cOFF")), true);
         return 1;
     }
 
@@ -372,19 +349,34 @@ public final class InfusedMobsCommand {
 
         // If entity is null (convenience overload), default to zombie
         if (entityType == null) {
-            entityType = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.tryParse("minecraft:zombie"));
+            entityType = BuiltInRegistries.ENTITY_TYPE.getValue(
+                    Identifier.fromNamespaceAndPath("minecraft", "zombie"));
+            if (entityType == null) {
+                source.sendFailure(Component.literal("§cDefault entity (zombie) is missing from the registry."));
+                return 0;
+            }
         }
 
         Vec3 spawnPos = resolveSpawnPosition(source);
         ServerLevel level = source.getLevel();
 
-        // Refuse to summon in blacklisted worlds — the blacklist is authoritative.
-        if (MobTierManager.isWorldBlacklisted(level)) {
-            source.sendFailure(Component.literal(
-                    "§cThis world is on the infused-mobs blacklist. "
-                            + "Remove it with §f/infusedmobs world remove "
-                            + level.dimension().identifier() + "§c to summon here."));
-            return 0;
+        // Refuse to summon where the mod is inactive — blacklist and
+        // gamerule are both authoritative, with a distinct message each.
+        switch (MobTierManager.canInfuse(level)) {
+            case WORLD_BLACKLISTED -> {
+                source.sendFailure(Component.literal(
+                        "§cThis world is on the infused-mobs blacklist. "
+                                + "Remove it with §f/infusedmobs world remove "
+                                + level.dimension().identifier() + "§c to summon here."));
+                return 0;
+            }
+            case RULE_DISABLED -> {
+                source.sendFailure(Component.literal(
+                        "§cInfused mobs are disabled in this world. "
+                                + "Enable them with §f/gamerule infusedmobs:enabled true§c."));
+                return 0;
+            }
+            case ACTIVE -> { /* proceed */ }
         }
 
         Entity raw = entityType.create(level, EntitySpawnReason.COMMAND);
@@ -414,48 +406,46 @@ public final class InfusedMobsCommand {
         return 1;
     }
 
+    /** Result of parsing a space-separated ability argument. */
+    record AbilityParse(List<Ability> abilities, List<String> unknown) {}
+
     /**
-     * Parses a space-separated ability string and validates every ID.
-     *
-     * @return the resolved abilities, or {@code null} if any ID was unknown
-     *         (the error message is already sent to the source in that case)
+     * Parses a space-separated ability string, resolving valid IDs and
+     * collecting unknown ones (deduplicated, in input order). No I/O —
+     * the caller decides how to respond.
      */
-    private static List<Ability> parseAbilities(CommandContext<CommandSourceStack> ctx) {
-        String raw = StringArgumentType.getString(ctx, "abilities");
-        if (raw == null || raw.isBlank()) return List.of();
-        String[] parts = raw.trim().split("\\s+");
-        List<String> ids = new ArrayList<>();
-        for (String part : parts) {
-            if (!part.isEmpty()) ids.add(part);
-        }
-        if (ids.isEmpty()) return List.of();
+    static AbilityParse parseAbilities(String raw) {
+        if (raw == null || raw.isBlank()) return new AbilityParse(List.of(), List.of());
 
-        // resolve — silently skips unknown
-        List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(ids);
-        List<String> foundIds = abilities.stream()
-                .map(Ability::id)
+        List<String> ids = Arrays.stream(raw.trim().split("\\s+"))
+                .filter(part -> !part.isEmpty())
                 .toList();
+        if (ids.isEmpty()) return new AbilityParse(List.of(), List.of());
 
-        // find unknown IDs
-        List<String> notFound = new ArrayList<>(ids);
-        notFound.removeAll(foundIds);
+        // Resolve in pool order, skipping unknown IDs
+        List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(ids);
+        List<String> foundIds = abilities.stream().map(Ability::id).toList();
 
-        if (!notFound.isEmpty()) {
-            List<String> allIds = AbilityRegistry.getAllAbilityIds();
-            StringBuilder msg = new StringBuilder();
-            msg.append("§cUnknown ability ID(s): ").append(String.join(", ", notFound)).append("\n");
-            for (String bad : notFound) {
-                String closest = findClosest(bad, allIds);
-                if (closest != null) {
-                    msg.append("§eDid you mean §f").append(closest).append("§e?\n");
-                }
+        List<String> unknown = ids.stream()
+                .filter(id -> !foundIds.contains(id))
+                .distinct()
+                .toList();
+        return new AbilityParse(abilities, unknown);
+    }
+
+    /** Reports unknown ability IDs with closest-match hints. */
+    private static void sendUnknownAbilities(CommandContext<CommandSourceStack> ctx, List<String> unknown) {
+        List<String> allIds = AbilityRegistry.getAllAbilityIds();
+        StringBuilder msg = new StringBuilder();
+        msg.append("§cUnknown ability ID(s): ").append(String.join(", ", unknown)).append("\n");
+        for (String bad : unknown) {
+            String closest = findClosest(bad, allIds);
+            if (closest != null) {
+                msg.append("§eDid you mean §f").append(closest).append("§e?\n");
             }
-            msg.append("§7Valid IDs: §f").append(String.join("§7, §f", allIds));
-            ctx.getSource().sendFailure(Component.literal(msg.toString()));
-            return null;
         }
-
-        return abilities;
+        msg.append("§7Valid IDs: §f").append(String.join("§7, §f", allIds));
+        ctx.getSource().sendFailure(Component.literal(msg.toString()));
     }
 
     /** Formats a Vec3 as a concise coordinate string. */
@@ -473,7 +463,7 @@ public final class InfusedMobsCommand {
         StringBuilder sb = new StringBuilder("§e--- Hostile Mobs ---\n§7");
         int count = 0;
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (type.canSummon() && type.getCategory() == MobCategory.MONSTER) {
+            if (isInfusable(type)) {
                 Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
                 if (id != null) {
                     if (count > 0) sb.append("§7, ");
@@ -493,74 +483,21 @@ public final class InfusedMobsCommand {
     // Helpers
     // ========================================
 
-    /** Tab-completion provider for space-separated ability IDs. */
-    private static CompletableFuture<Suggestions> suggestAbilityIds(
-            CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        // getRemaining() returns text AFTER the cursor position, NOT the full argument value.
-        // When cursor is at end of input, getRemaining() is "" even when text was typed.
-        // Use getInput() + getStart() to reconstruct the actual argument content.
-        String input = builder.getInput();
-        int start = builder.getStart();
-
-        // Find the beginning of this argument's value by walking back from start
-        // to find the previous word boundary (space)
-        int argStart = 0;
-        for (int i = start - 1; i >= 0; i--) {
-            if (input.charAt(i) == ' ') {
-                argStart = i + 1;
-                break;
-            }
-        }
-
-        // Full text from the argument value start to end of input
-        // Keep trailing space so we can detect when user finished a word
-        String fullValue = input.substring(argStart);
-        boolean hasTrailingSpace = fullValue.endsWith(" ");
-        fullValue = fullValue.trim();
-
-        List<String> allIds = AbilityRegistry.getAllAbilityIds();
-
-        // Nothing typed yet — show all abilities
-        if (fullValue.isEmpty()) {
-            for (String id : allIds) {
-                builder.suggest(id);
-            }
-            return builder.buildFuture();
-        }
-
-        // User finished a word and pressed space — suggest the next unused ability
-        if (hasTrailingSpace) {
-            String prefix = fullValue + " ";
-            for (String id : allIds) {
-                if (fullValue.contains(id)) continue;
-                builder.suggest(prefix + id);
-            }
-            return builder.buildFuture();
-        }
-
-        // Determine the current word being typed (last segment)
-        int lastSpace = fullValue.lastIndexOf(' ');
-        String prefix = lastSpace >= 0 ? fullValue.substring(0, lastSpace + 1) : "";
-        String currentWord = lastSpace >= 0 ? fullValue.substring(lastSpace + 1) : fullValue;
-
-        // Only suggest when the current segment matches the start of an ability ID
-        for (String id : allIds) {
-            if (fullValue.contains(id)) continue; // already picked
-            if (id.startsWith(currentWord)) {
-                builder.suggest(prefix + id);
-            }
-        }
-
-        return builder.buildFuture();
+    /** True if the entity type is a summonable MONSTER — shared by summon suggestions and {@code list}. */
+    private static boolean isInfusable(EntityType<?> type) {
+        return type.canSummon() && type.getCategory() == MobCategory.MONSTER;
     }
 
-    private static MobTier parseTier(String name) {
-        return switch (name.toLowerCase()) {
-            case "cinder" -> MobTier.CINDER;
-            case "shade" -> MobTier.SHADE;
-            case "doom" -> MobTier.DOOM;
-            default -> null;
-        };
+    /**
+     * Parses a tier name (case-insensitive) into a {@link MobTier}.
+     * Derived from the enum so adding a tier works without touching this.
+     */
+    static MobTier parseTier(String name) {
+        try {
+            return MobTier.valueOf(name.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**
@@ -586,7 +523,7 @@ public final class InfusedMobsCommand {
     }
 
     /** Computes Levenshtein edit distance between two strings. */
-    private static int levenshtein(String a, String b) {
+    static int levenshtein(String a, String b) {
         int[][] dp = new int[a.length() + 1][b.length() + 1];
         for (int i = 0; i <= a.length(); i++) dp[i][0] = i;
         for (int j = 0; j <= b.length(); j++) dp[0][j] = j;
