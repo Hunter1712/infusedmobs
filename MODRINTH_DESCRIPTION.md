@@ -29,7 +29,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **Bane** | Poison I | 3s |
 | **Chill** | Slowness I | 3s |
 | **Decay** | Wither I | 3s |
-| **Hellfire** | Ignite | 3s |
+| **Hellfire** | Ignite | 5s |
 | **Siphon** | Heal 100% of damage dealt | — |
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
@@ -121,7 +121,9 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
   "tickEffectAmplifier": 0,
   "infernoFireSeconds": 5,
   "acidArmorDamage": 4,
-  "combustExplosionPower": 4.0
+  "combustExplosionPower": 4.0,
+  "worldBlacklist": [],
+  "configVersion": 3
 }
 ```
 
@@ -140,8 +142,9 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 | `infernoFireSeconds` | Seconds of fire from Hellfire |
 | `acidArmorDamage` | Durability damage per armor slot from Vitriol |
 | `combustExplosionPower` | Explosion strength (TNT = 4.0) |
+| `worldBlacklist` | Dimension IDs where the mod is disabled (e.g. `"minecraft:overworld"`) — managed in-game via `/infusedmobs world add\|remove\|list` |
 
-> **Tip:** Set a tier's `spawnChance` to `0` to disable it entirely.
+> **Note:** Values are validated on load — e.g. `spawnChance` and `abilityCount` must be greater than 0. An invalid config is replaced with defaults (with a warning in the log), so tier edits are preserved across upgrades but not past validation errors.
 
 ---
 
@@ -149,7 +152,7 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 
 | Mod Loader | Minecraft | Java | Fabric API |
 |------------|-----------|------|------------|
-| Fabric | 26.2 | 21+ | 0.158.0+ |
+| Fabric | 26.2 | 25+ | 0.155.2+ |
 
 - **Client-side:** Required (for nametags)
 - **Server-side:** Required (all logic runs server-side)
@@ -181,7 +184,7 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 
 - **Split copies** from Rupture are always Cinder-tier (by design), and never roll Rupture again (recursion guard)
 - **Nametags** use Minecraft color codes (§a, §e, §c, §7) — visible in vanilla
-- **Old configs** (pre-2.5.0) must be deleted; the new `abilityCount` field is required
+- **Old configs** (pre-2.5.0) lack the required `abilityCount` field — they are automatically replaced with defaults on load (tier edits from before 2.5.0 are lost)
 
 ---
 

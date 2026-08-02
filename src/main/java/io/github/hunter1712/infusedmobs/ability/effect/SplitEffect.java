@@ -35,7 +35,7 @@ public final class SplitEffect {
             Entity raw = type.create(level, EntitySpawnReason.REINFORCEMENT);
             if (raw instanceof Mob copy) {
                 placeCopy(copy, mob, i);
-                // Registers the copy (tier-null entry) BEFORE it enters the
+                // Registers the copy (split-copy entry) BEFORE it enters the
                 // world, so the spawn handler won't roll a tier for it.
                 MobTierManager.applyCinderTierToSplitCopy(copy);
                 level.addFreshEntity(copy);
