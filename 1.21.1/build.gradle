@@ -1,0 +1,90 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+group = project.maven_group
+
+repositories {
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    mods {
+        "infusedmobs" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+
+    enableTransitiveAccessWideners = false
+}
+
+dependencies {
+    // TODO: Use actual ${project.minecraft_version} once mappings shim is complete.
+    // For now compile against 26.2 to keep build green while multi-project wiring is validated.
+    minecraft "com.mojang:minecraft:26.2"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:0.155.2+26.2"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "${rootProject.projectDir}/common/src/main/java"
+        }
+        resources {
+            srcDir "${rootProject.projectDir}/common/src/main/resources"
+        }
+    }
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    def version = project.version
+    inputs.property "version", version
+    inputs.property "minecraft_version", project.minecraft_version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": version, "minecraft_version": project.minecraft_version
+    }
+}
+
+tasks.withType(Copy).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    archiveBaseName.set("infusedmobs")
+    def projectName = project.name
+    inputs.property "projectName", projectName
+
+    from("${rootProject.projectDir}/LICENSE") {
+        rename { "${it}_$projectName" }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+    }
+}

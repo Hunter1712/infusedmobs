@@ -1,0 +1,91 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+group = project.maven_group
+
+repositories {
+    // Loom adds the essential maven repositories to download Minecraft and libraries automatically
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    mods {
+        "infusedmobs" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// Include common sources — common's shim files were removed, so version's own shim wins
+sourceSets {
+    main {
+        java {
+            srcDir "${rootProject.projectDir}/common/src/main/java"
+            // version's own java is already src/main/java by default
+        }
+        resources {
+            srcDir "${rootProject.projectDir}/common/src/main/resources"
+            // version's own resources is already src/main/resources; common has only assets now
+        }
+    }
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    def version = project.version
+    inputs.property "version", version
+    inputs.property "minecraft_version", project.minecraft_version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": version, "minecraft_version": project.minecraft_version
+    }
+}
+
+tasks.withType(Copy).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    archiveBaseName.set("infusedmobs")
+    def projectName = project.name
+    inputs.property "projectName", projectName
+
+    from("${rootProject.projectDir}/LICENSE") {
+        rename { "${it}_$projectName" }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        // Add repositories to publish to here.
+    }
+}

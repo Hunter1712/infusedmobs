@@ -31,3 +31,17 @@ _Avoid_: Dimension Blacklist, World Ban, Blacklisted World
 **Gamerule Gate**:
 A per-save boolean gamerule `infusedmobs:enabled` combined per dimension with the World Blacklist; infusion is active in a dimension only if that dimension is not blacklisted and the gamerule is true.
 _Avoid_: Enabled Flag, Global Toggle
+
+### Versioning
+
+**Versioned Source Set**:
+A per-Minecraft-version Gradle subproject (`1.20.1`, `1.21.1`, `26.2`) plus `common` that holds shared code; each version compiles `common/src/main/java` plus its own shims and `fabric.mod.json`.
+_Avoid_: Version overlay, Chiseled source set
+
+**Shim**:
+A small file duplicated per version where Mojang/Fabric APIs diverge (e.g. `gamerules/ModGameRules.java`, `tier/TierSavedData.java`, `infusedmobs.mixins.json` with `JAVA_17`/`JAVA_21`/`JAVA_25`).
+_Avoid_: Version-specific file, Compat layer
+
+**Artifact Suffix**:
+The `+mc` qualifier appended to `mod_version` for published jars (`2.7.1+1.20.1`, `2.7.1+1.21.1`, `2.7.1+26.2`) so Modrinth channels stay distinct.
+_Avoid_: Version suffix, Build suffix

@@ -1,0 +1,93 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically
+}
+
+loom {
+    // Split environment (client/server) — default is fine
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    // Pure-logic unit tests (no Minecraft bootstrap needed, but need minecraft classes on classpath for compilation)
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.0'
+}
+
+sourceSets {
+    main {
+        java {
+            // Shim files live in version modules — pull the 26.2 versions for common compilation so tests can run
+            srcDir "${rootProject.projectDir}/26.2/src/main/java"
+        }
+        resources {
+            srcDir "src/main/resources"
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    def version = project.version
+    inputs.property "version", version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": version
+    }
+}
+
+tasks.withType(Copy).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+}
+
+java {
+    withSourcesJar()
+
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    def projectName = project.name
+    inputs.property "projectName", projectName
+
+    from("${rootProject.projectDir}/LICENSE") {
+        rename { "${it}_$projectName" }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        // Add repositories to publish to here.
+    }
+}

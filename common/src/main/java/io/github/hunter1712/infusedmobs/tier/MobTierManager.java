@@ -162,26 +162,22 @@ public final class MobTierManager {
 
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
     private static void restoreRolled(Mob mob, UUID uuid, TierSavedData.Rolled rolled) {
-        switch (rolled) {
-            case TierSavedData.Rolled.Tiered t -> {
-                List<Ability> abilities = resolveAbilities(t.abilityIds());
-                INFUSED.put(uuid, InfusedMob.tiered(t.tier(), abilities));
+        if (rolled instanceof TierSavedData.Rolled.Tiered t) {
+            List<Ability> abilities = resolveAbilities(t.abilityIds());
+            INFUSED.put(uuid, InfusedMob.tiered(t.tier(), abilities));
 
-                ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
-                applyHealthMultiplier(mob, tc);
-                setTierNametag(mob, t.tier(), abilities);
-            }
-            case TierSavedData.Rolled.Split s -> {
-                List<Ability> abilities = resolveAbilities(s.abilityIds());
-                INFUSED.put(uuid, InfusedMob.split(abilities));
-                // Re-apply the Cinder HP boost — otherwise a chunk reload
-                // silently deflates the copy back to vanilla max health.
-                applyCinderStats(mob);
-                setSplitCopyNametag(mob, abilities);
-            }
-            case TierSavedData.Rolled.Nothing ignored -> {
-                // Rolled nothing — leave the mob vanilla.
-            }
+            ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
+            applyHealthMultiplier(mob, tc);
+            setTierNametag(mob, t.tier(), abilities);
+        } else if (rolled instanceof TierSavedData.Rolled.Split s) {
+            List<Ability> abilities = resolveAbilities(s.abilityIds());
+            INFUSED.put(uuid, InfusedMob.split(abilities));
+            // Re-apply the Cinder HP boost — otherwise a chunk reload
+            // silently deflates the copy back to vanilla max health.
+            applyCinderStats(mob);
+            setSplitCopyNametag(mob, abilities);
+        } else if (rolled instanceof TierSavedData.Rolled.Nothing) {
+            // Rolled nothing — leave the mob vanilla.
         }
     }
 
@@ -252,11 +248,14 @@ public final class MobTierManager {
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
         InfusedMob infused = INFUSED.get(mob.getUUID());
-        return switch (infused) {
-            case InfusedMob.TieredMob t -> t.tier();
-            case InfusedMob.SplitCopyMob s -> null;
-            case null -> null;
-        };
+        if (infused == null) return null;
+        if (infused instanceof InfusedMob.TieredMob t) {
+            return t.tier();
+        } else if (infused instanceof InfusedMob.SplitCopyMob) {
+            return null;
+        } else {
+            return null;
+        }
     }
 
     /** Returns abilities assigned to this mob matching the given trigger type. */
@@ -360,9 +359,10 @@ public final class MobTierManager {
 
             if (show) {
                 if (infused.abilities().isEmpty()) continue;
-                switch (infused) {
-                    case InfusedMob.TieredMob t -> setTierNametag(mob, t.tier(), t.abilities());
-                    case InfusedMob.SplitCopyMob s -> setSplitCopyNametag(mob, s.abilities());
+                if (infused instanceof InfusedMob.TieredMob t) {
+                    setTierNametag(mob, t.tier(), t.abilities());
+                } else if (infused instanceof InfusedMob.SplitCopyMob s) {
+                    setSplitCopyNametag(mob, s.abilities());
                 }
             } else {
                 mob.setCustomName(null);
