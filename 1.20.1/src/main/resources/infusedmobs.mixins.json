@@ -1,0 +1,12 @@
+{
+    "required": true,
+    "package": "io.github.hunter1712.infusedmobs.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "mixins": [
+        "EntityRemoveMixin",
+        "LivingEntityMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

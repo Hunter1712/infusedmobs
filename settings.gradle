@@ -10,3 +10,8 @@ pluginManagement {
 }
 
 rootProject.name = 'infusedmobs'
+
+include 'common'
+include '1.20.1'
+include '1.21.1'
+include '26.2'

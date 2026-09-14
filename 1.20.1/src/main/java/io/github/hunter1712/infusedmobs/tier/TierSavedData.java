@@ -51,11 +51,13 @@ public final class TierSavedData extends SavedData {
         record DTO(String kind, MobTier tier, List<String> abilityIds) {
 
             static DTO fromRolled(Rolled rolled) {
-                return switch (rolled) {
-                    case Tiered t -> new DTO("tiered", t.tier(), t.abilityIds());
-                    case Split s -> new DTO("split", null, s.abilityIds());
-                    case Nothing n -> new DTO("nothing", null, List.of());
-                };
+                if (rolled instanceof Tiered t) {
+                    return new DTO("tiered", t.tier(), t.abilityIds());
+                } else if (rolled instanceof Split s) {
+                    return new DTO("split", null, s.abilityIds());
+                } else {
+                    return new DTO("nothing", null, List.of());
+                }
             }
 
             Rolled toRolled() {

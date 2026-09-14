@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "infusedmobs",
+	"version": "${version}",
+	"name": "Infused Mobs",
+	"description": "Hostile mobs spawn with occult-infused tiers (Cinder/Shade/Doom) and randomized abilities. Includes commands, a world blacklist, per-world gamerule control, configurable nametags, and config reload.",
+	"authors": [
+		"hunter1712"
+	],
+	"contact": {
+		"homepage": "https://github.com/hunter1712/infusedmobs",
+		"sources": "https://github.com/hunter1712/infusedmobs",
+		"issues": "https://github.com/hunter1712/infusedmobs/issues"
+	},
+	"license": "ARR",
+	"icon": "assets/infusedmobs/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"io.github.hunter1712.infusedmobs.InfusedMobsMod"
+		]
+	},
+	"mixins": [
+		"infusedmobs.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
