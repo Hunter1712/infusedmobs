@@ -2,6 +2,7 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.config.ModConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,44 @@ class MobTierManagerTest {
         // A fresh world save has no stored value — the rule default is true.
         assertEquals(MobTierManager.InfuseStatus.ACTIVE,
                 MobTierManager.canInfuse(false, null));
+    }
+
+    @Test
+    void netherOnlyScenarioAllowsOnlyNether() {
+        // Canonical nether-only: blacklist overworld + end, allow nether (spec #4 story 10, #6 acceptance).
+        var cfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
+
+        assertTrue(cfg.isWorldBlacklisted("minecraft:overworld"));
+        assertTrue(cfg.isWorldBlacklisted("minecraft:the_end"));
+        assertTrue(!cfg.isWorldBlacklisted("minecraft:the_nether"));
+
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:overworld"), Boolean.TRUE));
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:the_end"), Boolean.TRUE));
+        assertEquals(MobTierManager.InfuseStatus.ACTIVE,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:the_nether"), Boolean.TRUE));
+    }
+
+    @Test
+    void netherOnlyScenarioBlacklistDominatesEvenWhenGameruleTrue() {
+        var cfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
+        // Blacklist wins even if gamerule true (spec story 12)
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:overworld"), Boolean.TRUE));
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:overworld"), Boolean.FALSE));
+    }
+
+    @Test
+    void gameruleOffDisablesNetherEvenWhenNotBlacklisted() {
+        var cfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
+        // Nether is not blacklisted but gamerule off → RULE_DISABLED (spec story 11: !blacklisted && gamerule)
+        assertEquals(MobTierManager.InfuseStatus.RULE_DISABLED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:the_nether"), Boolean.FALSE));
     }
 
     // ========================================
