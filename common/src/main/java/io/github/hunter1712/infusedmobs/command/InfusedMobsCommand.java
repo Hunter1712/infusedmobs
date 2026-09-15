@@ -3,6 +3,7 @@ package io.github.hunter1712.infusedmobs.command;
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
+import io.github.hunter1712.infusedmobs.tier.DimensionHelper;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
@@ -16,16 +17,13 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
@@ -60,7 +58,7 @@ public final class InfusedMobsCommand {
 
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
         dispatcher.register(Commands.literal("infusedmobs")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(CommandArgHelper.gamemaster())
 
                 // --- help ---
                 .then(Commands.literal("help")
@@ -77,11 +75,11 @@ public final class InfusedMobsCommand {
                 // --- world ---
                 .then(Commands.literal("world")
                         .then(Commands.literal("add")
-                                .then(Commands.argument("world", IdentifierArgument.id())
+                                .then(CommandArgHelper.worldId("world")
                                         .suggests(InfusedMobsCommand::suggestWorldIds)
                                         .executes(InfusedMobsCommand::worldAdd)))
                         .then(Commands.literal("remove")
-                                .then(Commands.argument("world", IdentifierArgument.id())
+                                .then(CommandArgHelper.worldId("world")
                                         .suggests(InfusedMobsCommand::suggestWorldIds)
                                         .executes(InfusedMobsCommand::worldRemove)))
                         .then(Commands.literal("list")
@@ -113,9 +111,9 @@ public final class InfusedMobsCommand {
                                         .suggests((ctx, builder) -> {
                                             for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
                                                 if (isInfusable(type)) {
-                                                    Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
-                                                    if (id != null) {
-                                                        builder.suggest(id.toString());
+                                                    String key = CommandArgHelper.entityKey(type);
+                                                    if (key != null) {
+                                                        builder.suggest(key);
                                                     }
                                                 }
                                             }
@@ -209,7 +207,7 @@ public final class InfusedMobsCommand {
     /** Adds a world to the blacklist and persists. */
     private static int worldAdd(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        String worldId = IdentifierArgument.getId(ctx, "world").toString();
+        String worldId = CommandArgHelper.getWorldId(ctx, "world");
 
         ModConfig.Instance current = ModConfig.get();
         if (current.isWorldBlacklisted(worldId)) {
@@ -231,7 +229,7 @@ public final class InfusedMobsCommand {
     /** Removes a world from the blacklist and persists. */
     private static int worldRemove(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        String worldId = IdentifierArgument.getId(ctx, "world").toString();
+        String worldId = CommandArgHelper.getWorldId(ctx, "world");
 
         ModConfig.Instance current = ModConfig.get();
         if (!current.isWorldBlacklisted(worldId)) {
@@ -275,12 +273,12 @@ public final class InfusedMobsCommand {
         CommandSourceStack source = ctx.getSource();
 
         // Always suggest the world the caller is standing in first.
-        String currentWorld = source.getLevel().dimension().identifier().toString();
+        String currentWorld = DimensionHelper.getId(source.getLevel());
         builder.suggest(currentWorld);
 
         // Then suggest every other loaded level's dimension id.
         for (ServerLevel level : source.getServer().getAllLevels()) {
-            String id = level.dimension().identifier().toString();
+            String id = DimensionHelper.getId(level);
             if (!id.equals(currentWorld)) {
                 builder.suggest(id);
             }
@@ -349,8 +347,7 @@ public final class InfusedMobsCommand {
 
         // If entity is null (convenience overload), default to zombie
         if (entityType == null) {
-            entityType = BuiltInRegistries.ENTITY_TYPE.getValue(
-                    Identifier.fromNamespaceAndPath("minecraft", "zombie"));
+            entityType = CommandArgHelper.defaultEntity();
             if (entityType == null) {
                 source.sendFailure(Component.literal("§cDefault entity (zombie) is missing from the registry."));
                 return 0;
@@ -367,7 +364,7 @@ public final class InfusedMobsCommand {
                 source.sendFailure(Component.literal(
                         "§cThis world is on the infused-mobs blacklist. "
                                 + "Remove it with §f/infusedmobs world remove "
-                                + level.dimension().identifier() + "§c to summon here."));
+                                + DimensionHelper.getId(level) + "§c to summon here."));
                 return 0;
             }
             case RULE_DISABLED -> {
@@ -379,7 +376,7 @@ public final class InfusedMobsCommand {
             case ACTIVE -> { /* proceed */ }
         }
 
-        Entity raw = entityType.create(level, EntitySpawnReason.COMMAND);
+        Entity raw = CommandArgHelper.createForCommand(entityType, level);
         if (!(raw instanceof Mob mob)) {
             source.sendFailure(Component.literal(
                     "§c" + entityType.getDescription().getString() + " is not a mob."));
@@ -464,10 +461,10 @@ public final class InfusedMobsCommand {
         int count = 0;
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
             if (isInfusable(type)) {
-                Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
-                if (id != null) {
+                String key = CommandArgHelper.entityKey(type);
+                if (key != null) {
                     if (count > 0) sb.append("§7, ");
-                    sb.append(id.toString());
+                    sb.append(key);
                     count++;
                 }
             }

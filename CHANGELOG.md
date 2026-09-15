@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Multi-version builds from one repo** — Gradle multi-project `common` + `1.20.1`/`1.21.1`/`26.2` (`settings.gradle:12`, `common/build.gradle:32` `srcDir`, `26.2/build.gradle:32` `srcDir` shims) producing `infusedmobs-<mod>+<mc>.jar` (`2.7.1+1.20.1`, `+1.21.1`, `+26.2`) via `gradle build` (one clone, one command). `fabric.mod.json` declares `minecraft:~<mc>` and `java >=17/21/25`, `infusedmobs.mixins.json` `JAVA_17/21/25`.
+- **CI matrix** — `.github/workflows/build.yml:12` `fail-fast` matrix `common:25`, `26.2:25`, `1.21.1:21`, `1.20.1:17` plus `aggregate` `gradle build` to verify all three overlays; single Modrinth project page with one file per game version (`+mc` suffix) and game-version filter.
+
+#### 1.20.1
+- Overlay with Java 17, `minecraft ~1.20.1` (`1.20.1/gradle.properties:1`, `fabric.mod.json:27`), `JAVA_17` mixins; Gamerule Gate `infusedmobs:enabled` via legacy `GameRuleRegistry`/`GameRuleFactory` (fallback to modern registry when compiled against 26.2 workaround); persistence via NBT `CompoundTag` (`1.20.1/.../TierSavedData.java:178` `save`/`load`) with same field names `rolls/kind/tier/abilityIds`.
+- Dimension accessor via `DimensionHelper` (`1.20.1/.../DimensionHelper.java:19` reflection `location()`), spawn via `SpawnHelper` (`EntitySpawnReason` vs `MobSpawnType`), effect holders via `AbilityHelper` reflection.
+
+#### 1.21.1
+- Overlay with Java 21, `minecraft ~1.21.1` (`1.21.1/gradle.properties:1`), `JAVA_21` mixins, real `1.21.1` mappings via `fabric-loom-remap` + MojMap (`1.21.1/build.gradle`); Gamerule Gate `infusedmobs:enabled` via Fabric `GameRuleRegistry`/`GameRuleFactory`; persistence via NBT `CompoundTag` Factory path with same field names `rolls/kind/tier/abilityIds`; `location()` dimension, `hurt()` damage, `Holder<MobEffect>` effects (1.21.1 MojMap names via `AbilityHelper`).
+
+#### 26.2
+- Baseline unchanged; now also built via `common` shim indirection (`MobTierManager.java:60` `DimensionHelper.getId`, `TierSavedData.get`, `AbilityHelper`/`SpawnHelper`).
+
+### Changed
+- `MobTierManager` now delegates dimension and storage via shims (`DimensionHelper`, `TierSavedData.get`) and `isEnabled` (`ModGameRules.java:60`); `AbilityRegistry` delegates to `AbilityHelper`; `SplitEffect` to `SpawnHelper`, `MobHurtTrigger` to `AbilityHelper.reflectThorns`.
+
 ## [2.7.1] - 2026-08-02
 
 ### Added

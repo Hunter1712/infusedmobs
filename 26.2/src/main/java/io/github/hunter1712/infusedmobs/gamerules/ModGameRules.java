@@ -57,6 +57,11 @@ public final class ModGameRules {
         return resolveRule(stored(server, rule), rule.defaultValue());
     }
 
+    /** Version-agnostic check for the master switch. */
+    public static boolean isEnabled(MinecraftServer server) {
+        return readRule(server, ENABLED);
+    }
+
     // ========================================
     // Pure resolution helper (unit-testable without Minecraft bootstrap)
     // ========================================
@@ -64,6 +69,11 @@ public final class ModGameRules {
     /** Returns {@code stored} when set, otherwise {@code defaultValue}. */
     public static boolean resolveRule(Boolean stored, boolean defaultValue) {
         return stored != null ? stored : defaultValue;
+    }
+
+    /** Default value of the master switch (matches the registered rule). */
+    public static boolean defaultValue() {
+        return ENABLED.defaultValue();
     }
 
     // ========================================

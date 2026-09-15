@@ -3,6 +3,7 @@
 // applying it to the root (which has no source).
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
 
 // Propagate mod version + group to all projects (version-specific projects override `version` with `+mc` suffix)

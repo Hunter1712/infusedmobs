@@ -1,23 +1,13 @@
 package io.github.hunter1712.infusedmobs.gamerules;
 
-import io.github.hunter1712.infusedmobs.InfusedMobsMod;
-
-import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.serialization.Codec;
-
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.fabricmc.fabric.api.gamerule.v1.GameRuleFactory;
+import net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.level.gamerules.GameRule;
-import net.minecraft.world.level.gamerules.GameRuleCategory;
-import net.minecraft.world.level.gamerules.GameRuleMap;
-import net.minecraft.world.level.gamerules.GameRuleType;
-import net.minecraft.world.flag.FeatureFlagSet;
+import net.minecraft.world.level.GameRules;
 
 /**
- * Custom gamerules for Infused Mobs, registered in
- * {@link BuiltInRegistries#GAME_RULE} during mod initialisation.
+ * Custom gamerules for Infused Mobs, registered via Fabric's
+ * {@link GameRuleRegistry} during mod initialisation.
  * <p>
  * Gamerules give per-world-save control that survives restarts and can be
  * set at launch by modpack makers (datapacks, gamerule-modifying mods, or
@@ -33,28 +23,24 @@ import net.minecraft.world.flag.FeatureFlagSet;
 public final class ModGameRules {
 
     /** Master switch — set false to disable the mod in this world save. */
-    public static final GameRule<Boolean> ENABLED =
-            createRule(GameRuleCategory.MOBS, true);
+    public static final GameRules.Key<GameRules.BooleanValue> ENABLED =
+            GameRuleRegistry.register("infusedmobs:enabled", GameRules.Category.MOBS,
+                    GameRuleFactory.createBooleanRule(true));
 
     private ModGameRules() {}
 
     /**
-     * Registers the rule into {@link BuiltInRegistries#GAME_RULE}.
-     * Must be called from {@code onInitialize} — the registry is frozen
-     * later during {@code Bootstrap.bootStrap()}.
+     * Registers the rule. Must be called from {@code onInitialize}.
+     * (Fabric's registry handles actual registration at class-load;
+     * this method exists for API parity with other versions.)
      */
     public static void register() {
-        Registry.register(BuiltInRegistries.GAME_RULE, id("enabled"), ENABLED);
+        // No-op: ENABLED is registered via GameRuleRegistry at class init.
     }
 
-    /**
-     * Reads the current value of a boolean rule for the server's world save.
-     * Never uses {@code GameRules.get(GameRule)} directly — that throws for
-     * rules not yet stored in the save (e.g. fresh worlds or rules added by
-     * an upgrade); a missing value resolves to the rule's default instead.
-     */
-    public static boolean readRule(MinecraftServer server, GameRule<Boolean> rule) {
-        return resolveRule(stored(server, rule), rule.defaultValue());
+    /** Version-agnostic check for the master switch. */
+    public static boolean isEnabled(MinecraftServer server) {
+        return server.getGameRules().getBoolean(ENABLED);
     }
 
     // ========================================
@@ -66,33 +52,8 @@ public final class ModGameRules {
         return stored != null ? stored : defaultValue;
     }
 
-    // ========================================
-    // Helpers
-    // ========================================
-
-    private static GameRule<Boolean> createRule(GameRuleCategory category, boolean defaultValue) {
-        return new GameRule<>(
-                category,
-                GameRuleType.BOOL,
-                BoolArgumentType.bool(),
-                (visitor, rule) -> visitor.visitBoolean(rule),
-                Codec.BOOL,
-                value -> 1,
-                defaultValue,
-                FeatureFlagSet.of()
-        );
-    }
-
-    private static Identifier id(String name) {
-        return Identifier.fromNamespaceAndPath(InfusedMobsMod.MOD_ID, name);
-    }
-
-    /**
-     * Returns the stored value of the rule from the server's saved
-     * game-rule data, or {@code null} when unset.
-     */
-    private static Boolean stored(MinecraftServer server, GameRule<Boolean> rule) {
-        GameRuleMap map = server.getDataStorage().computeIfAbsent(GameRuleMap.TYPE);
-        return map.get(rule);
+    /** Default value of the master switch (matches the registered rule). */
+    public static boolean defaultValue() {
+        return true;
     }
 }

@@ -4,6 +4,8 @@ import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
+import io.github.hunter1712.infusedmobs.util.AbilityHelper;
+
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -60,7 +62,7 @@ public final class MobHurtTrigger {
 
         float reflected = damageTaken * THORNS_REFLECT_FRACTION;
         if (reflected > 0.0f && mob.level() instanceof ServerLevel level) {
-            player.hurtServer(level, player.damageSources().thorns(mob), reflected);
+            AbilityHelper.reflectThorns(player, mob, reflected, level);
         }
     }
 

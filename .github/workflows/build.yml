@@ -9,34 +9,64 @@ on: [pull_request, push]
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - project: common
+            java: 25
+            task: :common:build
+          - project: 26.2
+            java: 25
+            task: :26.2:build
+          - project: 1.21.1
+            java: 21
+            task: :1.21.1:build
+          - project: 1.20.1
+            java: 17
+            task: :1.20.1:build
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v6
-      - name: setup jdk 17
+      - name: setup jdk ${{ matrix.java }}
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: ${{ matrix.java }}
           distribution: 'microsoft'
-      - name: setup jdk 21
-        uses: actions/setup-java@v5
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build ${{ matrix.project }} (Java ${{ matrix.java }})
+        run: ./gradlew ${{ matrix.task }} --info
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
         with:
-          java-version: '21'
-          distribution: 'microsoft'
+          name: ${{ matrix.project }}-Artifacts
+          path: ${{ matrix.project }}/build/libs/
+
+  aggregate:
+    runs-on: ubuntu-24.04
+    needs: build
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
       - name: setup jdk 25
         uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'microsoft'
-      - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
-      - name: build
-        run: ./gradlew build
-      - name: capture build artifacts
+      # Also validates that ./gradlew build from root builds all three overlays
+      - name: build all overlays via root
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build
+      - name: capture all artifacts (combined)
         uses: actions/upload-artifact@v7
         with:
-          name: Artifacts
+          name: Artifacts-all
           path: |
             common/build/libs/
             26.2/build/libs/
