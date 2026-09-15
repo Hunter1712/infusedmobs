@@ -9,6 +9,8 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
+import net.minecraft.server.level.ServerLevel;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,5 +132,14 @@ public final class TierSavedData extends SavedData {
         if (rolls.remove(uuid) != null) {
             setDirty();
         }
+    }
+
+    // ========================================
+    // Version shim — storage accessor
+    // ========================================
+
+    /** Version-agnostic accessor: modern codec path via SavedDataType. */
+    public static TierSavedData get(ServerLevel level) {
+        return level.getDataStorage().computeIfAbsent(TYPE);
     }
 }

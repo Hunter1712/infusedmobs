@@ -1,18 +1,17 @@
 package io.github.hunter1712.infusedmobs.tier;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import net.minecraft.core.UUIDUtil;
-import net.minecraft.resources.Identifier;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -21,7 +20,12 @@ import java.util.UUID;
  * reloads (and chunk unload/reload cycles).
  * <p>
  * Stored per-world in {@code data/infusedmobs_tiers.dat} and loaded
- * on demand via {@link net.minecraft.world.level.storage.SavedDataStorage#computeIfAbsent(SavedDataType)}.
+ * on demand via {@link #get(ServerLevel)}.
+ * <p>
+ * 1.21.1 uses the legacy NBT {@code Factory} path
+ * ({@code DimensionDataStorage#computeIfAbsent(Factory, String)}); field names
+ * ({@code rolls}, {@code kind}, {@code tier}, {@code abilityIds}) match the
+ * modern codec path so saves stay conceptually compatible across versions.
  */
 public final class TierSavedData extends SavedData {
 
@@ -43,56 +47,14 @@ public final class TierSavedData extends SavedData {
         record Split(List<String> abilityIds) implements Rolled {}
 
         record Nothing() implements Rolled {}
-
-        /**
-         * DTO bridging the sealed interface to a flat serialisable record
-         * ({@code kind} discriminates the variants).
-         */
-        record DTO(String kind, MobTier tier, List<String> abilityIds) {
-
-            static DTO fromRolled(Rolled rolled) {
-                if (rolled instanceof Tiered t) {
-                    return new DTO("tiered", t.tier(), t.abilityIds());
-                } else if (rolled instanceof Split s) {
-                    return new DTO("split", null, s.abilityIds());
-                } else {
-                    return new DTO("nothing", null, List.of());
-                }
-            }
-
-            Rolled toRolled() {
-                return switch (kind) {
-                    // A null tier (corrupted save / unknown tier value) falls
-                    // back to Nothing rather than crashing or NPE-ing later.
-                    case "tiered" -> tier != null ? new Tiered(tier, abilityIds) : new Nothing();
-                    case "split" -> new Split(abilityIds);
-                    default -> new Nothing();
-                };
-            }
-        }
-
-        Codec<Rolled> CODEC = RecordCodecBuilder.<DTO>create(instance -> instance.group(
-                Codec.STRING.fieldOf("kind").forGetter(DTO::kind),
-                MobTier.CODEC.optionalFieldOf("tier").forGetter(dto -> Optional.ofNullable(dto.tier())),
-                Codec.STRING.listOf().optionalFieldOf("abilityIds", List.of()).forGetter(DTO::abilityIds)
-        ).apply(instance, (kind, tier, abilityIds) -> new DTO(kind, tier.orElse(null), abilityIds)))
-                .xmap(DTO::toRolled, DTO::fromRolled);
     }
 
-    private static final Codec<TierSavedData> CODEC = RecordCodecBuilder.<TierSavedData>create(instance ->
-            instance.group(
-                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Rolled.CODEC)
-                            .fieldOf("rolls")
-                            .forGetter(d -> d.rolls)
-            ).apply(instance, TierSavedData::new)
-    );
+    private static final String ID = "infusedmobs_tiers";
 
-    public static final SavedDataType<TierSavedData> TYPE = new SavedDataType<>(
-            Identifier.fromNamespaceAndPath("infusedmobs", "tiers"),
+    private static final SavedData.Factory<TierSavedData> FACTORY = new SavedData.Factory<>(
             TierSavedData::new,
-            CODEC,
-            DataFixTypes.LEVEL
-    );
+            TierSavedData::load,
+            DataFixTypes.LEVEL);
 
     private final Map<UUID, Rolled> rolls;
 
@@ -102,7 +64,6 @@ public final class TierSavedData extends SavedData {
     }
 
     private TierSavedData(Map<UUID, Rolled> rolls) {
-        // Copy into a mutable map — the codec may produce immutable maps
         this.rolls = new HashMap<>(rolls);
     }
 
@@ -130,5 +91,76 @@ public final class TierSavedData extends SavedData {
         if (rolls.remove(uuid) != null) {
             setDirty();
         }
+    }
+
+    // ========================================
+    // Version shim — storage accessor
+    // ========================================
+
+    /** Version-agnostic accessor: legacy NBT path via Factory. */
+    public static TierSavedData get(ServerLevel level) {
+        return level.getDataStorage().computeIfAbsent(FACTORY, ID);
+    }
+
+    // ========================================
+    // NBT serialization — same field names as codec
+    // ========================================
+
+    @Override
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+        CompoundTag rollsTag = new CompoundTag();
+        for (Map.Entry<UUID, Rolled> e : rolls.entrySet()) {
+            CompoundTag entry = new CompoundTag();
+            Rolled r = e.getValue();
+            if (r instanceof Rolled.Tiered t) {
+                entry.putString("kind", "tiered");
+                entry.putString("tier", t.tier().name());
+                ListTag list = new ListTag();
+                for (String id : t.abilityIds()) list.add(StringTag.valueOf(id));
+                entry.put("abilityIds", list);
+            } else if (r instanceof Rolled.Split s) {
+                entry.putString("kind", "split");
+                ListTag list = new ListTag();
+                for (String id : s.abilityIds()) list.add(StringTag.valueOf(id));
+                entry.put("abilityIds", list);
+            } else {
+                entry.putString("kind", "nothing");
+            }
+            rollsTag.put(e.getKey().toString(), entry);
+        }
+        tag.put("rolls", rollsTag);
+        return tag;
+    }
+
+    public static TierSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
+        TierSavedData data = new TierSavedData();
+        if (!tag.contains("rolls", Tag.TAG_COMPOUND)) return data;
+        CompoundTag rollsTag = tag.getCompound("rolls");
+        for (String key : rollsTag.getAllKeys()) {
+            try {
+                UUID uuid = UUID.fromString(key);
+                if (!rollsTag.contains(key, Tag.TAG_COMPOUND)) continue;
+                CompoundTag entry = rollsTag.getCompound(key);
+                String kind = entry.contains("kind", Tag.TAG_STRING) ? entry.getString("kind") : "";
+                List<String> abilityIds = List.of();
+                if (entry.contains("abilityIds", Tag.TAG_LIST)) {
+                    ListTag list = entry.getList("abilityIds", Tag.TAG_STRING);
+                    abilityIds = list.stream().map(t -> t.getAsString()).toList();
+                }
+                Rolled rolled = switch (kind) {
+                    case "tiered" -> {
+                        String tierName = entry.contains("tier", Tag.TAG_STRING) ? entry.getString("tier") : "";
+                        MobTier tier;
+                        try { tier = tierName.isEmpty() ? null : MobTier.valueOf(tierName); }
+                        catch (IllegalArgumentException ex) { tier = null; }
+                        yield tier != null ? new Rolled.Tiered(tier, abilityIds) : new Rolled.Nothing();
+                    }
+                    case "split" -> new Rolled.Split(abilityIds);
+                    default -> new Rolled.Nothing();
+                };
+                data.rolls.put(uuid, rolled);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        return data;
     }
 }

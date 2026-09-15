@@ -2,6 +2,7 @@ package io.github.hunter1712.infusedmobs.ability;
 
 import io.github.hunter1712.infusedmobs.ability.effect.SplitEffect;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
+import io.github.hunter1712.infusedmobs.util.AbilityHelper;
 
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
@@ -9,9 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
@@ -35,9 +34,6 @@ public final class AbilityRegistry {
 
     private static final List<Ability> ALL_ABILITIES = new ArrayList<>();
     private static final Map<String, Ability> BY_ID = new HashMap<>();
-    private static final EquipmentSlot[] ARMOR_SLOTS = {
-            EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
-    };
 
     private AbilityRegistry() {}
 
@@ -56,7 +52,7 @@ public final class AbilityRegistry {
         // ---- HURT abilities (fire when the mob hits a player — melee or projectile) ----
 
         registerHurtEffect("bane",     "Bane",     MobEffects.POISON);
-        registerHurtEffect("chill",    "Chill",    MobEffects.SLOWNESS);
+        registerHurtEffect("chill",    "Chill",    AbilityHelper.slowness());
         registerHurtEffect("decay",    "Decay",    MobEffects.WITHER);
         registerHurtEffect("hex",      "Hex",      MobEffects.WEAKNESS);
 
@@ -71,9 +67,9 @@ public final class AbilityRegistry {
 
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
-        registerTickEffect("ward",    "Ward",    MobEffects.RESISTANCE);
-        registerTickEffect("frenzy",   "Frenzy",  MobEffects.STRENGTH);
-        registerTickEffect("wraith",   "Wraith",  MobEffects.SPEED);
+        registerTickEffect("ward",    "Ward",    AbilityHelper.resistance());
+        registerTickEffect("frenzy",   "Frenzy",  AbilityHelper.strength());
+        registerTickEffect("wraith",   "Wraith",  AbilityHelper.speed());
         registerTickEffect("blight",   "Blight",  MobEffects.REGENERATION);
 
         // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
@@ -93,7 +89,7 @@ public final class AbilityRegistry {
                         double dist = entity.distanceTo(mob);
                         if (dist <= radius) {
                             float inflicted = (float) (4.0 * (1.0 - dist / radius));
-                            living.hurtServer(level, dmgSource, Math.max(inflicted, 1.0f));
+                            AbilityHelper.hurtFromExplosion(living, level, dmgSource, Math.max(inflicted, 1.0f));
                         }
                     }
                 }
@@ -107,13 +103,14 @@ public final class AbilityRegistry {
     /**
      * Registers a HURT ability that applies a status effect to the target.
      * Duration/amplifier are read from config at fire time.
+     * Delegates to version shim {@link AbilityHelper} so 1.20.1's raw
+     * {@code MobEffect} vs 26.2's {@code Holder<MobEffect>} is hidden.
      */
     private static void registerHurtEffect(String id, String name, Holder<MobEffect> effect) {
         all(id, name, TriggerType.HURT, (mob, target, damage) ->
-                target.addEffect(new MobEffectInstance(
-                        effect,
+                AbilityHelper.applyHurtEffect(target, effect,
                         ModConfig.get().hurtEffectDuration(),
-                        ModConfig.get().hurtEffectAmplifier())));
+                        ModConfig.get().hurtEffectAmplifier()));
     }
 
     /**
@@ -122,25 +119,21 @@ public final class AbilityRegistry {
      */
     private static void registerTickEffect(String id, String name, Holder<MobEffect> effect) {
         all(id, name, TriggerType.TICK, (mob, target, damage) ->
-                mob.addEffect(new MobEffectInstance(
-                        effect,
+                AbilityHelper.applyTickEffect(mob, effect,
                         ModConfig.get().tickEffectDuration(),
-                        ModConfig.get().tickEffectAmplifier(),
-                        false, false, false)));
+                        ModConfig.get().tickEffectAmplifier()));
     }
 
     /**
      * Damages all 4 armor slots by the configurable durability amount.
-     * {@code mob} and {@code damage} params unused — required by the
-     * {@link AbilityEffect} signature.
+     * Delegates to version shim so per-version item handling (modern
+     * {@code hurtAndBreak} vs legacy) is isolated.
      */
     private static void damageArmor(Mob mob, LivingEntity target, float damage) {
         if (!(target instanceof ServerPlayer player)) return;
         ServerLevel level = (ServerLevel) player.level();
         int dmg = ModConfig.get().acidArmorDamage();
-        for (EquipmentSlot slot : ARMOR_SLOTS) {
-            player.getItemBySlot(slot).hurtAndBreak(dmg, level, player, item -> {});
-        }
+        AbilityHelper.damageArmor(player, level, dmg);
     }
 
     /**

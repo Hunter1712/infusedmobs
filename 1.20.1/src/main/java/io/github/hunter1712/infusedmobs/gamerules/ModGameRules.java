@@ -40,8 +40,14 @@ public final class ModGameRules {
 
     /**
      * Registers the rule into {@link BuiltInRegistries#GAME_RULE}.
-     * Must be called from {@code onInitialize} — the registry is frozen
-     * later during {@code Bootstrap.bootStrap()}.
+     * <p>
+     * TODO 1.20.1 legacy: On real 1.20.1 the modern {@code BuiltInRegistries.GAME_RULE}
+     * registry does not exist; the legacy Fabric {@code GameRuleRegistry} with
+     * {@code GameRuleFactory.createBooleanRule} via
+     * {@code net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry.register} and
+     * {@code GameRuleFactory.createBooleanRule} should be used. This shim
+     * currently compiles against 26.2's modern API (workaround) and will be
+     * switched to legacy when 1.20.1 is compiled against its real mappings.
      */
     public static void register() {
         Registry.register(BuiltInRegistries.GAME_RULE, id("enabled"), ENABLED);
@@ -57,6 +63,11 @@ public final class ModGameRules {
         return resolveRule(stored(server, rule), rule.defaultValue());
     }
 
+    /** Version-agnostic check for the master switch. */
+    public static boolean isEnabled(MinecraftServer server) {
+        return readRule(server, ENABLED);
+    }
+
     // ========================================
     // Pure resolution helper (unit-testable without Minecraft bootstrap)
     // ========================================
@@ -64,6 +75,11 @@ public final class ModGameRules {
     /** Returns {@code stored} when set, otherwise {@code defaultValue}. */
     public static boolean resolveRule(Boolean stored, boolean defaultValue) {
         return stored != null ? stored : defaultValue;
+    }
+
+    /** Default value of the master switch (matches the registered rule). */
+    public static boolean defaultValue() {
+        return ENABLED.defaultValue();
     }
 
     // ========================================

@@ -57,15 +57,15 @@ public final class MobTierManager {
 
     /** Status of the mod in the given level. */
     public static InfuseStatus canInfuse(ServerLevel level) {
-        return canInfuse(
-                ModConfig.get().isWorldBlacklisted(level.dimension().identifier().toString()),
-                ModGameRules.readRule(level.getServer(), ModGameRules.ENABLED));
+        if (ModConfig.get().isWorldBlacklisted(DimensionHelper.getId(level))) return InfuseStatus.WORLD_BLACKLISTED;
+        if (!ModGameRules.isEnabled(level.getServer())) return InfuseStatus.RULE_DISABLED;
+        return InfuseStatus.ACTIVE;
     }
 
     /** Pure decision helper — unit-testable without Minecraft bootstrap. */
     static InfuseStatus canInfuse(boolean worldBlacklisted, Boolean storedEnabled) {
         if (worldBlacklisted) return InfuseStatus.WORLD_BLACKLISTED;
-        if (!ModGameRules.resolveRule(storedEnabled, ModGameRules.ENABLED.defaultValue())) {
+        if (!ModGameRules.resolveRule(storedEnabled, ModGameRules.defaultValue())) {
             return InfuseStatus.RULE_DISABLED;
         }
         return InfuseStatus.ACTIVE;
@@ -96,7 +96,7 @@ public final class MobTierManager {
         if (canInfuse(serverLevel) != InfuseStatus.ACTIVE) return;
         if (INFUSED.containsKey(mob.getUUID())) return;  // Already assigned — prevents stacking
 
-        TierSavedData savedData = serverLevel.getDataStorage().computeIfAbsent(TierSavedData.TYPE);
+        TierSavedData savedData = TierSavedData.get(serverLevel);
         UUID uuid = mob.getUUID();
 
         // If this UUID already rolled in a previous session, restore that result exactly
@@ -154,7 +154,7 @@ public final class MobTierManager {
         setTierNametag(mob, tier, abilities);
 
         if (serverLevel != null) {
-            serverLevel.getDataStorage().computeIfAbsent(TierSavedData.TYPE)
+            TierSavedData.get(serverLevel)
                     .setRolled(uuid, new TierSavedData.Rolled.Tiered(tier, idsOf(abilities)));
         }
         return true;
@@ -163,22 +163,29 @@ public final class MobTierManager {
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
     private static void restoreRolled(Mob mob, UUID uuid, TierSavedData.Rolled rolled) {
         if (rolled instanceof TierSavedData.Rolled.Tiered t) {
-            List<Ability> abilities = resolveAbilities(t.abilityIds());
-            INFUSED.put(uuid, InfusedMob.tiered(t.tier(), abilities));
-
-            ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
-            applyHealthMultiplier(mob, tc);
-            setTierNametag(mob, t.tier(), abilities);
+            restoreTiered(mob, uuid, t);
         } else if (rolled instanceof TierSavedData.Rolled.Split s) {
-            List<Ability> abilities = resolveAbilities(s.abilityIds());
-            INFUSED.put(uuid, InfusedMob.split(abilities));
-            // Re-apply the Cinder HP boost — otherwise a chunk reload
-            // silently deflates the copy back to vanilla max health.
-            applyCinderStats(mob);
-            setSplitCopyNametag(mob, abilities);
+            restoreSplit(mob, uuid, s);
         } else if (rolled instanceof TierSavedData.Rolled.Nothing) {
             // Rolled nothing — leave the mob vanilla.
         }
+    }
+
+    private static void restoreTiered(Mob mob, UUID uuid, TierSavedData.Rolled.Tiered t) {
+        List<Ability> abilities = resolveAbilities(t.abilityIds());
+        INFUSED.put(uuid, InfusedMob.tiered(t.tier(), abilities));
+        ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
+        applyHealthMultiplier(mob, tc);
+        setTierNametag(mob, t.tier(), abilities);
+    }
+
+    private static void restoreSplit(Mob mob, UUID uuid, TierSavedData.Rolled.Split s) {
+        List<Ability> abilities = resolveAbilities(s.abilityIds());
+        INFUSED.put(uuid, InfusedMob.split(abilities));
+        // Re-apply the Cinder HP boost — otherwise a chunk reload
+        // silently deflates the copy back to vanilla max health.
+        applyCinderStats(mob);
+        setSplitCopyNametag(mob, abilities);
     }
 
     private static List<Ability> resolveAbilities(List<String> ids) {
@@ -225,7 +232,7 @@ public final class MobTierManager {
 
         INFUSED.put(copy.getUUID(), InfusedMob.split(abilities));
         if (copy.level() instanceof ServerLevel serverLevel) {
-            serverLevel.getDataStorage().computeIfAbsent(TierSavedData.TYPE)
+            TierSavedData.get(serverLevel)
                     .setRolled(copy.getUUID(), new TierSavedData.Rolled.Split(idsOf(abilities)));
         }
         setSplitCopyNametag(copy, abilities);
@@ -248,14 +255,12 @@ public final class MobTierManager {
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
         InfusedMob infused = INFUSED.get(mob.getUUID());
-        if (infused == null) return null;
-        if (infused instanceof InfusedMob.TieredMob t) {
-            return t.tier();
-        } else if (infused instanceof InfusedMob.SplitCopyMob) {
-            return null;
-        } else {
-            return null;
-        }
+        return infused == null ? null : extractTier(infused);
+    }
+
+    private static MobTier extractTier(InfusedMob infused) {
+        if (infused instanceof InfusedMob.TieredMob t) return t.tier();
+        return null; // SplitCopyMob and future variants have no tier
     }
 
     /** Returns abilities assigned to this mob matching the given trigger type. */
@@ -306,7 +311,7 @@ public final class MobTierManager {
 
         // Clean up persistent state so it doesn't grow unboundedly
         if (mob.level() instanceof ServerLevel serverLevel) {
-            serverLevel.getDataStorage().computeIfAbsent(TierSavedData.TYPE).remove(uuid);
+            TierSavedData.get(serverLevel).remove(uuid);
         }
     }
 
@@ -320,6 +325,14 @@ public final class MobTierManager {
 
     private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
         setNametag(mob, "§7", abilities);
+    }
+
+    private static void applyNametagForInfused(Mob mob, InfusedMob infused) {
+        if (infused instanceof InfusedMob.TieredMob t) {
+            setTierNametag(mob, t.tier(), t.abilities());
+        } else if (infused instanceof InfusedMob.SplitCopyMob s) {
+            setSplitCopyNametag(mob, s.abilities());
+        }
     }
 
     private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
@@ -359,11 +372,7 @@ public final class MobTierManager {
 
             if (show) {
                 if (infused.abilities().isEmpty()) continue;
-                if (infused instanceof InfusedMob.TieredMob t) {
-                    setTierNametag(mob, t.tier(), t.abilities());
-                } else if (infused instanceof InfusedMob.SplitCopyMob s) {
-                    setSplitCopyNametag(mob, s.abilities());
-                }
+                applyNametagForInfused(mob, infused);
             } else {
                 mob.setCustomName(null);
                 mob.setCustomNameVisible(false);
