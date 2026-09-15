@@ -1,23 +1,15 @@
 package io.github.hunter1712.infusedmobs.tier;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -26,7 +18,13 @@ import java.util.UUID;
  * reloads (and chunk unload/reload cycles).
  * <p>
  * Stored per-world in {@code data/infusedmobs_tiers.dat} and loaded
- * on demand via {@link net.minecraft.world.level.storage.SavedDataStorage#computeIfAbsent(SavedDataType)}.
+ * on demand via {@link #get(ServerLevel)}.
+ * <p>
+ * 1.20.1 uses the legacy NBT path
+ * ({@code DimensionDataStorage#computeIfAbsent(Function, Supplier, String)}
+ * with single-arg {@code save(CompoundTag)}); field names ({@code rolls},
+ * {@code kind}, {@code tier}, {@code abilityIds}) match the modern codec
+ * path so saves stay conceptually compatible across versions.
  */
 public final class TierSavedData extends SavedData {
 
@@ -48,56 +46,9 @@ public final class TierSavedData extends SavedData {
         record Split(List<String> abilityIds) implements Rolled {}
 
         record Nothing() implements Rolled {}
-
-        /**
-         * DTO bridging the sealed interface to a flat serialisable record
-         * ({@code kind} discriminates the variants).
-         */
-        record DTO(String kind, MobTier tier, List<String> abilityIds) {
-
-            static DTO fromRolled(Rolled rolled) {
-                if (rolled instanceof Tiered t) {
-                    return new DTO("tiered", t.tier(), t.abilityIds());
-                } else if (rolled instanceof Split s) {
-                    return new DTO("split", null, s.abilityIds());
-                } else {
-                    return new DTO("nothing", null, List.of());
-                }
-            }
-
-            Rolled toRolled() {
-                return switch (kind) {
-                    // A null tier (corrupted save / unknown tier value) falls
-                    // back to Nothing rather than crashing or NPE-ing later.
-                    case "tiered" -> tier != null ? new Tiered(tier, abilityIds) : new Nothing();
-                    case "split" -> new Split(abilityIds);
-                    default -> new Nothing();
-                };
-            }
-        }
-
-        Codec<Rolled> CODEC = RecordCodecBuilder.<DTO>create(instance -> instance.group(
-                Codec.STRING.fieldOf("kind").forGetter(DTO::kind),
-                MobTier.CODEC.optionalFieldOf("tier").forGetter(dto -> Optional.ofNullable(dto.tier())),
-                Codec.STRING.listOf().optionalFieldOf("abilityIds", List.of()).forGetter(DTO::abilityIds)
-        ).apply(instance, (kind, tier, abilityIds) -> new DTO(kind, tier.orElse(null), abilityIds)))
-                .xmap(DTO::toRolled, DTO::fromRolled);
     }
 
-    private static final Codec<TierSavedData> CODEC = RecordCodecBuilder.<TierSavedData>create(instance ->
-            instance.group(
-                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Rolled.CODEC)
-                            .fieldOf("rolls")
-                            .forGetter(d -> d.rolls)
-            ).apply(instance, TierSavedData::new)
-    );
-
-    public static final SavedDataType<TierSavedData> TYPE = new SavedDataType<>(
-            Identifier.fromNamespaceAndPath("infusedmobs", "tiers"),
-            TierSavedData::new,
-            CODEC,
-            DataFixTypes.LEVEL
-    );
+    private static final String ID = "infusedmobs_tiers";
 
     private final Map<UUID, Rolled> rolls;
 
@@ -107,7 +58,6 @@ public final class TierSavedData extends SavedData {
     }
 
     private TierSavedData(Map<UUID, Rolled> rolls) {
-        // Copy into a mutable map — the codec may produce immutable maps
         this.rolls = new HashMap<>(rolls);
     }
 
@@ -138,43 +88,19 @@ public final class TierSavedData extends SavedData {
     }
 
     // ========================================
-    // Version shim — storage accessor (legacy NBT path)
+    // Version shim — storage accessor
     // ========================================
 
-    /**
-     * Version-agnostic accessor. On 1.20.1 the underlying storage is
-     * {@code DimensionDataStorage} with NBT ({@code CompoundTag}) rather than
-     * the modern {@code SavedDataType} codec path. Field names
-     * ({@code rolls}, {@code kind}, {@code tier}, {@code abilityIds}) are
-     * identical so saves are conceptually compatible, but the serialization
-     * adapter differs.
-     * <p>
-     * This shim compiles against 26.2's API (workaround) via reflection so
-     * {@code gradle build} stays green while the wiring is validated. When
-     * compiled against real 1.20.1 mappings, the NBT branch is the primary
-     * path.
-     */
+    /** Version-agnostic accessor: legacy NBT path via load/supplier functions. */
     public static TierSavedData get(ServerLevel level) {
-        // Try legacy NBT string key first via reflection (real 1.20.1 runtime)
-        try {
-            var storage = level.getServer().overworld().getDataStorage();
-            var method = storage.getClass().getMethod("computeIfAbsent",
-                    java.util.function.Function.class,
-                    java.util.function.Supplier.class,
-                    String.class);
-            //noinspection unchecked
-            return (TierSavedData) method.invoke(storage,
-                    (java.util.function.Function<CompoundTag, TierSavedData>) TierSavedData::load,
-                    (java.util.function.Supplier<TierSavedData>) TierSavedData::new,
-                    "infusedmobs_tiers");
-        } catch (Exception ignored) {
-            // Fallback to modern SavedDataType path (26.2 / workaround)
-            return level.getDataStorage().computeIfAbsent(TYPE);
-        }
+        return level.getDataStorage().computeIfAbsent(TierSavedData::load, TierSavedData::new, ID);
     }
 
-    // ---- NBT serialization (1.20.1 legacy) — same field names as codec ----
+    // ========================================
+    // NBT serialization — same field names as codec
+    // ========================================
 
+    @Override
     public CompoundTag save(CompoundTag tag) {
         CompoundTag rollsTag = new CompoundTag();
         for (Map.Entry<UUID, Rolled> e : rolls.entrySet()) {
@@ -202,24 +128,22 @@ public final class TierSavedData extends SavedData {
 
     public static TierSavedData load(CompoundTag tag) {
         TierSavedData data = new TierSavedData();
-        // Modern NBT API: use Optional<CompoundTag>
-        var rollsOpt = tag.getCompound("rolls");
-        if (rollsOpt.isEmpty()) return data;
-        CompoundTag rollsTag = rollsOpt.get();
-        for (String key : rollsTag.keySet()) {
+        if (!tag.contains("rolls", Tag.TAG_COMPOUND)) return data;
+        CompoundTag rollsTag = tag.getCompound("rolls");
+        for (String key : rollsTag.getAllKeys()) {
             try {
                 UUID uuid = UUID.fromString(key);
-                CompoundTag entry = rollsTag.getCompound(key).orElse(new CompoundTag());
-                String kind = entry.getString("kind").orElse("");
+                if (!rollsTag.contains(key, Tag.TAG_COMPOUND)) continue;
+                CompoundTag entry = rollsTag.getCompound(key);
+                String kind = entry.contains("kind", Tag.TAG_STRING) ? entry.getString("kind") : "";
                 List<String> abilityIds = List.of();
-                var listOpt = entry.getList("abilityIds");
-                if (listOpt.isPresent()) {
-                    ListTag list = listOpt.get();
-                    abilityIds = list.stream().map(t -> t.asString().orElse("")).toList();
+                if (entry.contains("abilityIds", Tag.TAG_LIST)) {
+                    ListTag list = entry.getList("abilityIds", Tag.TAG_STRING);
+                    abilityIds = list.stream().map(t -> t.getAsString()).toList();
                 }
                 Rolled rolled = switch (kind) {
                     case "tiered" -> {
-                        String tierName = entry.getString("tier").orElse("");
+                        String tierName = entry.contains("tier", Tag.TAG_STRING) ? entry.getString("tier") : "";
                         MobTier tier;
                         try { tier = tierName.isEmpty() ? null : MobTier.valueOf(tierName); }
                         catch (IllegalArgumentException ex) { tier = null; }

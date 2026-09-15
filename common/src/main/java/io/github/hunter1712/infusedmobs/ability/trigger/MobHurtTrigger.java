@@ -6,7 +6,6 @@ import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import io.github.hunter1712.infusedmobs.util.AbilityHelper;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -37,11 +36,21 @@ public final class MobHurtTrigger {
 
     private MobHurtTrigger() {}
 
-    public static void register() {
-        ServerLivingEntityEvents.AFTER_DAMAGE.register(MobHurtTrigger::onAfterDamage);
+    /**
+     * Version-neutral HURT callback. Mirrors Fabric's
+     * {@code ServerLivingEntityEvents.AfterDamage} shape so every overlay
+     * can adapt its own damage event to it — see {@link HurtTriggerHelper}.
+     */
+    public interface HurtHandler {
+        void onHurt(LivingEntity entity, DamageSource source,
+                    float baseDamageTaken, float damageTaken, boolean blocked);
     }
 
-    private static void onAfterDamage(
+    public static void register() {
+        HurtTriggerHelper.register(MobHurtTrigger::onAfterDamage);
+    }
+
+    static void onAfterDamage(
             LivingEntity entity, DamageSource source,
             float baseDamageTaken /* unused */, float damageTaken, boolean blocked
     ) {

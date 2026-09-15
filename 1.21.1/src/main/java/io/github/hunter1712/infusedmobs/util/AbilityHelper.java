@@ -15,16 +15,23 @@ import net.minecraft.server.level.ServerPlayer;
  * — 1.21.1 has no {@code hurtServer(ServerLevel, DamageSource, float)}.
  * Four {@code MobEffects} fields were renamed in 26.x, so common code reads
  * them through the accessors below.
+ * <p>
+ * Effect handles are deliberately {@code Object}: 26.2/1.21.1 pass
+ * {@code Holder<MobEffect>} while 1.20.1 passes raw {@code MobEffect}, and
+ * the shared {@code common} sources must compile against both. Each handle
+ * comes from the accessors below and is cast back here.
  */
 public final class AbilityHelper {
     private AbilityHelper() {}
 
-    public static void applyHurtEffect(LivingEntity target, Holder<MobEffect> effect, int duration, int amplifier) {
-        target.addEffect(new MobEffectInstance(effect, duration, amplifier));
+    @SuppressWarnings("unchecked")
+    public static void applyHurtEffect(LivingEntity target, Object effect, int duration, int amplifier) {
+        target.addEffect(new MobEffectInstance((Holder<MobEffect>) effect, duration, amplifier));
     }
 
-    public static void applyTickEffect(LivingEntity mob, Holder<MobEffect> effect, int duration, int amplifier) {
-        mob.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false));
+    @SuppressWarnings("unchecked")
+    public static void applyTickEffect(LivingEntity mob, Object effect, int duration, int amplifier) {
+        mob.addEffect(new MobEffectInstance((Holder<MobEffect>) effect, duration, amplifier, false, false, false));
     }
 
     public static void damageArmor(ServerPlayer player, ServerLevel level, int dmg) {
@@ -41,15 +48,27 @@ public final class AbilityHelper {
         living.hurt(source, amount);
     }
 
+    public static void ignite(LivingEntity target, int seconds) {
+        target.igniteForSeconds(seconds);
+    }
+
     // ========================================
-    // MobEffect renames (1.21.1 MojMap names)
+    // Effect handles (1.21.1 MojMap names)
     // ========================================
 
-    public static Holder<MobEffect> slowness() { return MobEffects.MOVEMENT_SLOWDOWN; }
+    public static Object slowness() { return MobEffects.MOVEMENT_SLOWDOWN; }
 
-    public static Holder<MobEffect> resistance() { return MobEffects.DAMAGE_RESISTANCE; }
+    public static Object resistance() { return MobEffects.DAMAGE_RESISTANCE; }
 
-    public static Holder<MobEffect> strength() { return MobEffects.DAMAGE_BOOST; }
+    public static Object strength() { return MobEffects.DAMAGE_BOOST; }
 
-    public static Holder<MobEffect> speed() { return MobEffects.MOVEMENT_SPEED; }
+    public static Object speed() { return MobEffects.MOVEMENT_SPEED; }
+
+    public static Object poison() { return MobEffects.POISON; }
+
+    public static Object wither() { return MobEffects.WITHER; }
+
+    public static Object weakness() { return MobEffects.WEAKNESS; }
+
+    public static Object regeneration() { return MobEffects.REGENERATION; }
 }
