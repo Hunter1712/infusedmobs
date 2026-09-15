@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI matrix** — `.github/workflows/build.yml:12` `fail-fast` matrix `common:25`, `26.2:25`, `1.21.1:21`, `1.20.1:17` plus `aggregate` `gradle build` to verify all three overlays; single Modrinth project page with one file per game version (`+mc` suffix) and game-version filter.
 
 #### 1.20.1
-- Overlay with Java 17, `minecraft ~1.20.1` (`1.20.1/gradle.properties:1`, `fabric.mod.json:27`), `JAVA_17` mixins; Gamerule Gate `infusedmobs:enabled` via legacy `GameRuleRegistry`/`GameRuleFactory` (fallback to modern registry when compiled against 26.2 workaround); persistence via NBT `CompoundTag` (`1.20.1/.../TierSavedData.java:178` `save`/`load`) with same field names `rolls/kind/tier/abilityIds`.
-- Dimension accessor via `DimensionHelper` (`1.20.1/.../DimensionHelper.java:19` reflection `location()`), spawn via `SpawnHelper` (`EntitySpawnReason` vs `MobSpawnType`), effect holders via `AbilityHelper` reflection.
+- Overlay with Java 17, `minecraft ~1.20.1` (`1.20.1/gradle.properties:1`, `fabric.mod.json:27`), `JAVA_17` mixins, real `1.20.1` mappings via `fabric-loom-remap` + MojMap (`1.20.1/build.gradle` `mappings loom.officialMojangMappings()`, `modImplementation` loader/Fabric API `0.92.0+1.20.1`); Gamerule Gate `infusedmobs:enabled` via legacy Fabric `GameRuleRegistry`/`GameRuleFactory` (`GameRules.Key<BooleanValue>`) with the same `!blacklisted && gamerule` semantics, so datapacks toggling the rule see the same effect; persistence via legacy NBT path (`DimensionDataStorage#computeIfAbsent`, single-arg `save(CompoundTag)`) with same field names `rolls/kind/tier/abilityIds`; `location()` dimension, plain `create(Level)` spawn, raw-`MobEffect` effects + `hurt()` damage + `setSecondsOnFire` ignite via `AbilityHelper`, `ResourceLocationArgument` commands; HURT trigger via `ALLOW_DAMAGE` (`HurtTriggerHelper`, pre-mitigation amount, `blocked=false` — exact after-damage parity is #9).
+- Effect handles are version-neutral `Object` (`AbilityRegistry` routes all effects — poison/wither/weakness/regeneration included — through `AbilityHelper` accessors; 26.2/1.21.1 cast to `Holder<MobEffect>`, 1.20.1 to raw `MobEffect`) and HURT registration goes through `HurtTriggerHelper` (`AFTER_DAMAGE` on 26.2/1.21.1) so `common` compiles against all three mappings.
+- Local builds work with the system `gradle` binary as well as `./gradlew` (same scripts; wrapper stays canonical for CI).
 
 #### 1.21.1
 - Overlay with Java 21, `minecraft ~1.21.1` (`1.21.1/gradle.properties:1`), `JAVA_21` mixins, real `1.21.1` mappings via `fabric-loom-remap` + MojMap (`1.21.1/build.gradle`); Gamerule Gate `infusedmobs:enabled` via Fabric `GameRuleRegistry`/`GameRuleFactory`; persistence via NBT `CompoundTag` Factory path with same field names `rolls/kind/tier/abilityIds`; `location()` dimension, `hurt()` damage, `Holder<MobEffect>` effects (1.21.1 MojMap names via `AbilityHelper`).
@@ -22,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Baseline unchanged; now also built via `common` shim indirection (`MobTierManager.java:60` `DimensionHelper.getId`, `TierSavedData.get`, `AbilityHelper`/`SpawnHelper`).
 
 ### Changed
-- `MobTierManager` now delegates dimension and storage via shims (`DimensionHelper`, `TierSavedData.get`) and `isEnabled` (`ModGameRules.java:60`); `AbilityRegistry` delegates to `AbilityHelper`; `SplitEffect` to `SpawnHelper`, `MobHurtTrigger` to `AbilityHelper.reflectThorns`.
+- `MobTierManager` now delegates dimension and storage via shims (`DimensionHelper`, `TierSavedData.get`) and `isEnabled` (`ModGameRules.java:60`); `AbilityRegistry` delegates to `AbilityHelper`; `SplitEffect` to `SpawnHelper`, `MobHurtTrigger` to `AbilityHelper.reflectThorns` and `HurtTriggerHelper.register`.
 
 ## [2.7.1] - 2026-08-02
 

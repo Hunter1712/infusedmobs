@@ -4,13 +4,10 @@ import io.github.hunter1712.infusedmobs.ability.effect.SplitEffect;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.util.AbilityHelper;
 
-import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
@@ -51,13 +48,13 @@ public final class AbilityRegistry {
     public static void registerAll() {
         // ---- HURT abilities (fire when the mob hits a player — melee or projectile) ----
 
-        registerHurtEffect("bane",     "Bane",     MobEffects.POISON);
+        registerHurtEffect("bane",     "Bane",     AbilityHelper.poison());
         registerHurtEffect("chill",    "Chill",    AbilityHelper.slowness());
-        registerHurtEffect("decay",    "Decay",    MobEffects.WITHER);
-        registerHurtEffect("hex",      "Hex",      MobEffects.WEAKNESS);
+        registerHurtEffect("decay",    "Decay",    AbilityHelper.wither());
+        registerHurtEffect("hex",      "Hex",      AbilityHelper.weakness());
 
         all("hellfire", "Hellfire", TriggerType.HURT, (mob, target, damage) ->
-                target.igniteForSeconds(ModConfig.get().infernoFireSeconds()));
+                AbilityHelper.ignite(target, ModConfig.get().infernoFireSeconds()));
 
         all("siphon", "Siphon", TriggerType.HURT, (mob, target, damage) -> {
             if (damage > 0) mob.heal(damage);
@@ -70,7 +67,7 @@ public final class AbilityRegistry {
         registerTickEffect("ward",    "Ward",    AbilityHelper.resistance());
         registerTickEffect("frenzy",   "Frenzy",  AbilityHelper.strength());
         registerTickEffect("wraith",   "Wraith",  AbilityHelper.speed());
-        registerTickEffect("blight",   "Blight",  MobEffects.REGENERATION);
+        registerTickEffect("blight",   "Blight",  AbilityHelper.regeneration());
 
         // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
         all("thorns", "Thorns", TriggerType.TICK, (mob, target, damage) -> {});
@@ -103,10 +100,12 @@ public final class AbilityRegistry {
     /**
      * Registers a HURT ability that applies a status effect to the target.
      * Duration/amplifier are read from config at fire time.
-     * Delegates to version shim {@link AbilityHelper} so 1.20.1's raw
-     * {@code MobEffect} vs 26.2's {@code Holder<MobEffect>} is hidden.
+     * The effect handle is version-neutral (see {@link AbilityHelper}):
+     * 26.2/1.21.1 pass {@code Holder<MobEffect>}, 1.20.1 passes raw
+     * {@code MobEffect} — always obtained from an {@code AbilityHelper}
+     * accessor, never from {@code MobEffects} directly.
      */
-    private static void registerHurtEffect(String id, String name, Holder<MobEffect> effect) {
+    private static void registerHurtEffect(String id, String name, Object effect) {
         all(id, name, TriggerType.HURT, (mob, target, damage) ->
                 AbilityHelper.applyHurtEffect(target, effect,
                         ModConfig.get().hurtEffectDuration(),
@@ -117,7 +116,7 @@ public final class AbilityRegistry {
      * Registers a TICK ability that applies a status effect to the mob itself.
      * Duration/amplifier are read from config at fire time.
      */
-    private static void registerTickEffect(String id, String name, Holder<MobEffect> effect) {
+    private static void registerTickEffect(String id, String name, Object effect) {
         all(id, name, TriggerType.TICK, (mob, target, damage) ->
                 AbilityHelper.applyTickEffect(mob, effect,
                         ModConfig.get().tickEffectDuration(),
