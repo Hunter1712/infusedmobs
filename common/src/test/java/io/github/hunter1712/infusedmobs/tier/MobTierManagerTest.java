@@ -57,41 +57,64 @@ class MobTierManagerTest {
     }
 
     @Test
-    void netherOnlyScenarioAllowsOnlyNether() {
-        // Canonical nether-only: blacklist overworld + end, allow nether (spec #4 story 10, #6 acceptance).
-        var cfg = ModConfig.Instance.defaults()
+    void worldBlacklistBlocksOnlyListedDimensions() {
+        // World Blacklist is per-dimension (CONTEXT.md: World Blacklist); Gamerule Gate is per-world (CONTEXT.md: Gamerule Gate).
+        // Nether-only (blacklist overworld+end) is one example; logic is generic for any dimension id, including modded.
+        var vanillaCfg = ModConfig.Instance.defaults()
                 .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
 
-        assertTrue(cfg.isWorldBlacklisted("minecraft:overworld"));
-        assertTrue(cfg.isWorldBlacklisted("minecraft:the_end"));
-        assertTrue(!cfg.isWorldBlacklisted("minecraft:the_nether"));
+        assertTrue(vanillaCfg.isWorldBlacklisted("minecraft:overworld"));
+        assertTrue(vanillaCfg.isWorldBlacklisted("minecraft:the_end"));
+        assertTrue(!vanillaCfg.isWorldBlacklisted("minecraft:the_nether"));
 
         assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
-                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:overworld"), Boolean.TRUE));
+                MobTierManager.canInfuse(vanillaCfg.isWorldBlacklisted("minecraft:overworld"), Boolean.TRUE));
         assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
-                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:the_end"), Boolean.TRUE));
+                MobTierManager.canInfuse(vanillaCfg.isWorldBlacklisted("minecraft:the_end"), Boolean.TRUE));
         assertEquals(MobTierManager.InfuseStatus.ACTIVE,
-                MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:the_nether"), Boolean.TRUE));
+                MobTierManager.canInfuse(vanillaCfg.isWorldBlacklisted("minecraft:the_nether"), Boolean.TRUE));
+
+        // Modded dimension: same per-dimension semantics (e.g. twilightforest, aether)
+        var moddedCfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("twilightforest:twilight_forest"));
+        assertTrue(moddedCfg.isWorldBlacklisted("twilightforest:twilight_forest"));
+        assertTrue(!moddedCfg.isWorldBlacklisted("minecraft:overworld"));
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(moddedCfg.isWorldBlacklisted("twilightforest:twilight_forest"), Boolean.TRUE));
+        assertEquals(MobTierManager.InfuseStatus.ACTIVE,
+                MobTierManager.canInfuse(moddedCfg.isWorldBlacklisted("minecraft:overworld"), Boolean.TRUE));
+        assertEquals(MobTierManager.InfuseStatus.ACTIVE,
+                MobTierManager.canInfuse(moddedCfg.isWorldBlacklisted("aether:the_aether"), Boolean.TRUE));
     }
 
     @Test
-    void netherOnlyScenarioBlacklistDominatesEvenWhenGameruleTrue() {
+    void worldBlacklistDominatesRegardlessOfGamerule() {
+        // World Blacklist (per-dimension) dominates even if Gamerule Gate (per-world) is true (spec story 12)
         var cfg = ModConfig.Instance.defaults()
-                .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
-        // Blacklist wins even if gamerule true (spec story 12)
+                .withWorldBlacklist(List.of("minecraft:overworld", "twilightforest:twilight_forest"));
         assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
                 MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:overworld"), Boolean.TRUE));
         assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
                 MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:overworld"), Boolean.FALSE));
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("twilightforest:twilight_forest"), Boolean.TRUE));
+        assertEquals(MobTierManager.InfuseStatus.WORLD_BLACKLISTED,
+                MobTierManager.canInfuse(cfg.isWorldBlacklisted("twilightforest:twilight_forest"), null));
     }
 
     @Test
-    void gameruleOffDisablesNetherEvenWhenNotBlacklisted() {
+    void gameruleGateOffDisablesAllNonBlacklistedDimensions() {
+        // Gamerule Gate is per-world (not per-dimension); when off, any non-blacklisted dimension is RULE_DISABLED (spec story 11: !blacklisted && gamerule)
         var cfg = ModConfig.Instance.defaults()
                 .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
-        // Nether is not blacklisted but gamerule off → RULE_DISABLED (spec story 11: !blacklisted && gamerule)
         assertEquals(MobTierManager.InfuseStatus.RULE_DISABLED,
                 MobTierManager.canInfuse(cfg.isWorldBlacklisted("minecraft:the_nether"), Boolean.FALSE));
+        var moddedCfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("minecraft:overworld"));
+        assertEquals(MobTierManager.InfuseStatus.RULE_DISABLED,
+                MobTierManager.canInfuse(moddedCfg.isWorldBlacklisted("twilightforest:twilight_forest"), Boolean.FALSE));
+        assertEquals(MobTierManager.InfuseStatus.RULE_DISABLED,
+                MobTierManager.canInfuse(moddedCfg.isWorldBlacklisted("aether:the_aether"), Boolean.FALSE));
     }
 
     // ========================================
