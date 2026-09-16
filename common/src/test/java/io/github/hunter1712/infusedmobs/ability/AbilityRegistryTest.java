@@ -21,10 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(IsolatedState.class)
 class AbilityRegistryTest {
 
-    private static final AbilityEffect NOOP = (mob, target, damage) -> {};
-
     private static void register(String id, TriggerType trigger) {
-        AbilityRegistry.all(id, id, trigger, NOOP);
+        TestAbilities.register(id, trigger);
     }
 
     // ========================================
@@ -133,5 +131,29 @@ class AbilityRegistryTest {
 
         List<Ability> result = AbilityRegistry.getRandomAbilities(1, "rupture");
         assertTrue(result.isEmpty());
+    }
+
+    // ========================================
+    // Id lookup order contract (#14)
+    // ========================================
+
+    @Test
+    void getAbilitiesByIdsPreservesInputOrder() {
+        register("bane", TriggerType.HURT);
+        register("chill", TriggerType.HURT);
+        register("ward", TriggerType.TICK);
+
+        List<Ability> result = AbilityRegistry.getAbilitiesByIds(List.of("ward", "bane"));
+
+        assertEquals(List.of("ward", "bane"), result.stream().map(Ability::id).toList());
+    }
+
+    @Test
+    void getAbilitiesByIdsSkipsUnknownIds() {
+        register("bane", TriggerType.HURT);
+
+        List<Ability> result = AbilityRegistry.getAbilitiesByIds(List.of("bane", "nope", "ward"));
+
+        assertEquals(List.of("bane"), result.stream().map(Ability::id).toList());
     }
 }

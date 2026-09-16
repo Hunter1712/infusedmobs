@@ -42,4 +42,22 @@ class AbilitySuggestionsTest {
     void noMatchesYieldsEmpty() {
         assertTrue(AbilitySuggestions.nextWords("zzz", false, IDS).isEmpty());
     }
+
+    @Test
+    void trailingSpaceMatchesByTokenNotSubstring() {
+        List<String> ids = List.of("bane", "an", "ward");
+
+        List<String> result = AbilitySuggestions.nextWords("bane ", true, ids);
+
+        assertEquals(List.of("bane an", "bane ward"), result);
+    }
+
+    @Test
+    void partialWordSuggestsExactTokenEvenWhenSubstringOfPicked() {
+        List<String> ids = List.of("bane", "an");
+
+        List<String> result = AbilitySuggestions.nextWords("bane an", false, ids);
+
+        assertEquals(List.of("bane an"), result);
+    }
 }

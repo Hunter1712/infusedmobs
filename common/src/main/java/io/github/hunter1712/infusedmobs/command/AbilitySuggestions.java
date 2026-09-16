@@ -9,7 +9,9 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.commands.CommandSourceStack;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -67,11 +69,13 @@ public final class AbilitySuggestions {
             return result;
         }
 
+        Set<String> picked = Set.copyOf(new HashSet<>(List.of(fullValue.split("\\s+"))));
+
         // User finished a word and pressed space — suggest the next unused ability
         if (hasTrailingSpace) {
             String prefix = fullValue + " ";
             for (String id : allIds) {
-                if (!fullValue.contains(id)) {
+                if (!picked.contains(id)) {
                     result.add(prefix + id);
                 }
             }
@@ -85,7 +89,7 @@ public final class AbilitySuggestions {
 
         // Only suggest when the current segment matches the start of an ability ID
         for (String id : allIds) {
-            if (fullValue.contains(id)) continue; // already picked
+            if (picked.contains(id) && !id.equals(currentWord)) continue; // already picked
             if (id.startsWith(currentWord)) {
                 result.add(prefix + id);
             }
