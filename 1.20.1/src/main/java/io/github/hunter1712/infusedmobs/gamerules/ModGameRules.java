@@ -18,7 +18,7 @@ import net.minecraft.world.level.GameRules;
  *       nametags) and summoning is refused.</li>
  * </ul>
  * The rule is combined with the config blacklist by
- * {@link io.github.hunter1712.infusedmobs.tier.MobTierManager#canInfuse}.
+ * {@link io.github.hunter1712.infusedmobs.tier.InfusionGate#status}.
  * <p>
  * 1.20.1 uses the legacy {@code GameRules} API ({@code Key}/{@code Type})
  * with Fabric's {@code GameRuleRegistry.register} — the same shape as

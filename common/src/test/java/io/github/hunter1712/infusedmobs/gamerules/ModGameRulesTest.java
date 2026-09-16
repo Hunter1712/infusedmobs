@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * These tests never touch Minecraft state — they verify only the
  * stored-vs-default fallback. The blacklist+rule composition lives in
- * {@link io.github.hunter1712.infusedmobs.tier.MobTierManager#canInfuse}
- * and is covered by {@code MobTierManagerTest}.
+ * {@link io.github.hunter1712.infusedmobs.tier.InfusionGate#status}
+ * and is covered by {@code InfusionGateTest}.
  */
 class ModGameRulesTest {
 

@@ -28,7 +28,7 @@ import net.minecraft.world.flag.FeatureFlagSet;
  *       nametags) and summoning is refused.</li>
  * </ul>
  * The rule is combined with the config blacklist by
- * {@link io.github.hunter1712.infusedmobs.tier.MobTierManager#canInfuse}.
+ * {@link io.github.hunter1712.infusedmobs.tier.InfusionGate#status}.
  */
 public final class ModGameRules {
 

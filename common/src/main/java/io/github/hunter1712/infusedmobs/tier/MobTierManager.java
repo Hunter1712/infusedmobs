@@ -2,74 +2,35 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
-import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
-import io.github.hunter1712.infusedmobs.gamerules.ModGameRules;
 
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
- * Manages per-mob tier assignments and ability tracking.
+ * Rolls Tiers for hostile mobs and restores persisted rolls on reload.
  * <p>
- * Each hostile mob can be assigned a tier on spawn, which grants it
+ * Each hostile mob can be assigned a Tier on spawn, which grants it
  * a random subset of abilities and stat multipliers. The full roll
- * (tier, abilities, or split-copy status) is persisted via
+ * (Tier, abilities, or split-copy status) is persisted via
  * {@link TierSavedData} and restored exactly on world/chunk reloads.
- * Tracking is cleaned up when the mob dies.
+ * <p>
+ * Gating decisions live in {@link InfusionGate} and in-memory tracking plus
+ * nametag presentation in {@link InfusedTracker}; this module coordinates
+ * rolls, persistence and health between them. Tracking is cleaned up when
+ * the mob dies.
  */
 public final class MobTierManager {
-
-    private static final Map<UUID, InfusedMob> INFUSED = new HashMap<>();
 
     private static final float SPLIT_HEALTH_FRACTION = 0.6f;
 
     private MobTierManager() {}
-
-    /**
-     * Why the mod is (or isn't) active in a level — used by summon to give
-     * precise feedback and by assignment to gate infusion.
-     */
-    public enum InfuseStatus {
-        /** Mod active: not blacklisted and the {@code infusedmobs:enabled} rule is on. */
-        ACTIVE,
-        /** The level's dimension is on the config blacklist. */
-        WORLD_BLACKLISTED,
-        /** The {@code infusedmobs:enabled} gamerule is off. */
-        RULE_DISABLED
-    }
-
-    // ========================================
-    // Infusion gating
-    // ========================================
-
-    /** Status of the mod in the given level. */
-    public static InfuseStatus canInfuse(ServerLevel level) {
-        if (ModConfig.get().isWorldBlacklisted(DimensionHelper.getId(level))) return InfuseStatus.WORLD_BLACKLISTED;
-        if (!ModGameRules.isEnabled(level.getServer())) return InfuseStatus.RULE_DISABLED;
-        return InfuseStatus.ACTIVE;
-    }
-
-    /** Pure decision helper — unit-testable without Minecraft bootstrap. */
-    static InfuseStatus canInfuse(boolean worldBlacklisted, Boolean storedEnabled) {
-        if (worldBlacklisted) return InfuseStatus.WORLD_BLACKLISTED;
-        if (!ModGameRules.resolveRule(storedEnabled, ModGameRules.defaultValue())) {
-            return InfuseStatus.RULE_DISABLED;
-        }
-        return InfuseStatus.ACTIVE;
-    }
 
     // ========================================
     // Tier assignment
@@ -93,8 +54,8 @@ public final class MobTierManager {
     public static void assignTier(Mob mob) {
         if (!(mob.level() instanceof ServerLevel serverLevel)) return;
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
-        if (canInfuse(serverLevel) != InfuseStatus.ACTIVE) return;
-        if (INFUSED.containsKey(mob.getUUID())) return;  // Already assigned — prevents stacking
+        if (InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) return;
+        if (InfusedTracker.find(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
 
         TierSavedData savedData = TierSavedData.get(serverLevel);
         UUID uuid = mob.getUUID();
@@ -113,11 +74,11 @@ public final class MobTierManager {
             if (!(mob.getRandom().nextDouble() < tc.spawnChance())) continue;
 
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(tc.abilityCount());
-            INFUSED.put(uuid, InfusedMob.tiered(tier, abilities));
+            InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
             savedData.setRolled(uuid, new Rolled.Tiered(tier, idsOf(abilities)));
 
             applyHealthMultiplier(mob, tc);
-            setTierNametag(mob, tier, abilities);
+            InfusedTracker.setTierNametag(mob, tier, abilities);
             return;
         }
 
@@ -138,20 +99,20 @@ public final class MobTierManager {
      * <p>
      * Returns {@code false} (without modifying the mob) if the mod is
      * inactive in the mob's level. The summon command checks this beforehand
-     * via {@link #canInfuse(ServerLevel)} and shows a clear failure message,
+     * via {@link InfusionGate#status(ServerLevel)} and shows a clear failure message,
      * but this guard protects against any future callers.
      */
     public static boolean assignSpecificTier(Mob mob, MobTier tier, List<Ability> abilities) {
         ServerLevel serverLevel = mob.level() instanceof ServerLevel sl ? sl : null;
-        if (serverLevel != null && canInfuse(serverLevel) != InfuseStatus.ACTIVE) {
+        if (serverLevel != null && InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) {
             return false;
         }
         UUID uuid = mob.getUUID();
-        INFUSED.put(uuid, InfusedMob.tiered(tier, abilities));
+        InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
 
         ModConfig.TierConfig tc = ModConfig.get().forTier(tier);
         applyHealthMultiplier(mob, tc);
-        setTierNametag(mob, tier, abilities);
+        InfusedTracker.setTierNametag(mob, tier, abilities);
 
         if (serverLevel != null) {
             TierSavedData.get(serverLevel)
@@ -173,19 +134,19 @@ public final class MobTierManager {
 
     private static void restoreTiered(Mob mob, UUID uuid, Rolled.Tiered t) {
         List<Ability> abilities = resolveAbilities(t.abilityIds());
-        INFUSED.put(uuid, InfusedMob.tiered(t.tier(), abilities));
+        InfusedTracker.track(uuid, InfusedMob.tiered(t.tier(), abilities));
         ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
         applyHealthMultiplier(mob, tc);
-        setTierNametag(mob, t.tier(), abilities);
+        InfusedTracker.setTierNametag(mob, t.tier(), abilities);
     }
 
     private static void restoreSplit(Mob mob, UUID uuid, Rolled.Split s) {
         List<Ability> abilities = resolveAbilities(s.abilityIds());
-        INFUSED.put(uuid, InfusedMob.split(abilities));
+        InfusedTracker.track(uuid, InfusedMob.split(abilities));
         // Re-apply the Cinder HP boost — otherwise a chunk reload
         // silently deflates the copy back to vanilla max health.
         applyCinderStats(mob);
-        setSplitCopyNametag(mob, abilities);
+        InfusedTracker.setSplitCopyNametag(mob, abilities);
     }
 
     private static List<Ability> resolveAbilities(List<String> ids) {
@@ -230,12 +191,12 @@ public final class MobTierManager {
 
         List<Ability> abilities = AbilityRegistry.getRandomAbilities(1, "rupture");
 
-        INFUSED.put(copy.getUUID(), InfusedMob.split(abilities));
+        InfusedTracker.track(copy.getUUID(), InfusedMob.split(abilities));
         if (copy.level() instanceof ServerLevel serverLevel) {
             TierSavedData.get(serverLevel)
                     .setRolled(copy.getUUID(), new Rolled.Split(idsOf(abilities)));
         }
-        setSplitCopyNametag(copy, abilities);
+        InfusedTracker.setSplitCopyNametag(copy, abilities);
     }
 
     /** Applies the Cinder health multiplier and sets the copy to 60% of its boosted max. */
@@ -249,134 +210,17 @@ public final class MobTierManager {
     }
 
     // ========================================
-    // Queries
-    // ========================================
-
-    /** Returns the tier assigned to this mob, or null (split copy / untracked). */
-    public static MobTier getTier(Mob mob) {
-        InfusedMob infused = INFUSED.get(mob.getUUID());
-        return infused == null ? null : extractTier(infused);
-    }
-
-    private static MobTier extractTier(InfusedMob infused) {
-        if (infused instanceof InfusedMob.TieredMob t) return t.tier();
-        return null; // SplitCopyMob and future variants have no tier
-    }
-
-    /** Returns abilities assigned to this mob matching the given trigger type. */
-    public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
-        InfusedMob infused = INFUSED.get(mob.getUUID());
-        return infused == null ? List.of() : infused.forTrigger(trigger);
-    }
-
-    /** Returns all abilities assigned to this mob (empty list if none). */
-    public static List<Ability> getAllAbilities(Mob mob) {
-        InfusedMob infused = INFUSED.get(mob.getUUID());
-        return infused == null ? List.of() : infused.abilities();
-    }
-
-    /** Returns true if this mob has an ability with the given id. */
-    public static boolean hasAbility(Mob mob, String id) {
-        InfusedMob infused = INFUSED.get(mob.getUUID());
-        if (infused == null) return false;
-        for (Ability ability : infused.abilities()) {
-            if (ability.id().equals(id)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns the UUIDs of tracked mobs that have at least one TICK ability.
-     * Used by {@link io.github.hunter1712.infusedmobs.ability.trigger.MobTickTrigger}
-     * to iterate only the mobs it can actually affect.
-     * <p>
-     * Returns a snapshot so concurrent removal during iteration (mob death
-     * mid-scan) cannot throw a {@code ConcurrentModificationException}.
-     */
-    public static Set<UUID> getTickMobUUIDs() {
-        return INFUSED.entrySet().stream()
-                .filter(e -> !e.getValue().forTrigger(TriggerType.TICK).isEmpty())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-    }
-
-    // ========================================
     // Cleanup
     // ========================================
 
     /** Removes all tracking for this mob (called on death or despawn). */
     public static void removeMob(Mob mob) {
         UUID uuid = mob.getUUID();
-        INFUSED.remove(uuid);
+        InfusedTracker.untrack(uuid);
 
         // Clean up persistent state so it doesn't grow unboundedly
         if (mob.level() instanceof ServerLevel serverLevel) {
             TierSavedData.get(serverLevel).remove(uuid);
-        }
-    }
-
-    // ========================================
-    // Nametag helpers
-    // ========================================
-
-    private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
-        setNametag(mob, tier.colourCode(), abilities);
-    }
-
-    private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
-        setNametag(mob, "§7", abilities);
-    }
-
-    private static void applyNametagForInfused(Mob mob, InfusedMob infused) {
-        if (infused instanceof InfusedMob.TieredMob t) {
-            setTierNametag(mob, t.tier(), t.abilities());
-        } else if (infused instanceof InfusedMob.SplitCopyMob s) {
-            setSplitCopyNametag(mob, s.abilities());
-        }
-    }
-
-    private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
-        if (!ModConfig.get().showNametags()) return;
-        String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
-        // Use the entity type name (e.g. "Parched") rather than getName(),
-        // which would return any previously-set custom name and cause duplication.
-        String entityName = mob.getType().getDescription().getString();
-        mob.setCustomName(Component.literal(colour + abilityList + " §f" + entityName));
-        mob.setCustomNameVisible(true);
-    }
-
-    /**
-     * Looks up a mob by UUID across all loaded server levels.
-     * Returns null if the mob is not found or dead.
-     */
-    public static Mob findMob(MinecraftServer server, UUID uuid) {
-        for (ServerLevel level : server.getAllLevels()) {
-            if (level.getEntity(uuid) instanceof Mob mob && mob.isAlive()) {
-                return mob;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Applies or removes nametags for all tracked mobs based on the
-     * current {@link ModConfig.Instance#showNametags()} setting.
-     * Called when the toggle changes via command.
-     */
-    public static void refreshNametags(MinecraftServer server) {
-        boolean show = ModConfig.get().showNametags();
-        for (Map.Entry<UUID, InfusedMob> entry : INFUSED.entrySet()) {
-            Mob mob = findMob(server, entry.getKey());
-            if (mob == null) continue;
-            InfusedMob infused = entry.getValue();
-
-            if (show) {
-                if (infused.abilities().isEmpty()) continue;
-                applyNametagForInfused(mob, infused);
-            } else {
-                mob.setCustomName(null);
-                mob.setCustomNameVisible(false);
-            }
         }
     }
 }
