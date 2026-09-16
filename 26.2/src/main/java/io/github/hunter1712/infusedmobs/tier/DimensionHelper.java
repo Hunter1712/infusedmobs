@@ -5,8 +5,8 @@ import net.minecraft.server.level.ServerLevel;
 /**
  * Version shim for dimension accessor.
  * <p>
- * 26.2 uses {@code ResourceKey#identifier()} (Identifier) while 1.20.1 uses
- * {@code ResourceKey#location()} (ResourceLocation). This shim isolates the
+ * 26.2 uses {@code ResourceKey#identifier()} (Identifier) while 1.21.1 and
+ * 1.20.1 use {@code ResourceKey#location()} (ResourceLocation). This shim isolates the
  * difference so {@link MobTierManager} can stay in common.
  */
 public final class DimensionHelper {

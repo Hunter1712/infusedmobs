@@ -8,8 +8,8 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
  * (Bane, Thorns, …) are driven by {@code ALLOW_DAMAGE} instead, adapted
  * to {@link MobHurtTrigger.HurtHandler}.
  * <p>
- * Known divergences from the newer versions, owned by #9 (remaining
- * shims — exact trigger parity):
+ * Accepted divergences from the newer versions (exact parity is impossible
+ * without the post-mitigation event):
  * <ul>
  *   <li>the amount is pre-mitigation (armour/enchantments not yet applied),
  *       which marginally affects Siphon healing and Thorns reflection;</li>
