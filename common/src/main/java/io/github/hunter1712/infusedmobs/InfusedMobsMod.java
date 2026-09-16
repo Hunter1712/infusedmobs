@@ -7,6 +7,8 @@ import io.github.hunter1712.infusedmobs.ability.trigger.MobTickTrigger;
 import io.github.hunter1712.infusedmobs.command.InfusedMobsCommand;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.gamerules.ModGameRules;
+import io.github.hunter1712.infusedmobs.platform.Platform;
+import io.github.hunter1712.infusedmobs.platform.VersionPlatform;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.fabricmc.api.ModInitializer;
@@ -25,6 +27,7 @@ public class InfusedMobsMod implements ModInitializer {
     public void onInitialize() {
         LOGGER.info("InfusedMobs initializing...");
 
+        Platform.setProvider(new VersionPlatform());
         ModConfig.load();
         ModGameRules.register();
         AbilityRegistry.registerAll();

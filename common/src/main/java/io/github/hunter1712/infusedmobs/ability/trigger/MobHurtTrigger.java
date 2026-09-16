@@ -2,9 +2,8 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
-
-import io.github.hunter1712.infusedmobs.util.AbilityHelper;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -37,9 +36,8 @@ public final class MobHurtTrigger {
     private MobHurtTrigger() {}
 
     /**
-     * Version-neutral HURT callback. Mirrors Fabric's
-     * {@code ServerLivingEntityEvents.AfterDamage} shape so every overlay
-     * can adapt its own damage event to it — see {@link HurtTriggerHelper}.
+     * Version-neutral HURT callback. Mirrors Fabric's post-damage shape so
+     * every adapter can forward its own damage event to it.
      */
     public interface HurtHandler {
         void onHurt(LivingEntity entity, DamageSource source,
@@ -47,7 +45,7 @@ public final class MobHurtTrigger {
     }
 
     public static void register() {
-        HurtTriggerHelper.register(MobHurtTrigger::onAfterDamage);
+        Platform.hooks().registerHurtTrigger(MobHurtTrigger::onAfterDamage);
     }
 
     static void onAfterDamage(
@@ -71,7 +69,7 @@ public final class MobHurtTrigger {
 
         float reflected = damageTaken * THORNS_REFLECT_FRACTION;
         if (reflected > 0.0f && mob.level() instanceof ServerLevel level) {
-            AbilityHelper.reflectThorns(player, mob, reflected, level);
+            Platform.hooks().reflectThorns(player, mob, reflected, level);
         }
     }
 

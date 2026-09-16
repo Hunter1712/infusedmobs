@@ -3,7 +3,7 @@ package io.github.hunter1712.infusedmobs.command;
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
-import io.github.hunter1712.infusedmobs.tier.DimensionHelper;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.InfusionGate;
 import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
@@ -60,7 +60,7 @@ public final class InfusedMobsCommand {
 
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
         dispatcher.register(Commands.literal("infusedmobs")
-                .requires(CommandArgHelper.gamemaster())
+                .requires(Platform.hooks().gamemasterPermission())
 
                 // --- help ---
                 .then(Commands.literal("help")
@@ -77,11 +77,11 @@ public final class InfusedMobsCommand {
                 // --- world ---
                 .then(Commands.literal("world")
                         .then(Commands.literal("add")
-                                .then(CommandArgHelper.worldId("world")
+                                .then(Platform.hooks().worldIdArgument("world")
                                         .suggests(InfusedMobsCommand::suggestWorldIds)
                                         .executes(InfusedMobsCommand::worldAdd)))
                         .then(Commands.literal("remove")
-                                .then(CommandArgHelper.worldId("world")
+                                .then(Platform.hooks().worldIdArgument("world")
                                         .suggests(InfusedMobsCommand::suggestWorldIds)
                                         .executes(InfusedMobsCommand::worldRemove)))
                         .then(Commands.literal("list")
@@ -113,7 +113,7 @@ public final class InfusedMobsCommand {
                                         .suggests((ctx, builder) -> {
                                             for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
                                                 if (isInfusable(type)) {
-                                                    String key = CommandArgHelper.entityKey(type);
+                                                    String key = Platform.hooks().entityKey(type);
                                                     if (key != null) {
                                                         builder.suggest(key);
                                                     }
@@ -209,7 +209,7 @@ public final class InfusedMobsCommand {
     /** Adds a world to the blacklist and persists. */
     private static int worldAdd(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        String worldId = CommandArgHelper.getWorldId(ctx, "world");
+        String worldId = Platform.hooks().worldIdFromCommand(ctx, "world");
 
         ModConfig.Instance current = ModConfig.get();
         if (current.isWorldBlacklisted(worldId)) {
@@ -231,7 +231,7 @@ public final class InfusedMobsCommand {
     /** Removes a world from the blacklist and persists. */
     private static int worldRemove(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        String worldId = CommandArgHelper.getWorldId(ctx, "world");
+        String worldId = Platform.hooks().worldIdFromCommand(ctx, "world");
 
         ModConfig.Instance current = ModConfig.get();
         if (!current.isWorldBlacklisted(worldId)) {
@@ -275,12 +275,12 @@ public final class InfusedMobsCommand {
         CommandSourceStack source = ctx.getSource();
 
         // Always suggest the world the caller is standing in first.
-        String currentWorld = DimensionHelper.getId(source.getLevel());
+        String currentWorld = Platform.hooks().dimensionId(source.getLevel());
         builder.suggest(currentWorld);
 
         // Then suggest every other loaded level's dimension id.
         for (ServerLevel level : source.getServer().getAllLevels()) {
-            String id = DimensionHelper.getId(level);
+            String id = Platform.hooks().dimensionId(level);
             if (!id.equals(currentWorld)) {
                 builder.suggest(id);
             }
@@ -349,7 +349,7 @@ public final class InfusedMobsCommand {
 
         // If entity is null (convenience overload), default to zombie
         if (entityType == null) {
-            entityType = CommandArgHelper.defaultEntity();
+            entityType = Platform.hooks().defaultEntity();
             if (entityType == null) {
                 source.sendFailure(Component.literal("§cDefault entity (zombie) is missing from the registry."));
                 return 0;
@@ -366,7 +366,7 @@ public final class InfusedMobsCommand {
                 source.sendFailure(Component.literal(
                         "§cThis world is on the infused-mobs blacklist. "
                                 + "Remove it with §f/infusedmobs world remove "
-                                + DimensionHelper.getId(level) + "§c to summon here."));
+                                + Platform.hooks().dimensionId(level) + "§c to summon here."));
                 return 0;
             }
             case RULE_DISABLED -> {
@@ -378,7 +378,7 @@ public final class InfusedMobsCommand {
             case ACTIVE -> { /* proceed */ }
         }
 
-        Entity raw = CommandArgHelper.createForCommand(entityType, level);
+        Entity raw = Platform.hooks().spawnForCommand(entityType, level);
         if (!(raw instanceof Mob mob)) {
             source.sendFailure(Component.literal(
                     "§c" + entityType.getDescription().getString() + " is not a mob."));
@@ -449,7 +449,7 @@ public final class InfusedMobsCommand {
         int count = 0;
         for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
             if (isInfusable(type)) {
-                String key = CommandArgHelper.entityKey(type);
+                String key = Platform.hooks().entityKey(type);
                 if (key != null) {
                     if (count > 0) sb.append("§7, ");
                     sb.append(key);

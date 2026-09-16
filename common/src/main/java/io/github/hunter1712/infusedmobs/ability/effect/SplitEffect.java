@@ -1,8 +1,7 @@
 package io.github.hunter1712.infusedmobs.ability.effect;
 
+import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
-
-import io.github.hunter1712.infusedmobs.util.SpawnHelper;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -33,7 +32,7 @@ public final class SplitEffect {
 
         EntityType<?> type = mob.getType();
         for (int i = 0; i < COPY_COUNT; i++) {
-            Entity raw = SpawnHelper.create(type, level);
+            Entity raw = Platform.hooks().spawnEntity(type, level);
             if (raw instanceof Mob copy) {
                 placeCopy(copy, mob, i);
                 // Registers the copy (split-copy entry) BEFORE it enters the
