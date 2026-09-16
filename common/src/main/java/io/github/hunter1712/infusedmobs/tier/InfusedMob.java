@@ -8,7 +8,7 @@ import java.util.EnumMap;
 import java.util.List;
 
 /**
- * Immutable per-mob infused state, mirroring {@link TierSavedData.Rolled}
+ * Immutable per-mob infused state, mirroring {@link Rolled}
  * with abilities resolved to live objects and pre-indexed by trigger.
  * Split copies are a distinct variant — no null-tier polymorphism.
  */

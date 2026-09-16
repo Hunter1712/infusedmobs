@@ -11,7 +11,6 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 
 import net.minecraft.server.level.ServerLevel;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,60 +27,35 @@ import java.util.UUID;
 public final class TierSavedData extends SavedData {
 
     /**
-     * The immutable result of a mob's roll — the persisted source of truth.
-     * <ul>
-     *   <li>{@link Tiered} — the mob rolled a tier; abilities are stored by id
-     *       so the exact set is restored (no re-roll on reload).</li>
-     *   <li>{@link Split} — a Rupture split copy; its own distinct variant so
-     *       it is never re-rolled into a regular tiered mob (which could gain
-     *       DEATH abilities and recurse).</li>
-     *   <li>{@link Nothing} — the mob rolled nothing and must never roll again.</li>
-     * </ul>
+     * DTO bridging the shared {@link Rolled} model to a flat serialisable
+     * record ({@code kind} discriminates the variants). The wire rules live
+     * in {@link Rolled#decode} and the {@code kindOf}/{@code tierOf}/
+     * {@code abilityIdsOf} helpers — this record is only codec plumbing.
      */
-    public sealed interface Rolled {
+    record DTO(String kind, MobTier tier, List<String> abilityIds) {
 
-        record Tiered(MobTier tier, List<String> abilityIds) implements Rolled {}
-
-        record Split(List<String> abilityIds) implements Rolled {}
-
-        record Nothing() implements Rolled {}
-
-        /**
-         * DTO bridging the sealed interface to a flat serialisable record
-         * ({@code kind} discriminates the variants).
-         */
-        record DTO(String kind, MobTier tier, List<String> abilityIds) {
-
-            static DTO fromRolled(Rolled rolled) {
-                if (rolled instanceof Tiered t) {
-                    return new DTO("tiered", t.tier(), t.abilityIds());
-                } else if (rolled instanceof Split s) {
-                    return new DTO("split", null, s.abilityIds());
-                } else {
-                    return new DTO("nothing", null, List.of());
-                }
-            }
-
-            Rolled toRolled() {
-                return switch (kind) {
-                    // A null tier (corrupted save / unknown tier value) falls
-                    // back to Nothing rather than crashing or NPE-ing later.
-                    case "tiered" -> tier != null ? new Tiered(tier, abilityIds) : new Nothing();
-                    case "split" -> new Split(abilityIds);
-                    default -> new Nothing();
-                };
-            }
+        static DTO fromRolled(Rolled rolled) {
+            return new DTO(Rolled.kindOf(rolled), Rolled.tierOf(rolled), Rolled.abilityIdsOf(rolled));
         }
 
-        Codec<Rolled> CODEC = RecordCodecBuilder.<DTO>create(instance -> instance.group(
-                // Lenient: missing kind defaults to "nothing" (matches NBT shim which
-                // defaults missing kind to "" -> Nothing). Unknown kind also maps to
-                // Nothing via DTO.toRolled, so corrupted saves never fail world load.
+        Rolled toRolled() {
+            // A null tier (corrupted save / unknown tier value) degrades to
+            // Nothing inside Rolled.decode rather than crashing or NPE-ing later.
+            return Rolled.decode(kind, tier == null ? null : tier.name(), abilityIds);
+        }
+    }
+
+    /** Codec for a single roll, via the DTO bridge. */
+    public static final Codec<Rolled> ROLLED_CODEC = RecordCodecBuilder.<DTO>create(instance -> instance.group(
+                // Lenient: missing kind defaults to "nothing" (matching the NBT
+                // adapters, where a missing kind also decodes to Nothing).
+                // Unknown kind maps to Nothing via Rolled.decode, so corrupted
+                // saves never fail world load.
                 Codec.STRING.optionalFieldOf("kind", "nothing").forGetter(DTO::kind),
-                // Lenient tier: decoded as raw string then resolved via valueOf, so an
-                // unknown tier name falls back to null -> Nothing (matches NBT shim's
-                // try/catch). Using MobTier.CODEC directly would fail the whole decode
-                // on corrupted saves instead of degrading gracefully.
+                // Lenient tier: decoded as raw string then resolved in
+                // Rolled.decode, so an unknown tier name falls back to
+                // Nothing. Using MobTier.CODEC directly would fail the whole
+                // decode on corrupted saves instead of degrading gracefully.
                 Codec.STRING.optionalFieldOf("tier").forGetter(dto ->
                         Optional.ofNullable(dto.tier() == null ? null : dto.tier().name())),
                 Codec.STRING.listOf().optionalFieldOf("abilityIds", List.of()).forGetter(DTO::abilityIds)
@@ -96,15 +70,14 @@ public final class TierSavedData extends SavedData {
             }
             return new DTO(kind, tier, abilityIds);
         })).xmap(DTO::toRolled, DTO::fromRolled);
-    }
 
     static final Codec<TierSavedData> CODEC = RecordCodecBuilder.<TierSavedData>create(instance ->
             instance.group(
                     // Lenient: missing rolls defaults to empty (matches NBT shims which
                     // return an empty store when the tag is absent, e.g. fresh worlds).
-                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, Rolled.CODEC)
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, ROLLED_CODEC)
                             .optionalFieldOf("rolls", Map.of())
-                            .forGetter(d -> d.rolls)
+                            .forGetter(d -> d.store.snapshot())
             ).apply(instance, TierSavedData::new)
     );
 
@@ -115,16 +88,16 @@ public final class TierSavedData extends SavedData {
             DataFixTypes.LEVEL
     );
 
-    private final Map<UUID, Rolled> rolls;
+    private final TierRollStore store;
 
     /** Creates an empty store. */
     public TierSavedData() {
-        this(new HashMap<>());
+        this.store = new TierRollStore();
     }
 
     private TierSavedData(Map<UUID, Rolled> rolls) {
-        // Copy into a mutable map — the codec may produce immutable maps
-        this.rolls = new HashMap<>(rolls);
+        // Copy into a fresh store — the codec may produce immutable maps
+        this.store = new TierRollStore(rolls);
     }
 
     // ========================================
@@ -133,7 +106,7 @@ public final class TierSavedData extends SavedData {
 
     /** Returns the stored roll for this UUID, or null if never rolled. */
     public Rolled getRolled(UUID uuid) {
-        return rolls.get(uuid);
+        return store.get(uuid);
     }
 
     // ========================================
@@ -142,13 +115,13 @@ public final class TierSavedData extends SavedData {
 
     /** Records the roll result for this UUID. */
     public void setRolled(UUID uuid, Rolled rolled) {
-        rolls.put(uuid, rolled);
+        store.put(uuid, rolled);
         setDirty();
     }
 
     /** Removes all tracking for this UUID (called on mob death or despawn). */
     public void remove(UUID uuid) {
-        if (rolls.remove(uuid) != null) {
+        if (store.remove(uuid)) {
             setDirty();
         }
     }
