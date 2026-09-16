@@ -68,7 +68,8 @@ jobs:
         with:
           name: Artifacts-all
           path: |
-            common/build/libs/
-            26.2/build/libs/
-            1.21.1/build/libs/
-            1.20.1/build/libs/
+            26.2/build/libs/infusedmobs-*.jar
+            1.21.1/build/libs/infusedmobs-*.jar
+            1.20.1/build/libs/infusedmobs-*.jar
+            !**/*-sources.jar
+            !**/*-dev.jar

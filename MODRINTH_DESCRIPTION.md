@@ -150,9 +150,13 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 
 ## 🛡️ Compatibility
 
-| Mod Loader | Minecraft | Java | Fabric API |
-|------------|-----------|------|------------|
-| Fabric | 26.2 | 25+ | 0.155.2+ |
+One project page covers all supported versions — pick the file matching your game version (filtered by game version on Modrinth, versioned as `mod_version+mc`).
+
+| Mod Loader | Minecraft | Java | Fabric API | Jar |
+|------------|-----------|------|------------|-----|
+| Fabric | 1.20.1 | 17+ | 0.92.0+1.20.1 | `infusedmobs-<mod>+1.20.1.jar` |
+| Fabric | 1.21.1 | 21+ | 0.116.6+1.21.1 | `infusedmobs-<mod>+1.21.1.jar` |
+| Fabric | 26.2 | 25+ | 0.155.2+26.2 | `infusedmobs-<mod>+26.2.jar` |
 
 - **Client-side:** Required (for nametags)
 - **Server-side:** Required (all logic runs server-side)
@@ -163,9 +167,9 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 
 ## 📦 Installation
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) for Minecraft 26.2
-2. Install [Fabric API](https://modrinth.com/mod/fabric-api) (required)
-3. Drop `infusedmobs-2.7.1.jar` into your `mods` folder
+1. Install [Fabric Loader](https://fabricmc.net/use/) (0.19.3+) for your Minecraft version (1.20.1, 1.21.1 or 26.2)
+2. Install [Fabric API](https://modrinth.com/mod/fabric-api) matching your game version (see table above)
+3. From this single project page, download the file for your game version — e.g. `infusedmobs-2.7.1+1.20.1.jar`, `infusedmobs-2.7.1+1.21.1.jar` or `infusedmobs-2.7.1+26.2.jar` — into your `mods` folder
 4. Launch — config generates at `config/infusedmobs.json`
 
 ---
@@ -176,7 +180,7 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 - **Config-driven** — no code changes needed for balance tweaks
 - **Gamerule-driven** — the `infusedmobs:enabled` gamerule lets pack makers disable the mod per world at launch
 - **No hard dependencies** beyond Fabric API
-- **Tested on:** Fabric 0.19.3+, MC 26.2
+- **Tested on:** Fabric Loader 0.19.3+, MC 1.20.1 / 1.21.1 / 26.2
 
 ---
 
@@ -247,4 +251,4 @@ Modpack inclusion with credit is permitted; redistribution and derivatives requi
 
 ---
 
-*Made with ☕ for Fabric 26.2*
+*Made with ☕ for Fabric 1.20.1 / 1.21.1 / 26.2*

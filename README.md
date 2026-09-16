@@ -1,7 +1,10 @@
 # Infused Mobs
 
-A Fabric mod for Minecraft 26.2 that gives vanilla hostile mobs occult-infused
+A Fabric mod for Minecraft 1.20.1 / 1.21.1 / 26.2 that gives vanilla hostile mobs occult-infused
 tiers with randomized abilities — fully configurable via JSON.
+
+One project page covers all three versions — download `infusedmobs-<mod>+<mc>.jar` matching your game version
+(e.g. `infusedmobs-2.7.1+1.20.1.jar`, `infusedmobs-2.7.1+1.21.1.jar`, `infusedmobs-2.7.1+26.2.jar`).
 
 ## Tiers
 
