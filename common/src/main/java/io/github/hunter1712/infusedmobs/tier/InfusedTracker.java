@@ -53,8 +53,8 @@ public final class InfusedTracker {
         return TRACKED.remove(id) != null;
     }
 
-    /** Clears all tracking. Test-only — live code untracks per mob. */
-    static void clear() {
+    /** Clears all tracking. Test-only — live code untracks per mob. Public so shared test extensions can isolate state. */
+    public static void clear() {
         TRACKED.clear();
     }
 

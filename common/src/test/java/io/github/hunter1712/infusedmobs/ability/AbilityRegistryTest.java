@@ -1,8 +1,9 @@
 package io.github.hunter1712.infusedmobs.ability;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import io.github.hunter1712.infusedmobs.test.IsolatedState;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
@@ -17,19 +18,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@link #cleanup()} restores the empty-registry state for other test
  * classes that assume no abilities are registered.
  */
+@ExtendWith(IsolatedState.class)
 class AbilityRegistryTest {
 
     private static final AbilityEffect NOOP = (mob, target, damage) -> {};
-
-    @BeforeEach
-    void reset() {
-        AbilityRegistry.resetForTests();
-    }
-
-    @AfterEach
-    void cleanup() {
-        AbilityRegistry.resetForTests();
-    }
 
     private static void register(String id, TriggerType trigger) {
         AbilityRegistry.all(id, id, trigger, NOOP);

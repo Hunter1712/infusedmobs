@@ -152,8 +152,9 @@ public final class AbilityRegistry {
 
     /**
      * Test hook — clears the registered pool. Not for production use.
+     * Public so shared test extensions can isolate state without reflection.
      */
-    static void resetForTests() {
+    public static void resetForTests() {
         ALL_ABILITIES.clear();
         BY_ID.clear();
     }
