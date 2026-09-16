@@ -79,6 +79,10 @@ jar {
     }
 }
 
+sourcesJar {
+    archiveBaseName.set("infusedmobs")
+}
+
 publishing {
     publications {
         create("mavenJava", MavenPublication) {

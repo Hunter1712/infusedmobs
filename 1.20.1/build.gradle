@@ -83,6 +83,14 @@ remapJar {
     archiveBaseName.set("infusedmobs")
 }
 
+sourcesJar {
+    archiveBaseName.set("infusedmobs")
+}
+
+remapSourcesJar {
+    archiveBaseName.set("infusedmobs")
+}
+
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
