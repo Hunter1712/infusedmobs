@@ -248,6 +248,8 @@ class VersionShimParityTest {
     void commonHasNoVersionSpecificApiLeaks() throws Exception {
         List<String> commonFiles = List.of(
                 "io/github/hunter1712/infusedmobs/tier/MobTierManager.java",
+                "io/github/hunter1712/infusedmobs/tier/InfusionGate.java",
+                "io/github/hunter1712/infusedmobs/tier/InfusedTracker.java",
                 "io/github/hunter1712/infusedmobs/ability/AbilityRegistry.java",
                 "io/github/hunter1712/infusedmobs/ability/effect/SplitEffect.java",
                 "io/github/hunter1712/infusedmobs/ability/trigger/MobHurtTrigger.java",

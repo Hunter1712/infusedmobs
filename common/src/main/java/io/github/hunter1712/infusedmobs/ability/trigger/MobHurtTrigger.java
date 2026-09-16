@@ -2,7 +2,7 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
-import io.github.hunter1712.infusedmobs.tier.MobTierManager;
+import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
 
 import io.github.hunter1712.infusedmobs.util.AbilityHelper;
 
@@ -67,7 +67,7 @@ public final class MobHurtTrigger {
     /** Player hit a tiered mob that has Thorns — reflect a fraction back. */
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
         if (!(source.getEntity() instanceof Player player)) return;
-        if (!MobTierManager.hasAbility(mob, "thorns")) return;
+        if (!InfusedTracker.hasAbility(mob, "thorns")) return;
 
         float reflected = damageTaken * THORNS_REFLECT_FRACTION;
         if (reflected > 0.0f && mob.level() instanceof ServerLevel level) {
@@ -81,7 +81,7 @@ public final class MobHurtTrigger {
         if (mob == null) return;
         // Gate on abilities rather than tier so Rupture split copies
         // (which have no tier) still fire their HURT abilities.
-        if (MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT).isEmpty()) return;
+        if (InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.HURT).isEmpty()) return;
 
         fireHurtAbilities(mob, player, damageTaken);
     }
@@ -102,7 +102,7 @@ public final class MobHurtTrigger {
 
     /** Fires all HURT abilities for the mob, passing the damage amount through. */
     private static void fireHurtAbilities(Mob mob, Player player, float damageTaken) {
-        for (Ability ability : MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT)) {
+        for (Ability ability : InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.HURT)) {
             ability.effect().apply(mob, player, damageTaken);
         }
     }

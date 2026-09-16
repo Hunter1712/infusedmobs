@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `MobTierManager` now delegates dimension and storage via shims (`DimensionHelper`, `TierSavedData.get`) and `isEnabled` (`ModGameRules.java:60`); `AbilityRegistry` delegates to `AbilityHelper`; `SplitEffect` to `SpawnHelper`, `MobHurtTrigger` to `AbilityHelper.reflectThorns` and `HurtTriggerHelper.register`.
 - Tier persistence rules live once in `common` (`tier/Rolled.java` decode/encode helpers + `tier/TierRollStore.java` in-memory map) with thin codec/NBT adapters per version; corrupted-save fallback is covered by behaviour tests instead of source-text checks.
+- `MobTierManager` slimmed to roll/restore/health flows: gating decisions moved to `tier/InfusionGate.java` (`status(level)` → ACTIVE/WORLD_BLACKLISTED/RULE_DISABLED) and the in-memory Infused Mob registry + nametag presentation to `tier/InfusedTracker.java`, which triggers and commands query directly.
 
 ## [2.7.1] - 2026-08-02
 

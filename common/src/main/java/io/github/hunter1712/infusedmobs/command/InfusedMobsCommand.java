@@ -4,6 +4,8 @@ import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.tier.DimensionHelper;
+import io.github.hunter1712.infusedmobs.tier.InfusionGate;
+import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
@@ -194,7 +196,7 @@ public final class InfusedMobsCommand {
         CommandSourceStack source = ctx.getSource();
         ModConfig.Instance updated = ModConfig.get().withShowNametags(show);
         ModConfig.swapInstance(updated);
-        MobTierManager.refreshNametags(source.getServer());
+        InfusedTracker.refreshNametags(source.getServer());
         source.sendSuccess(() -> Component.literal(
                 "§eNametags turned " + (show ? "§aON" : "§cOFF")), true);
         return 1;
@@ -294,7 +296,7 @@ public final class InfusedMobsCommand {
     private static int executeReload(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
         ModConfig.load();
-        MobTierManager.refreshNametags(source.getServer());
+        InfusedTracker.refreshNametags(source.getServer());
         source.sendSuccess(() -> Component.literal("§aConfig reloaded from disk."), true);
         return 1;
     }
@@ -359,7 +361,7 @@ public final class InfusedMobsCommand {
 
         // Refuse to summon where the mod is inactive — blacklist and
         // gamerule are both authoritative, with a distinct message each.
-        switch (MobTierManager.canInfuse(level)) {
+        switch (InfusionGate.status(level)) {
             case WORLD_BLACKLISTED -> {
                 source.sendFailure(Component.literal(
                         "§cThis world is on the infused-mobs blacklist. "
