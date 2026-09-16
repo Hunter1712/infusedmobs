@@ -1,5 +1,7 @@
 package io.github.hunter1712.infusedmobs.util;
 
+import io.github.hunter1712.infusedmobs.ability.EffectToken;
+
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -16,22 +18,19 @@ import net.minecraft.server.level.ServerPlayer;
  * Four {@code MobEffects} fields were renamed in 26.x, so common code reads
  * them through the accessors below.
  * <p>
- * Effect handles are deliberately {@code Object}: 26.2/1.21.1 pass
- * {@code Holder<MobEffect>} while 1.20.1 passes raw {@code MobEffect}, and
- * the shared {@code common} sources must compile against both. Each handle
- * comes from the accessors below and is cast back here.
+ * Effect handles are opaque {@link EffectToken}s wrapping holders here.
  */
 public final class AbilityHelper {
     private AbilityHelper() {}
 
     @SuppressWarnings("unchecked")
-    public static void applyHurtEffect(LivingEntity target, Object effect, int duration, int amplifier) {
-        target.addEffect(new MobEffectInstance((Holder<MobEffect>) effect, duration, amplifier));
+    public static void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {
+        target.addEffect(new MobEffectInstance((Holder<MobEffect>) effect.handle(), duration, amplifier));
     }
 
     @SuppressWarnings("unchecked")
-    public static void applyTickEffect(LivingEntity mob, Object effect, int duration, int amplifier) {
-        mob.addEffect(new MobEffectInstance((Holder<MobEffect>) effect, duration, amplifier, false, false, false));
+    public static void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier) {
+        mob.addEffect(new MobEffectInstance((Holder<MobEffect>) effect.handle(), duration, amplifier, false, false, false));
     }
 
     public static void damageArmor(ServerPlayer player, ServerLevel level, int dmg) {
@@ -56,19 +55,19 @@ public final class AbilityHelper {
     // Effect handles (1.21.1 MojMap names)
     // ========================================
 
-    public static Object slowness() { return MobEffects.MOVEMENT_SLOWDOWN; }
+    public static EffectToken slowness() { return EffectToken.of(MobEffects.MOVEMENT_SLOWDOWN); }
 
-    public static Object resistance() { return MobEffects.DAMAGE_RESISTANCE; }
+    public static EffectToken resistance() { return EffectToken.of(MobEffects.DAMAGE_RESISTANCE); }
 
-    public static Object strength() { return MobEffects.DAMAGE_BOOST; }
+    public static EffectToken strength() { return EffectToken.of(MobEffects.DAMAGE_BOOST); }
 
-    public static Object speed() { return MobEffects.MOVEMENT_SPEED; }
+    public static EffectToken speed() { return EffectToken.of(MobEffects.MOVEMENT_SPEED); }
 
-    public static Object poison() { return MobEffects.POISON; }
+    public static EffectToken poison() { return EffectToken.of(MobEffects.POISON); }
 
-    public static Object wither() { return MobEffects.WITHER; }
+    public static EffectToken wither() { return EffectToken.of(MobEffects.WITHER); }
 
-    public static Object weakness() { return MobEffects.WEAKNESS; }
+    public static EffectToken weakness() { return EffectToken.of(MobEffects.WEAKNESS); }
 
-    public static Object regeneration() { return MobEffects.REGENERATION; }
+    public static EffectToken regeneration() { return EffectToken.of(MobEffects.REGENERATION); }
 }
