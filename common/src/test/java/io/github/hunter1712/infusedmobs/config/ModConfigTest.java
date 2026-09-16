@@ -18,8 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ModConfigTest {
 
     /** A valid tier config used as filler for tiers not under test. */
-    private static final ModConfig.TierConfig VALID_TIER =
-            new ModConfig.TierConfig(0.1, 1, 1.0, 1.0);
+    private static final ModConfig.TierConfig VALID_TIER = InstanceBuilder.validTier();
 
     // ========================================
     // Existing tests (updated for new Instance fields)

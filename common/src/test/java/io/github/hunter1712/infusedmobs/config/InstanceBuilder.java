@@ -30,6 +30,11 @@ public final class InstanceBuilder {
         return new InstanceBuilder();
     }
 
+    /** Filler Tier values for tests that only vary other fields. */
+    public static ModConfig.TierConfig validTier() {
+        return VALID_TIER;
+    }
+
     public InstanceBuilder cinder(ModConfig.TierConfig tier) {
         cinder = tier;
         return this;
