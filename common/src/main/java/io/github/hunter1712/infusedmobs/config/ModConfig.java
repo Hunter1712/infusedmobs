@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -276,15 +275,7 @@ public final class ModConfig {
          * duplicates preserving first-seen order. Returns an immutable list.
          */
         private static List<String> normaliseBlacklist(List<String> blacklist) {
-            if (blacklist == null) return List.of();
-            List<String> result = new ArrayList<>();
-            for (String entry : blacklist) {
-                if (entry == null) continue;
-                String trimmed = entry.trim();
-                if (trimmed.isEmpty() || result.contains(trimmed)) continue;
-                result.add(trimmed);
-            }
-            return List.copyOf(result);
+            return BlacklistNormalizer.normalise(blacklist);
         }
     }
 }

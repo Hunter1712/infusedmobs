@@ -147,11 +147,11 @@ public final class InfusedTracker {
 
     private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
         if (!ModConfig.get().showNametags()) return;
-        String abilityList = String.join("§7, ", abilities.stream().map(Ability::name).toList());
+        List<String> names = abilities.stream().map(Ability::name).toList();
         // Use the entity type name (e.g. "Parched") rather than getName(),
         // which would return any previously-set custom name and cause duplication.
         String entityName = mob.getType().getDescription().getString();
-        mob.setCustomName(Component.literal(colour + abilityList + " §f" + entityName));
+        mob.setCustomName(Component.literal(NametagFormatter.format(colour, names, entityName)));
         mob.setCustomNameVisible(true);
     }
 
