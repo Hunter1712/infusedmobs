@@ -2,7 +2,7 @@ package io.github.hunter1712.infusedmobs.ability;
 
 import io.github.hunter1712.infusedmobs.ability.effect.SplitEffect;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
-import io.github.hunter1712.infusedmobs.util.AbilityHelper;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,13 +38,13 @@ public final class AbilityRegistry {
     public static void registerAll() {
         // ---- HURT abilities (fire when the mob hits a player — melee or projectile) ----
 
-        registerHurtEffect("bane",     "Bane",     AbilityHelper.poison());
-        registerHurtEffect("chill",    "Chill",    AbilityHelper.slowness());
-        registerHurtEffect("decay",    "Decay",    AbilityHelper.wither());
-        registerHurtEffect("hex",      "Hex",      AbilityHelper.weakness());
+        registerHurtEffect("bane",     "Bane",     Platform.hooks().poison());
+        registerHurtEffect("chill",    "Chill",    Platform.hooks().slowness());
+        registerHurtEffect("decay",    "Decay",    Platform.hooks().wither());
+        registerHurtEffect("hex",      "Hex",      Platform.hooks().weakness());
 
         all("hellfire", "Hellfire", TriggerType.HURT, (mob, target, damage) ->
-                AbilityHelper.ignite(target, ModConfig.get().infernoFireSeconds()));
+                Platform.hooks().ignite(target, ModConfig.get().infernoFireSeconds()));
 
         all("siphon", "Siphon", TriggerType.HURT, (mob, target, damage) -> {
             if (damage > 0) mob.heal(damage);
@@ -54,10 +54,10 @@ public final class AbilityRegistry {
 
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
-        registerTickEffect("ward",    "Ward",    AbilityHelper.resistance());
-        registerTickEffect("frenzy",   "Frenzy",  AbilityHelper.strength());
-        registerTickEffect("wraith",   "Wraith",  AbilityHelper.speed());
-        registerTickEffect("blight",   "Blight",  AbilityHelper.regeneration());
+        registerTickEffect("ward",    "Ward",    Platform.hooks().resistance());
+        registerTickEffect("frenzy",   "Frenzy",  Platform.hooks().strength());
+        registerTickEffect("wraith",   "Wraith",  Platform.hooks().speed());
+        registerTickEffect("blight",   "Blight",  Platform.hooks().regeneration());
 
         // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
         all("thorns", "Thorns", TriggerType.TICK, (mob, target, damage) -> {});
@@ -76,7 +76,7 @@ public final class AbilityRegistry {
                         double dist = entity.distanceTo(mob);
                         if (dist <= radius) {
                             float inflicted = (float) (4.0 * (1.0 - dist / radius));
-                            AbilityHelper.hurtFromExplosion(living, level, dmgSource, Math.max(inflicted, 1.0f));
+                            Platform.hooks().hurtFromExplosion(living, level, dmgSource, Math.max(inflicted, 1.0f));
                         }
                     }
                 }
@@ -90,12 +90,12 @@ public final class AbilityRegistry {
     /**
      * Registers a HURT ability that applies a status effect to the target.
      * Duration/amplifier are read from config at fire time.
-     * The token is opaque (see {@link AbilityHelper}): always obtained from
-     * an {@code AbilityHelper} accessor, never constructed directly.
+     * The token is opaque (see {@link io.github.hunter1712.infusedmobs.platform.PlatformHooks}):
+     * always obtained from the platform seam, never constructed directly.
      */
     private static void registerHurtEffect(String id, String name, EffectToken effect) {
         all(id, name, TriggerType.HURT, (mob, target, damage) ->
-                AbilityHelper.applyHurtEffect(target, effect,
+                Platform.hooks().applyHurtEffect(target, effect,
                         ModConfig.get().hurtEffectDuration(),
                         ModConfig.get().hurtEffectAmplifier()));
     }
@@ -106,21 +106,20 @@ public final class AbilityRegistry {
      */
     private static void registerTickEffect(String id, String name, EffectToken effect) {
         all(id, name, TriggerType.TICK, (mob, target, damage) ->
-                AbilityHelper.applyTickEffect(mob, effect,
+                Platform.hooks().applyTickEffect(mob, effect,
                         ModConfig.get().tickEffectDuration(),
                         ModConfig.get().tickEffectAmplifier()));
     }
 
     /**
      * Damages all 4 armor slots by the configurable durability amount.
-     * Delegates to version shim so per-version item handling (modern
-     * {@code hurtAndBreak} vs legacy) is isolated.
+     * Delegates to the platform seam so per-version item handling is isolated.
      */
     private static void damageArmor(Mob mob, LivingEntity target, float damage) {
         if (!(target instanceof ServerPlayer player)) return;
         ServerLevel level = (ServerLevel) player.level();
         int dmg = ModConfig.get().acidArmorDamage();
-        AbilityHelper.damageArmor(player, level, dmg);
+        Platform.hooks().damageArmor(player, level, dmg);
     }
 
     /**

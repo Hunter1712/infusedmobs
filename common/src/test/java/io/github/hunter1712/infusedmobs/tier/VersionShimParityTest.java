@@ -9,12 +9,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Guards the remaining version shims (#9): dimension accessor, ability effect
- * handling, spawn helper, HURT trigger registration and the two mixins must
- * produce the same Infused Mob behaviour on 26.2, 1.21.1 and 1.20.1.
+ * Guards the platform seam: one adapter per Versioned Source Set implements
+ * the shared interface with the correct version tokens inside.
  *
  * <p>Pure-logic file-content tests (no Minecraft bootstrap): they guard
- * against divergence between the per-version shims and against
+ * against divergence between the per-version adapters and against
  * version-specific APIs leaking into {@code common}.
  */
 class VersionShimParityTest {
@@ -86,82 +85,95 @@ class VersionShimParityTest {
         throw new java.io.FileNotFoundException("Cannot find common/" + relative);
     }
 
-    private static final String DIM = "io/github/hunter1712/infusedmobs/tier/DimensionHelper.java";
-    private static final String ABIL = "io/github/hunter1712/infusedmobs/util/AbilityHelper.java";
-    private static final String SPAWN = "io/github/hunter1712/infusedmobs/util/SpawnHelper.java";
-    private static final String HURT = "io/github/hunter1712/infusedmobs/ability/trigger/HurtTriggerHelper.java";
-    private static final String CMD = "io/github/hunter1712/infusedmobs/command/CommandArgHelper.java";
+    private static final String ADAPTER = "io/github/hunter1712/infusedmobs/platform/VersionPlatform.java";
 
     // ========================================
-    // 1. Tier assignment gate — dimension accessor per version
+    // 1. Adapters implement the shared seam
     // ========================================
 
     @Test
-    void dimensionAccessorPerVersion() throws Exception {
-        String modern = readShim("26.2", DIM);
-        assertTrue(modern.contains(".identifier()"), "26.2 DimensionHelper must use identifier()");
-        assertTrue(modern.contains("getId(ServerLevel"), "26.2 DimensionHelper must expose getId(ServerLevel)");
-
-        for (String version : new String[]{"1.21.1", "1.20.1"}) {
-            String shim = readShim(version, DIM);
-            assertTrue(shim.contains(".location()"), version + " DimensionHelper must use location()");
-            assertTrue(shim.contains("getId(ServerLevel"), version + " DimensionHelper must expose getId(ServerLevel)");
-            assertTrue(shim.contains("level.dimension()"), version + " must read level.dimension()");
+    void adaptersImplementSharedSeam() throws Exception {
+        for (String version : new String[]{"26.2", "1.21.1", "1.20.1"}) {
+            String adapter = readShim(version, ADAPTER);
+            assertTrue(adapter.contains("implements PlatformHooks"),
+                    version + " adapter must implement PlatformHooks");
+            for (String seam : new String[]{"dimensionId(", "spawnEntity(", "spawnForCommand(",
+                    "entityKey(", "defaultEntity(", "gamemasterPermission(",
+                    "worldIdArgument(", "worldIdFromCommand(",
+                    "applyHurtEffect(", "applyTickEffect(", "damageArmor(",
+                    "reflectThorns(", "hurtFromExplosion(", "ignite(",
+                    "registerHurtTrigger(", "loadRoll(", "storeRoll(", "clearRoll("}) {
+                assertTrue(adapter.contains(seam), version + " adapter must expose " + seam);
+            }
         }
     }
 
     // ========================================
-    // 2. Ability effects — holders vs raw, damage, items
+    // 2. Tier assignment gate — dimension accessor per version
+    // ========================================
+
+    @Test
+    void dimensionAccessorPerVersion() throws Exception {
+        String modern = readShim("26.2", ADAPTER);
+        assertTrue(modern.contains(".identifier()"), "26.2 adapter must use identifier()");
+        assertTrue(modern.contains("dimensionId(ServerLevel"), "26.2 adapter must expose dimensionId(ServerLevel)");
+
+        for (String version : new String[]{"1.21.1", "1.20.1"}) {
+            String adapter = readShim(version, ADAPTER);
+            assertTrue(adapter.contains(".location()"), version + " adapter must use location()");
+            assertTrue(adapter.contains("dimensionId(ServerLevel"), version + " adapter must expose dimensionId(ServerLevel)");
+            assertTrue(adapter.contains("level.dimension()"), version + " must read level.dimension()");
+        }
+    }
+
+    // ========================================
+    // 3. Ability effects — holders vs raw, damage, items
     // ========================================
 
     @Test
     void abilityEffectHandlesPerVersion() throws Exception {
-        String modern = readShim("26.2", ABIL);
+        String modern = readShim("26.2", ADAPTER);
         assertTrue(modern.contains("MobEffects.SLOWNESS"), "26.2 must use SLOWNESS");
         assertTrue(modern.contains("MobEffects.RESISTANCE"), "26.2 must use RESISTANCE");
         assertTrue(modern.contains("MobEffects.STRENGTH"), "26.2 must use STRENGTH");
         assertTrue(modern.contains("MobEffects.SPEED"), "26.2 must use SPEED");
 
         for (String version : new String[]{"1.21.1", "1.20.1"}) {
-            String shim = readShim(version, ABIL);
-            assertTrue(shim.contains("MobEffects.MOVEMENT_SLOWDOWN"), version + " must use MOVEMENT_SLOWDOWN");
-            assertTrue(shim.contains("MobEffects.DAMAGE_RESISTANCE"), version + " must use DAMAGE_RESISTANCE");
-            assertTrue(shim.contains("MobEffects.DAMAGE_BOOST"), version + " must use DAMAGE_BOOST");
-            assertTrue(shim.contains("MobEffects.MOVEMENT_SPEED"), version + " must use MOVEMENT_SPEED");
+            String adapter = readShim(version, ADAPTER);
+            assertTrue(adapter.contains("MobEffects.MOVEMENT_SLOWDOWN"), version + " must use MOVEMENT_SLOWDOWN");
+            assertTrue(adapter.contains("MobEffects.DAMAGE_RESISTANCE"), version + " must use DAMAGE_RESISTANCE");
+            assertTrue(adapter.contains("MobEffects.DAMAGE_BOOST"), version + " must use DAMAGE_BOOST");
+            assertTrue(adapter.contains("MobEffects.MOVEMENT_SPEED"), version + " must use MOVEMENT_SPEED");
         }
 
         // Shared effects keep the same names on all versions
         for (String version : new String[]{"26.2", "1.21.1", "1.20.1"}) {
-            String shim = readShim(version, ABIL);
+            String adapter = readShim(version, ADAPTER);
             for (String effect : new String[]{"MobEffects.POISON", "MobEffects.WITHER",
                     "MobEffects.WEAKNESS", "MobEffects.REGENERATION"}) {
-                assertTrue(shim.contains(effect), version + " must map " + effect);
+                assertTrue(adapter.contains(effect), version + " must map " + effect);
             }
-            assertTrue(shim.contains("applyHurtEffect"), version + " must expose applyHurtEffect");
-            assertTrue(shim.contains("applyTickEffect"), version + " must expose applyTickEffect");
-            assertTrue(shim.contains("damageArmor"), version + " must expose damageArmor");
-            assertTrue(shim.contains("reflectThorns"), version + " must expose reflectThorns");
-            assertTrue(shim.contains("hurtFromExplosion"), version + " must expose hurtFromExplosion");
-            assertTrue(shim.contains("ignite("), version + " must expose ignite");
+            assertTrue(adapter.contains("EffectToken.of("), version + " must wrap handles as tokens");
+            assertTrue(adapter.contains("effect.handle()"), version + " must unwrap tokens at the boundary");
         }
     }
 
     // ========================================
-    // 3. HURT trigger registration — AFTER_DAMAGE vs ALLOW_DAMAGE
+    // 4. HURT trigger registration — AFTER_DAMAGE vs ALLOW_DAMAGE
     // ========================================
 
     @Test
     void hurtTriggerRegistrationPerVersion() throws Exception {
         for (String version : new String[]{"26.2", "1.21.1"}) {
-            String shim = readShim(version, HURT);
-            assertTrue(shim.contains("AFTER_DAMAGE"), version + " must register AFTER_DAMAGE");
-            assertTrue(shim.contains("HurtHandler"), version + " must adapt HurtHandler");
+            String adapter = readShim(version, ADAPTER);
+            assertTrue(adapter.contains("AFTER_DAMAGE"), version + " must register AFTER_DAMAGE");
+            assertTrue(adapter.contains("HurtHandler"), version + " must adapt HurtHandler");
         }
 
         // 1.20.1 FAPI has no AFTER_DAMAGE: ALLOW_DAMAGE adaptor that never cancels.
         // Divergences (pre-mitigation amount, blocked=false) are accepted: exact
         // parity is impossible without the post-mitigation event.
-        String legacy = readShim("1.20.1", HURT);
+        String legacy = readShim("1.20.1", ADAPTER);
         assertTrue(legacy.contains("ALLOW_DAMAGE"), "1.20.1 must register ALLOW_DAMAGE");
         assertTrue(legacy.contains("return true"), "1.20.1 adaptor must never cancel damage");
         assertTrue(legacy.contains("HurtHandler"), "1.20.1 must adapt HurtHandler");
@@ -170,25 +182,26 @@ class VersionShimParityTest {
     }
 
     // ========================================
-    // 4. Spawn helper — REINFORCEMENT vs plain create
+    // 5. Spawn helper — REINFORCEMENT vs plain create
     // ========================================
 
     @Test
     void spawnHelperPerVersion() throws Exception {
         for (String version : new String[]{"26.2", "1.21.1", "1.20.1"}) {
-            String shim = readShim(version, SPAWN);
-            assertTrue(shim.contains("create(EntityType"), version + " must expose create(EntityType, ServerLevel)");
+            String adapter = readShim(version, ADAPTER);
+            assertTrue(adapter.contains("spawnEntity(EntityType"), version + " must expose spawnEntity(EntityType, ServerLevel)");
+            assertTrue(adapter.contains("spawnForCommand(EntityType"), version + " must expose spawnForCommand(EntityType, ServerLevel)");
         }
-        assertTrue(readShim("26.2", SPAWN).contains("EntitySpawnReason.REINFORCEMENT"),
+        assertTrue(readShim("26.2", ADAPTER).contains("EntitySpawnReason.REINFORCEMENT"),
                 "26.2 must spawn split copies as REINFORCEMENT");
         for (String version : new String[]{"1.21.1", "1.20.1"}) {
-            assertTrue(readShim(version, SPAWN).contains("type.create(level)"),
+            assertTrue(readShim(version, ADAPTER).contains("type.create(level)"),
                     version + " must use plain create(Level)");
         }
     }
 
     // ========================================
-    // 5. Mixins fire on all versions — XP scaling + despawn cleanup
+    // 6. Mixins fire on all versions — XP scaling + despawn cleanup
     // ========================================
 
     @Test
@@ -211,23 +224,23 @@ class VersionShimParityTest {
     }
 
     // ========================================
-    // 6. Command args + TICK/DEATH triggers — same wiring per version
+    // 7. Command args + TICK/DEATH triggers — same wiring per version
     // ========================================
 
     @Test
     void commandArgsAndTickDeathTriggers() throws Exception {
-        // CommandArgHelper: same seam on all versions, Identifier vs ResourceLocation inside
+        // Adapters expose the same command seam on all versions, Identifier vs ResourceLocation inside
         for (String version : new String[]{"26.2", "1.21.1", "1.20.1"}) {
-            String cmd = readShim(version, CMD);
-            for (String seam : new String[]{"worldId(", "getWorldId", "defaultEntity()",
-                    "entityKey(", "createForCommand(", "gamemaster()"}) {
-                assertTrue(cmd.contains(seam), version + " CommandArgHelper must expose " + seam);
+            String adapter = readShim(version, ADAPTER);
+            for (String seam : new String[]{"worldIdArgument(", "worldIdFromCommand(",
+                    "defaultEntity()", "entityKey(", "spawnForCommand(", "gamemasterPermission("}) {
+                assertTrue(adapter.contains(seam), version + " adapter must expose " + seam);
             }
         }
-        assertTrue(readShim("26.2", CMD).contains("IdentifierArgument"), "26.2 commands must use IdentifierArgument");
+        assertTrue(readShim("26.2", ADAPTER).contains("IdentifierArgument"), "26.2 adapter must use IdentifierArgument");
         for (String version : new String[]{"1.21.1", "1.20.1"}) {
-            assertTrue(readShim(version, CMD).contains("ResourceLocationArgument"),
-                    version + " commands must use ResourceLocationArgument");
+            assertTrue(readShim(version, ADAPTER).contains("ResourceLocationArgument"),
+                    version + " adapter must use ResourceLocationArgument");
         }
 
         // TICK + DEATH triggers live in common (no version split): stable Fabric APIs
@@ -241,7 +254,7 @@ class VersionShimParityTest {
     }
 
     // ========================================
-    // 7. Common stays version-neutral — no API leaks past the shims
+    // 8. Common stays version-neutral — no API leaks past the seam
     // ========================================
 
     @Test
@@ -256,7 +269,7 @@ class VersionShimParityTest {
                 "io/github/hunter1712/infusedmobs/ability/trigger/MobTickTrigger.java",
                 "io/github/hunter1712/infusedmobs/ability/trigger/MobDeathTrigger.java",
                 "io/github/hunter1712/infusedmobs/command/InfusedMobsCommand.java");
-        // Call/import patterns that must only appear inside per-version shims
+        // Call/import patterns that must only appear inside per-version adapters
         List<String> forbidden = List.of(
                 "IdentifierArgument", "ResourceLocationArgument", "EntitySpawnReason",
                 "import net.minecraft.world.effect.MobEffects",
@@ -266,7 +279,7 @@ class VersionShimParityTest {
             String text = readCommon(file);
             for (String pattern : forbidden) {
                 assertTrue(!text.contains(pattern),
-                        "common/" + file + " must not contain '" + pattern + "' (use a shim)");
+                        "common/" + file + " must not contain '" + pattern + "' (use the seam)");
             }
         }
     }

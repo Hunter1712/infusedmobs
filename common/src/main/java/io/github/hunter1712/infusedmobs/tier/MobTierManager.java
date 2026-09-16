@@ -3,6 +3,7 @@ package io.github.hunter1712.infusedmobs.tier;
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
@@ -57,11 +58,10 @@ public final class MobTierManager {
         if (InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) return;
         if (InfusedTracker.find(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
 
-        TierSavedData savedData = TierSavedData.get(serverLevel);
         UUID uuid = mob.getUUID();
 
         // If this UUID already rolled in a previous session, restore that result exactly
-        Rolled rolled = savedData.getRolled(uuid);
+        Rolled rolled = Platform.hooks().loadRoll(serverLevel, uuid);
         if (rolled != null) {
             restoreRolled(mob, uuid, rolled);
             return;
@@ -75,7 +75,7 @@ public final class MobTierManager {
 
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(tc.abilityCount());
             InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
-            savedData.setRolled(uuid, new Rolled.Tiered(tier, idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Tiered(tier, idsOf(abilities)));
 
             applyHealthMultiplier(mob, tc);
             InfusedTracker.setTierNametag(mob, tier, abilities);
@@ -83,7 +83,7 @@ public final class MobTierManager {
         }
 
         // Rolled nothing — persist so we never roll again for this UUID
-        savedData.setRolled(uuid, new Rolled.Nothing());
+        Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Nothing());
     }
 
     /**
@@ -115,8 +115,7 @@ public final class MobTierManager {
         InfusedTracker.setTierNametag(mob, tier, abilities);
 
         if (serverLevel != null) {
-            TierSavedData.get(serverLevel)
-                    .setRolled(uuid, new Rolled.Tiered(tier, idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Tiered(tier, idsOf(abilities)));
         }
         return true;
     }
@@ -193,8 +192,7 @@ public final class MobTierManager {
 
         InfusedTracker.track(copy.getUUID(), InfusedMob.split(abilities));
         if (copy.level() instanceof ServerLevel serverLevel) {
-            TierSavedData.get(serverLevel)
-                    .setRolled(copy.getUUID(), new Rolled.Split(idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, copy.getUUID(), new Rolled.Split(idsOf(abilities)));
         }
         InfusedTracker.setSplitCopyNametag(copy, abilities);
     }
@@ -220,7 +218,7 @@ public final class MobTierManager {
 
         // Clean up persistent state so it doesn't grow unboundedly
         if (mob.level() instanceof ServerLevel serverLevel) {
-            TierSavedData.get(serverLevel).remove(uuid);
+            Platform.hooks().clearRoll(serverLevel, uuid);
         }
     }
 }

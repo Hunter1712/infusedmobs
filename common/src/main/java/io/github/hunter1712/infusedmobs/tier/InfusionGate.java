@@ -2,6 +2,7 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.gamerules.ModGameRules;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 
 import net.minecraft.server.level.ServerLevel;
 
@@ -32,7 +33,7 @@ public final class InfusionGate {
 
     /** Status of the mod in the given level. */
     public static Status status(ServerLevel level) {
-        if (ModConfig.get().isWorldBlacklisted(DimensionHelper.getId(level))) return Status.WORLD_BLACKLISTED;
+        if (ModConfig.get().isWorldBlacklisted(Platform.hooks().dimensionId(level))) return Status.WORLD_BLACKLISTED;
         if (!ModGameRules.isEnabled(level.getServer())) return Status.RULE_DISABLED;
         return Status.ACTIVE;
     }

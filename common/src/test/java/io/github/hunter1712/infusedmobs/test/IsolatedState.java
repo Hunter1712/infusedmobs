@@ -1,6 +1,7 @@
 package io.github.hunter1712.infusedmobs.test;
 
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -25,5 +26,6 @@ public final class IsolatedState implements BeforeEachCallback, AfterEachCallbac
     private static void reset() {
         AbilityRegistry.resetForTests();
         InfusedTracker.clear();
+        Platform.resetForTests();
     }
 }
