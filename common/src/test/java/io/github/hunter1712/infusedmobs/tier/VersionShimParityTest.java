@@ -13,10 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * handling, spawn helper, HURT trigger registration and the two mixins must
  * produce the same Infused Mob behaviour on 26.2, 1.21.1 and 1.20.1.
  *
- * <p>Pure-logic file-content tests (no Minecraft bootstrap), same pattern as
- * {@link TierSavedDataNbtTest}: they guard against divergence between the
- * per-version shims and against version-specific APIs leaking into
- * {@code common}.
+ * <p>Pure-logic file-content tests (no Minecraft bootstrap): they guard
+ * against divergence between the per-version shims and against
+ * version-specific APIs leaking into {@code common}.
  */
 class VersionShimParityTest {
 

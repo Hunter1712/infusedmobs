@@ -84,7 +84,7 @@ public final class MobTierManager {
      * {@link TierSavedData}: the same mob (same UUID) restores the exact
      * same result on world or chunk reload — never re-rolled.
      * <p>
-     * Rupture split copies hold a persisted {@link TierSavedData.Rolled.Split}
+     * Rupture split copies hold a persisted {@link Rolled.Split}
      * entry, so they are skipped here and never become tiered mobs.
      * <p>
      * Worlds where the mod is inactive are skipped entirely — no tier,
@@ -100,7 +100,7 @@ public final class MobTierManager {
         UUID uuid = mob.getUUID();
 
         // If this UUID already rolled in a previous session, restore that result exactly
-        TierSavedData.Rolled rolled = savedData.getRolled(uuid);
+        Rolled rolled = savedData.getRolled(uuid);
         if (rolled != null) {
             restoreRolled(mob, uuid, rolled);
             return;
@@ -114,7 +114,7 @@ public final class MobTierManager {
 
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(tc.abilityCount());
             INFUSED.put(uuid, InfusedMob.tiered(tier, abilities));
-            savedData.setRolled(uuid, new TierSavedData.Rolled.Tiered(tier, idsOf(abilities)));
+            savedData.setRolled(uuid, new Rolled.Tiered(tier, idsOf(abilities)));
 
             applyHealthMultiplier(mob, tc);
             setTierNametag(mob, tier, abilities);
@@ -122,7 +122,7 @@ public final class MobTierManager {
         }
 
         // Rolled nothing — persist so we never roll again for this UUID
-        savedData.setRolled(uuid, new TierSavedData.Rolled.Nothing());
+        savedData.setRolled(uuid, new Rolled.Nothing());
     }
 
     /**
@@ -155,23 +155,23 @@ public final class MobTierManager {
 
         if (serverLevel != null) {
             TierSavedData.get(serverLevel)
-                    .setRolled(uuid, new TierSavedData.Rolled.Tiered(tier, idsOf(abilities)));
+                    .setRolled(uuid, new Rolled.Tiered(tier, idsOf(abilities)));
         }
         return true;
     }
 
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
-    private static void restoreRolled(Mob mob, UUID uuid, TierSavedData.Rolled rolled) {
-        if (rolled instanceof TierSavedData.Rolled.Tiered t) {
+    private static void restoreRolled(Mob mob, UUID uuid, Rolled rolled) {
+        if (rolled instanceof Rolled.Tiered t) {
             restoreTiered(mob, uuid, t);
-        } else if (rolled instanceof TierSavedData.Rolled.Split s) {
+        } else if (rolled instanceof Rolled.Split s) {
             restoreSplit(mob, uuid, s);
-        } else if (rolled instanceof TierSavedData.Rolled.Nothing) {
+        } else if (rolled instanceof Rolled.Nothing) {
             // Rolled nothing — leave the mob vanilla.
         }
     }
 
-    private static void restoreTiered(Mob mob, UUID uuid, TierSavedData.Rolled.Tiered t) {
+    private static void restoreTiered(Mob mob, UUID uuid, Rolled.Tiered t) {
         List<Ability> abilities = resolveAbilities(t.abilityIds());
         INFUSED.put(uuid, InfusedMob.tiered(t.tier(), abilities));
         ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
@@ -179,7 +179,7 @@ public final class MobTierManager {
         setTierNametag(mob, t.tier(), abilities);
     }
 
-    private static void restoreSplit(Mob mob, UUID uuid, TierSavedData.Rolled.Split s) {
+    private static void restoreSplit(Mob mob, UUID uuid, Rolled.Split s) {
         List<Ability> abilities = resolveAbilities(s.abilityIds());
         INFUSED.put(uuid, InfusedMob.split(abilities));
         // Re-apply the Cinder HP boost — otherwise a chunk reload
@@ -220,7 +220,7 @@ public final class MobTierManager {
      *       is still possible</li>
      *   <li>Greyscale nametag</li>
      * </ul>
-     * The copy's status is persisted as {@link TierSavedData.Rolled.Split}
+     * The copy's status is persisted as {@link Rolled.Split}
      * BEFORE it enters the world, so the spawn handler skips it and chunk
      * reloads restore it as a copy — it can never be re-rolled into a
      * tiered mob.
@@ -233,7 +233,7 @@ public final class MobTierManager {
         INFUSED.put(copy.getUUID(), InfusedMob.split(abilities));
         if (copy.level() instanceof ServerLevel serverLevel) {
             TierSavedData.get(serverLevel)
-                    .setRolled(copy.getUUID(), new TierSavedData.Rolled.Split(idsOf(abilities)));
+                    .setRolled(copy.getUUID(), new Rolled.Split(idsOf(abilities)));
         }
         setSplitCopyNametag(copy, abilities);
     }

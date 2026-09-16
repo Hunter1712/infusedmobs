@@ -9,7 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,26 +28,6 @@ import java.util.UUID;
  */
 public final class TierSavedData extends SavedData {
 
-    /**
-     * The immutable result of a mob's roll — the persisted source of truth.
-     * <ul>
-     *   <li>{@link Tiered} — the mob rolled a tier; abilities are stored by id
-     *       so the exact set is restored (no re-roll on reload).</li>
-     *   <li>{@link Split} — a Rupture split copy; its own distinct variant so
-     *       it is never re-rolled into a regular tiered mob (which could gain
-     *       DEATH abilities and recurse).</li>
-     *   <li>{@link Nothing} — the mob rolled nothing and must never roll again.</li>
-     * </ul>
-     */
-    public sealed interface Rolled {
-
-        record Tiered(MobTier tier, List<String> abilityIds) implements Rolled {}
-
-        record Split(List<String> abilityIds) implements Rolled {}
-
-        record Nothing() implements Rolled {}
-    }
-
     private static final String ID = "infusedmobs_tiers";
 
     private static final SavedData.Factory<TierSavedData> FACTORY = new SavedData.Factory<>(
@@ -56,15 +35,15 @@ public final class TierSavedData extends SavedData {
             TierSavedData::load,
             DataFixTypes.LEVEL);
 
-    private final Map<UUID, Rolled> rolls;
+    private final TierRollStore store;
 
     /** Creates an empty store. */
     public TierSavedData() {
-        this(new HashMap<>());
+        this.store = new TierRollStore();
     }
 
     private TierSavedData(Map<UUID, Rolled> rolls) {
-        this.rolls = new HashMap<>(rolls);
+        this.store = new TierRollStore(rolls);
     }
 
     // ========================================
@@ -73,7 +52,7 @@ public final class TierSavedData extends SavedData {
 
     /** Returns the stored roll for this UUID, or null if never rolled. */
     public Rolled getRolled(UUID uuid) {
-        return rolls.get(uuid);
+        return store.get(uuid);
     }
 
     // ========================================
@@ -82,13 +61,13 @@ public final class TierSavedData extends SavedData {
 
     /** Records the roll result for this UUID. */
     public void setRolled(UUID uuid, Rolled rolled) {
-        rolls.put(uuid, rolled);
+        store.put(uuid, rolled);
         setDirty();
     }
 
     /** Removes all tracking for this UUID (called on mob death or despawn). */
     public void remove(UUID uuid) {
-        if (rolls.remove(uuid) != null) {
+        if (store.remove(uuid)) {
             setDirty();
         }
     }
@@ -109,23 +88,19 @@ public final class TierSavedData extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         CompoundTag rollsTag = new CompoundTag();
-        for (Map.Entry<UUID, Rolled> e : rolls.entrySet()) {
+        for (Map.Entry<UUID, Rolled> e : store.entries()) {
             CompoundTag entry = new CompoundTag();
             Rolled r = e.getValue();
-            if (r instanceof Rolled.Tiered t) {
-                entry.putString("kind", "tiered");
-                entry.putString("tier", t.tier().name());
-                ListTag list = new ListTag();
-                for (String id : t.abilityIds()) list.add(StringTag.valueOf(id));
-                entry.put("abilityIds", list);
-            } else if (r instanceof Rolled.Split s) {
-                entry.putString("kind", "split");
-                ListTag list = new ListTag();
-                for (String id : s.abilityIds()) list.add(StringTag.valueOf(id));
-                entry.put("abilityIds", list);
-            } else {
-                entry.putString("kind", "nothing");
+            entry.putString("kind", Rolled.kindOf(r));
+            String tierName = Rolled.tierNameOf(r);
+            if (tierName != null) {
+                entry.putString("tier", tierName);
             }
+            ListTag list = new ListTag();
+            for (String id : Rolled.abilityIdsOf(r)) {
+                list.add(StringTag.valueOf(id));
+            }
+            entry.put("abilityIds", list);
             rollsTag.put(e.getKey().toString(), entry);
         }
         tag.put("rolls", rollsTag);
@@ -141,24 +116,14 @@ public final class TierSavedData extends SavedData {
                 UUID uuid = UUID.fromString(key);
                 if (!rollsTag.contains(key, Tag.TAG_COMPOUND)) continue;
                 CompoundTag entry = rollsTag.getCompound(key);
-                String kind = entry.contains("kind", Tag.TAG_STRING) ? entry.getString("kind") : "";
+                String kind = entry.contains("kind", Tag.TAG_STRING) ? entry.getString("kind") : null;
+                String tierName = entry.contains("tier", Tag.TAG_STRING) ? entry.getString("tier") : null;
                 List<String> abilityIds = List.of();
                 if (entry.contains("abilityIds", Tag.TAG_LIST)) {
                     ListTag list = entry.getList("abilityIds", Tag.TAG_STRING);
                     abilityIds = list.stream().map(t -> t.getAsString()).toList();
                 }
-                Rolled rolled = switch (kind) {
-                    case "tiered" -> {
-                        String tierName = entry.contains("tier", Tag.TAG_STRING) ? entry.getString("tier") : "";
-                        MobTier tier;
-                        try { tier = tierName.isEmpty() ? null : MobTier.valueOf(tierName); }
-                        catch (IllegalArgumentException ex) { tier = null; }
-                        yield tier != null ? new Rolled.Tiered(tier, abilityIds) : new Rolled.Nothing();
-                    }
-                    case "split" -> new Rolled.Split(abilityIds);
-                    default -> new Rolled.Nothing();
-                };
-                data.rolls.put(uuid, rolled);
+                data.store.put(uuid, Rolled.decode(kind, tierName, abilityIds));
             } catch (IllegalArgumentException ignored) {}
         }
         return data;
