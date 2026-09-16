@@ -67,27 +67,21 @@ class ModConfigTest {
 
     @Test
     void isValidRejectsNullTierConfigs() {
-        var invalid = new ModConfig.Instance(
-                null, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(), 2);
+        var invalid = InstanceBuilder.valid().cinder(null).version(2).build();
         assertFalse(invalid.isValid());
     }
 
     @Test
     void isValidRejectsZeroAbilityCount() {
         var badTier = new ModConfig.TierConfig(0.1, 0, 1.0, 1.0);
-        var invalid = new ModConfig.Instance(
-                badTier, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(), 2);
+        var invalid = InstanceBuilder.valid().cinder(badTier).version(2).build();
         assertFalse(invalid.isValid());
     }
 
     @Test
     void isValidRejectsZeroSpawnChance() {
         var badTier = new ModConfig.TierConfig(0.0, 1, 1.0, 1.0);
-        var invalid = new ModConfig.Instance(
-                VALID_TIER, badTier, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(), 2);
+        var invalid = InstanceBuilder.valid().shade(badTier).version(2).build();
         assertFalse(invalid.isValid());
     }
 
@@ -139,45 +133,34 @@ class ModConfigTest {
     void isValidAcceptsNullWorldBlacklist() {
         // A 2.6.0 config file has no worldBlacklist field → Gson deserialises it as null.
         // isValid() must accept this so the config can be backfilled rather than discarded.
-        var valid = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, null, 1);
+        var valid = InstanceBuilder.valid().blacklist(null).version(1).build();
         assertTrue(valid.isValid());
     }
 
     @Test
     void isValidRejectsMalformedWorldId() {
         // Missing colon → not a valid resource id
-        var noColon = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, List.of("overworld"), 2);
+        var noColon = InstanceBuilder.valid().blacklist(List.of("overworld")).version(2).build();
         assertFalse(noColon.isValid());
 
         // Colon at start → empty namespace
-        var emptyNs = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, List.of(":overworld"), 2);
+        var emptyNs = InstanceBuilder.valid().blacklist(List.of(":overworld")).version(2).build();
         assertFalse(emptyNs.isValid());
 
         // Colon at end → empty path
-        var emptyPath = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, List.of("minecraft:"), 2);
+        var emptyPath = InstanceBuilder.valid().blacklist(List.of("minecraft:")).version(2).build();
         assertFalse(emptyPath.isValid());
 
         // Null entry in the list — Arrays.asList allows nulls (List.of throws).
-        var nullEntry = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, Arrays.asList((String) null), 2);
+        var nullEntry = InstanceBuilder.valid().blacklist(Arrays.asList((String) null)).version(2).build();
         assertFalse(nullEntry.isValid());
     }
 
     @Test
     void isValidAcceptsValidWorldBlacklist() {
-        var valid = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true,
-                List.of("minecraft:overworld", "minecraft:the_nether"), 2);
+        var valid = InstanceBuilder.valid()
+                .blacklist(List.of("minecraft:overworld", "minecraft:the_nether"))
+                .version(2).build();
         assertTrue(valid.isValid());
     }
 
@@ -251,9 +234,7 @@ class ModConfigTest {
     @Test
     void backfillFromDefaultsUpgradesOldConfig() {
         // Simulate a 2.6.0 config: configVersion=1, no worldBlacklist (null).
-        var oldConfig = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, null, 1);
+        var oldConfig = InstanceBuilder.valid().blacklist(null).version(1).build();
 
         assertTrue(oldConfig.isValid(), "old config should still be valid");
 
@@ -280,9 +261,7 @@ class ModConfigTest {
     void backfillFromDefaultsFillsNullBlacklistOnCurrentVersion() {
         // Edge case: configVersion is current but worldBlacklist is null
         // (e.g. hand-edited JSON missing the field). Should be filled to empty.
-        var cfg = new ModConfig.Instance(
-                VALID_TIER, VALID_TIER, VALID_TIER,
-                60, 0, 60, 0, 5, 4, 4.0f, true, null, 3);
+        var cfg = InstanceBuilder.valid().blacklist(null).version(3).build();
 
         ModConfig.Instance backfilled = cfg.backfillFromDefaults();
         assertNotNull(backfilled.worldBlacklist());

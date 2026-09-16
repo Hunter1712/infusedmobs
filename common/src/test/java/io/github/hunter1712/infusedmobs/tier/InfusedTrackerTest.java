@@ -2,10 +2,10 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.test.IsolatedState;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Set;
@@ -22,16 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * tick-capable scan execute without Minecraft bootstrap; the Mob-based
  * queries are one-line delegates over {@link InfusedTracker#find}.
  */
+@ExtendWith(IsolatedState.class)
 class InfusedTrackerTest {
 
     private static Ability ability(String id, TriggerType trigger) {
         return new Ability(id, id, trigger, (mob, target, damage) -> {});
-    }
-
-    @BeforeEach
-    @AfterEach
-    void clearRegistry() {
-        InfusedTracker.clear();
     }
 
     @Test
