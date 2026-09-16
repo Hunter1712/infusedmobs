@@ -74,17 +74,36 @@ public final class TierSavedData extends SavedData {
         }
 
         Codec<Rolled> CODEC = RecordCodecBuilder.<DTO>create(instance -> instance.group(
-                Codec.STRING.fieldOf("kind").forGetter(DTO::kind),
-                MobTier.CODEC.optionalFieldOf("tier").forGetter(dto -> Optional.ofNullable(dto.tier())),
+                // Lenient: missing kind defaults to "nothing" (matches NBT shim which
+                // defaults missing kind to "" -> Nothing). Unknown kind also maps to
+                // Nothing via DTO.toRolled, so corrupted saves never fail world load.
+                Codec.STRING.optionalFieldOf("kind", "nothing").forGetter(DTO::kind),
+                // Lenient tier: decoded as raw string then resolved via valueOf, so an
+                // unknown tier name falls back to null -> Nothing (matches NBT shim's
+                // try/catch). Using MobTier.CODEC directly would fail the whole decode
+                // on corrupted saves instead of degrading gracefully.
+                Codec.STRING.optionalFieldOf("tier").forGetter(dto ->
+                        Optional.ofNullable(dto.tier() == null ? null : dto.tier().name())),
                 Codec.STRING.listOf().optionalFieldOf("abilityIds", List.of()).forGetter(DTO::abilityIds)
-        ).apply(instance, (kind, tier, abilityIds) -> new DTO(kind, tier.orElse(null), abilityIds)))
-                .xmap(DTO::toRolled, DTO::fromRolled);
+        ).apply(instance, (kind, tierName, abilityIds) -> {
+            MobTier tier = null;
+            if (tierName.isPresent()) {
+                try {
+                    tier = MobTier.valueOf(tierName.get());
+                } catch (IllegalArgumentException ignored) {
+                    tier = null;
+                }
+            }
+            return new DTO(kind, tier, abilityIds);
+        })).xmap(DTO::toRolled, DTO::fromRolled);
     }
 
-    private static final Codec<TierSavedData> CODEC = RecordCodecBuilder.<TierSavedData>create(instance ->
+    static final Codec<TierSavedData> CODEC = RecordCodecBuilder.<TierSavedData>create(instance ->
             instance.group(
+                    // Lenient: missing rolls defaults to empty (matches NBT shims which
+                    // return an empty store when the tag is absent, e.g. fresh worlds).
                     Codec.unboundedMap(UUIDUtil.STRING_CODEC, Rolled.CODEC)
-                            .fieldOf("rolls")
+                            .optionalFieldOf("rolls", Map.of())
                             .forGetter(d -> d.rolls)
             ).apply(instance, TierSavedData::new)
     );
