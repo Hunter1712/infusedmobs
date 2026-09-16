@@ -11,26 +11,16 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Central registry containing the global mob ability pool.
- * <p>
- * Abilities are stored in a flat list for random sampling and indexed
- * by id for O(1) lookups. Registration fails fast on duplicate ids —
- * a silently duplicated ability would skew the random draw weights.
+ * Global facade over the shared mob ability pool.
+ * Delegates to a shared {@link AbilityPool} instance so call sites stay
+ * one-liners while tests can instantiate isolated pools directly.
  */
 public final class AbilityRegistry {
 
-    private static final List<Ability> ALL_ABILITIES = new ArrayList<>();
-    private static final Map<String, Ability> BY_ID = new HashMap<>();
+    private static final AbilityPool SHARED = new AbilityPool();
 
     private AbilityRegistry() {}
 
@@ -100,12 +90,10 @@ public final class AbilityRegistry {
     /**
      * Registers a HURT ability that applies a status effect to the target.
      * Duration/amplifier are read from config at fire time.
-     * The effect handle is version-neutral (see {@link AbilityHelper}):
-     * 26.2/1.21.1 pass {@code Holder<MobEffect>}, 1.20.1 passes raw
-     * {@code MobEffect} — always obtained from an {@code AbilityHelper}
-     * accessor, never from {@code MobEffects} directly.
+     * The token is opaque (see {@link AbilityHelper}): always obtained from
+     * an {@code AbilityHelper} accessor, never constructed directly.
      */
-    private static void registerHurtEffect(String id, String name, Object effect) {
+    private static void registerHurtEffect(String id, String name, EffectToken effect) {
         all(id, name, TriggerType.HURT, (mob, target, damage) ->
                 AbilityHelper.applyHurtEffect(target, effect,
                         ModConfig.get().hurtEffectDuration(),
@@ -116,7 +104,7 @@ public final class AbilityRegistry {
      * Registers a TICK ability that applies a status effect to the mob itself.
      * Duration/amplifier are read from config at fire time.
      */
-    private static void registerTickEffect(String id, String name, Object effect) {
+    private static void registerTickEffect(String id, String name, EffectToken effect) {
         all(id, name, TriggerType.TICK, (mob, target, damage) ->
                 AbilityHelper.applyTickEffect(mob, effect,
                         ModConfig.get().tickEffectDuration(),
@@ -142,12 +130,7 @@ public final class AbilityRegistry {
      */
     static void all(String id, String name, TriggerType trigger,
                     AbilityEffect effect) {
-        if (BY_ID.containsKey(id)) {
-            throw new IllegalArgumentException("Duplicate ability id: '" + id + "'");
-        }
-        Ability ability = new Ability(id, name, trigger, effect);
-        ALL_ABILITIES.add(ability);
-        BY_ID.put(id, ability);
+        SHARED.register(id, name, trigger, effect);
     }
 
     /**
@@ -155,8 +138,7 @@ public final class AbilityRegistry {
      * Public so shared test extensions can isolate state without reflection.
      */
     public static void resetForTests() {
-        ALL_ABILITIES.clear();
-        BY_ID.clear();
+        SHARED.clear();
     }
 
     // ========================================
@@ -176,20 +158,7 @@ public final class AbilityRegistry {
      * @return a shuffled, unmodifiable list (may be shorter than {@code count})
      */
     public static List<Ability> getRandomAbilities(int count, String... excludedIds) {
-        if (count <= 0 || ALL_ABILITIES.isEmpty()) return List.of();
-
-        List<Ability> pool = new ArrayList<>(ALL_ABILITIES);
-        if (excludedIds.length > 0) {
-            Set<String> excluded = new HashSet<>(List.of(excludedIds));
-            pool.removeIf(a -> excluded.contains(a.id()));
-        }
-        if (pool.isEmpty()) return List.of();
-
-        ThreadLocalRandom rng = ThreadLocalRandom.current();
-        Collections.shuffle(pool, rng);
-        List<Ability> result = pool.subList(0, Math.min(count, pool.size()));
-
-        return Collections.unmodifiableList(result);
+        return SHARED.random(count, excludedIds);
     }
 
     /**
@@ -199,17 +168,12 @@ public final class AbilityRegistry {
      * @return list of matching abilities in input order (skips unknown IDs)
      */
     public static List<Ability> getAbilitiesByIds(List<String> ids) {
-        List<Ability> result = new ArrayList<>(ids.size());
-        for (String id : ids) {
-            Ability ability = BY_ID.get(id);
-            if (ability != null) result.add(ability);
-        }
-        return result;
+        return SHARED.byIds(ids);
     }
 
     /** Returns the ability with the given id, or null if unknown. */
     public static Ability getById(String id) {
-        return BY_ID.get(id);
+        return SHARED.byId(id);
     }
 
     /**
@@ -217,8 +181,6 @@ public final class AbilityRegistry {
      * Useful for command tab-completions.
      */
     public static List<String> getAllAbilityIds() {
-        return ALL_ABILITIES.stream()
-                .map(Ability::id)
-                .toList();
+        return SHARED.allIds();
     }
 }
