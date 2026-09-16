@@ -196,15 +196,13 @@ public final class AbilityRegistry {
      * Looks up abilities by their unique ID from the global pool.
      *
      * @param ids the ability IDs to look up
-     * @return list of matching abilities in pool order (skips unknown IDs)
+     * @return list of matching abilities in input order (skips unknown IDs)
      */
     public static List<Ability> getAbilitiesByIds(List<String> ids) {
-        Set<String> idSet = new HashSet<>(ids);
-        List<Ability> result = new ArrayList<>();
-        for (Ability ability : ALL_ABILITIES) {
-            if (idSet.contains(ability.id())) {
-                result.add(ability);
-            }
+        List<Ability> result = new ArrayList<>(ids.size());
+        for (String id : ids) {
+            Ability ability = BY_ID.get(id);
+            if (ability != null) result.add(ability);
         }
         return result;
     }

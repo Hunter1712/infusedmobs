@@ -414,22 +414,8 @@ public final class InfusedMobsCommand {
      * the caller decides how to respond.
      */
     static AbilityParse parseAbilities(String raw) {
-        if (raw == null || raw.isBlank()) return new AbilityParse(List.of(), List.of());
-
-        List<String> ids = Arrays.stream(raw.trim().split("\\s+"))
-                .filter(part -> !part.isEmpty())
-                .toList();
-        if (ids.isEmpty()) return new AbilityParse(List.of(), List.of());
-
-        // Resolve in pool order, skipping unknown IDs
-        List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(ids);
-        List<String> foundIds = abilities.stream().map(Ability::id).toList();
-
-        List<String> unknown = ids.stream()
-                .filter(id -> !foundIds.contains(id))
-                .distinct()
-                .toList();
-        return new AbilityParse(abilities, unknown);
+        AbilityParser.Parsed parsed = AbilityParser.parse(raw);
+        return new AbilityParse(parsed.abilities(), parsed.unknown());
     }
 
     /** Reports unknown ability IDs with closest-match hints. */
@@ -492,11 +478,7 @@ public final class InfusedMobsCommand {
      * Derived from the enum so adding a tier works without touching this.
      */
     static MobTier parseTier(String name) {
-        try {
-            return MobTier.valueOf(name.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        return TierParser.parse(name);
     }
 
     /**
@@ -504,36 +486,12 @@ public final class InfusedMobsCommand {
      * Levenshtein distance. Returns {@code null} if nothing is close enough.
      */
     static String findClosest(String input, List<String> candidates) {
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-        String lower = input.toLowerCase();
-        for (String candidate : candidates) {
-            String cLower = candidate.toLowerCase();
-            // Exact prefix match wins immediately
-            if (cLower.startsWith(lower)) return candidate;
-            int dist = levenshtein(lower, cLower);
-            if (dist < bestDist) {
-                bestDist = dist;
-                best = candidate;
-            }
-        }
-        // Only suggest if the distance is small enough
-        return bestDist <= 2 ? best : null;
+        return FuzzyMatcher.closest(input, candidates);
     }
 
     /** Computes Levenshtein edit distance between two strings. */
     static int levenshtein(String a, String b) {
-        int[][] dp = new int[a.length() + 1][b.length() + 1];
-        for (int i = 0; i <= a.length(); i++) dp[i][0] = i;
-        for (int j = 0; j <= b.length(); j++) dp[0][j] = j;
-        for (int i = 1; i <= a.length(); i++) {
-            for (int j = 1; j <= b.length(); j++) {
-                dp[i][j] = Math.min(
-                        Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
-                        dp[i - 1][j - 1] + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1));
-            }
-        }
-        return dp[a.length()][b.length()];
+        return FuzzyMatcher.distance(a, b);
     }
 
 }
