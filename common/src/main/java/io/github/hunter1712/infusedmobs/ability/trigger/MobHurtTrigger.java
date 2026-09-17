@@ -18,15 +18,17 @@ import java.util.List;
 
 /**
  * Handles the {@link TriggerType#HURT} trigger for both melee and projectile
- * attacks from tiered mobs, plus the Thorns reflection.
+ * attacks from Infused Mobs, plus the Thorns reflection.
  * <p>
  * A single {@code AFTER_DAMAGE} handler covers both directions:
  * <ul>
- *   <li>player damaged by an infused mob → its HURT abilities fire,</li>
- *   <li>infused mob damaged by a player → Thorns reflects damage back.</li>
+ *   <li>player damaged by an Infused Mob → its HURT Abilities fire,</li>
+ *   <li>Infused Mob damaged by a player → Thorns reflects damage back.</li>
  * </ul>
  * Reflection damage ({@link DamageTypes#THORNS}) never re-triggers either
  * path, which prevents infinite loops without any reentrancy state.
+ * <p>
+ * HURT fires against players only; mob-vs-mob hits never trigger Abilities.
  */
 public final class MobHurtTrigger {
 
@@ -62,7 +64,7 @@ public final class MobHurtTrigger {
         }
     }
 
-    /** Player hit a tiered mob that has Thorns — reflect a fraction back. */
+    /** Player hit an Infused Mob that has Thorns — reflect a fraction back. */
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
         if (!(source.getEntity() instanceof Player player)) return;
         if (!InfusedTracker.hasAbility(mob, "thorns")) return;
@@ -73,7 +75,7 @@ public final class MobHurtTrigger {
         }
     }
 
-    /** Player damaged by an infused mob (melee or projectile) — fire its HURT abilities. */
+    /** Player damaged by an Infused Mob (melee or projectile) — fire its HURT Abilities. */
     private static void onPlayerDamagedByMob(Player player, DamageSource source, float damageTaken) {
         Mob mob = findAttackingMob(source);
         if (mob == null) return;

@@ -91,13 +91,13 @@ public final class TierSavedData extends SavedData {
         for (Map.Entry<UUID, Rolled> e : store.entries()) {
             CompoundTag entry = new CompoundTag();
             Rolled r = e.getValue();
-            entry.putString("kind", Rolled.kindOf(r));
-            String tierName = Rolled.tierNameOf(r);
+            entry.putString("kind", r.kind());
+            String tierName = r.tierName();
             if (tierName != null) {
                 entry.putString("tier", tierName);
             }
             ListTag list = new ListTag();
-            for (String id : Rolled.abilityIdsOf(r)) {
+            for (String id : r.abilityIds()) {
                 list.add(StringTag.valueOf(id));
             }
             entry.put("abilityIds", list);

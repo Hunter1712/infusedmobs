@@ -29,13 +29,13 @@ public final class TierSavedData extends SavedData {
     /**
      * DTO bridging the shared {@link Rolled} model to a flat serialisable
      * record ({@code kind} discriminates the variants). The wire rules live
-     * in {@link Rolled#decode} and the {@code kindOf}/{@code tierOf}/
-     * {@code abilityIdsOf} helpers — this record is only codec plumbing.
+     * in {@link Rolled#decode} and its polymorphic accessors — this record
+     * is only codec plumbing.
      */
     record DTO(String kind, MobTier tier, List<String> abilityIds) {
 
         static DTO fromRolled(Rolled rolled) {
-            return new DTO(Rolled.kindOf(rolled), Rolled.tierOf(rolled), Rolled.abilityIdsOf(rolled));
+            return new DTO(rolled.kind(), rolled.tier(), rolled.abilityIds());
         }
 
         Rolled toRolled() {

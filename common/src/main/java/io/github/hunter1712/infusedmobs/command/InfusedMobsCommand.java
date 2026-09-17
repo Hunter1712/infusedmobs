@@ -61,6 +61,7 @@ public final class InfusedMobsCommand {
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext buildContext) {
         dispatcher.register(Commands.literal("infusedmobs")
                 .requires(Platform.hooks().gamemasterPermission())
+                .executes(InfusedMobsCommand::executeHelp)
 
                 // --- help ---
                 .then(Commands.literal("help")
@@ -172,7 +173,7 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs list §7— list all hostile mob types that can be infused"));
         source.sendSystemMessage(Component.literal(
-                "§f/infusedmobs summon <tier> [entity] [abilities] §7— spawn a tiered mob at crosshair"));
+                "§f/infusedmobs summon <tier> [entity] [abilities] §7— spawn an Infused Mob at crosshair (abilities require an entity)"));
         source.sendSystemMessage(Component.literal(
                 "§8Tiers: " + tierNames + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
         return 1;
@@ -191,7 +192,7 @@ public final class InfusedMobsCommand {
         return 1;
     }
 
-    /** Sets nametag visibility and refreshes all loaded tiered mobs. */
+    /** Sets nametag visibility and refreshes all loaded Infused Mobs. */
     private static int setNametags(CommandContext<CommandSourceStack> ctx, boolean show) {
         CommandSourceStack source = ctx.getSource();
         ModConfig.Instance updated = ModConfig.get().withShowNametags(show);
@@ -262,7 +263,7 @@ public final class InfusedMobsCommand {
         }
 
         source.sendSuccess(() -> Component.literal(
-                "§eBlacklisted worlds (" + blacklist.size() + "):"), false);
+                "§eWorld blacklist (" + blacklist.size() + "):"), false);
         for (String world : blacklist) {
             source.sendSystemMessage(Component.literal("§f - " + world));
         }
@@ -332,8 +333,12 @@ public final class InfusedMobsCommand {
     }
 
     /**
-     * Spawns a tiered mob at the command source's crosshair/position,
+     * Spawns an Infused Mob at the command source's crosshair/position,
      * optionally with specific abilities (or random if null/empty).
+     * Natural infusion targets hostile mobs only; summon accepts any mob
+     * so players can test tiers on demand. Abilities require an entity
+     * argument — {@code summon <tier> <abilities>} without an entity is
+     * not supported by the command tree.
      */
     private static int summon(CommandContext<CommandSourceStack> ctx, String tierName,
                               EntityType<?> entityType, List<Ability> abilities) {

@@ -72,6 +72,25 @@ class TierSavedDataTest {
     }
 
     @Test
+    void nothingEncodesOnlyLongStandingForm() {
+        // Save-shape lock: Nothing writes no tier and no abilities — kind is
+        // the long-standing "nothing" default (omitted when equal to default),
+        // so downgrades never see unexpected data.
+        var encoded = TierSavedData.ROLLED_CODEC
+                .encodeStart(JsonOps.INSTANCE, new Rolled.Nothing())
+                .getOrThrow().getAsJsonObject();
+        if (encoded.has("kind")) {
+            assertEquals("nothing", encoded.get("kind").getAsString());
+        }
+        assertTrue(!encoded.has("tier"),
+                "nothing rolls must not carry a tier field");
+        if (encoded.has("abilityIds")) {
+            assertEquals(0, encoded.getAsJsonArray("abilityIds").size(),
+                    "nothing rolls must not carry abilities");
+        }
+    }
+
+    @Test
     void setRolledAndGetRolledRoundTripInMemory() {
         TierSavedData store = new TierSavedData();
         var rolled = new Rolled.Tiered(MobTier.SHADE, List.of("hex", "thorns"));

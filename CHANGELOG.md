@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MobTierManager` now delegates dimension and storage via shims (`DimensionHelper`, `TierSavedData.get`) and `isEnabled` (`ModGameRules.java:60`); `AbilityRegistry` delegates to `AbilityHelper`; `SplitEffect` to `SpawnHelper`, `MobHurtTrigger` to `AbilityHelper.reflectThorns` and `HurtTriggerHelper.register`.
 - Tier persistence rules live once in `common` (`tier/Rolled.java` decode/encode helpers + `tier/TierRollStore.java` in-memory map) with thin codec/NBT adapters per version; corrupted-save fallback is covered by behaviour tests instead of source-text checks.
 - `MobTierManager` slimmed to roll/restore/health flows: gating decisions moved to `tier/InfusionGate.java` (`status(level)` → ACTIVE/WORLD_BLACKLISTED/RULE_DISABLED) and the in-memory Infused Mob registry + nametag presentation to `tier/InfusedTracker.java`, which triggers and commands query directly.
+- Docs/code vocab audit: `InfusedMob.TieredMob`→`Tiered` and `SplitCopyMob`→`SplitCopy` (CONTEXT.md avoids "Tiered Mob"), `AbilityRegistry.all`→`register`, split-copy grey extracted to `SPLIT_COPY_COLOUR`, entity-type name helper hides the `getType().getDescription()` chain; Javadoc now uses Infused Mob / Tier / Ability / TriggerType / World Blacklist / Gamerule Gate consistently.
+- Docs synced to code: HURT documented as melee-or-projectile against players, Rupture copies documented as Cinder stats with grey tag and no Tier, summon abilities documented as requiring an entity argument, vanilla share corrected to ~40% (sequential rolls).
+
+### Fixed
+- Bare `/infusedmobs` now shows help (previously did nothing despite help text advertising `/infusedmobs` — show this help).
 
 ## [2.7.1] - 2026-08-02
 

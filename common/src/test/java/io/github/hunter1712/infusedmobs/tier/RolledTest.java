@@ -94,37 +94,37 @@ class RolledTest {
         var mutable = new ArrayList<>(List.of("bane"));
         var decoded = Rolled.decode("tiered", "SHADE", mutable);
         mutable.add("rupture");
-        assertEquals(List.of("bane"), Rolled.abilityIdsOf(decoded));
+        assertEquals(List.of("bane"), decoded.abilityIds());
     }
 
     // ========================================
-    // encode helpers — kind / tier / abilityIds
+    // polymorphic accessors — the single shape for kind / tier / abilityIds
     // ========================================
 
     @Test
     void accessorsDescribeTiered() {
-        var tiered = new Rolled.Tiered(MobTier.SHADE, List.of("hex"));
-        assertEquals("tiered", Rolled.kindOf(tiered));
-        assertEquals(MobTier.SHADE, Rolled.tierOf(tiered));
-        assertEquals("SHADE", Rolled.tierNameOf(tiered));
-        assertEquals(List.of("hex"), Rolled.abilityIdsOf(tiered));
+        Rolled tiered = new Rolled.Tiered(MobTier.SHADE, List.of("hex"));
+        assertEquals("tiered", tiered.kind());
+        assertEquals(MobTier.SHADE, tiered.tier());
+        assertEquals("SHADE", tiered.tierName());
+        assertEquals(List.of("hex"), tiered.abilityIds());
     }
 
     @Test
     void accessorsDescribeSplit() {
-        var split = new Rolled.Split(List.of("ward"));
-        assertEquals("split", Rolled.kindOf(split));
-        assertNull(Rolled.tierOf(split));
-        assertNull(Rolled.tierNameOf(split));
-        assertEquals(List.of("ward"), Rolled.abilityIdsOf(split));
+        Rolled split = new Rolled.Split(List.of("ward"));
+        assertEquals("split", split.kind());
+        assertNull(split.tier());
+        assertNull(split.tierName());
+        assertEquals(List.of("ward"), split.abilityIds());
     }
 
     @Test
     void accessorsDescribeNothing() {
-        var nothing = new Rolled.Nothing();
-        assertEquals("nothing", Rolled.kindOf(nothing));
-        assertNull(Rolled.tierOf(nothing));
-        assertNull(Rolled.tierNameOf(nothing));
-        assertEquals(List.of(), Rolled.abilityIdsOf(nothing));
+        Rolled nothing = new Rolled.Nothing();
+        assertEquals("nothing", nothing.kind());
+        assertNull(nothing.tier());
+        assertNull(nothing.tierName());
+        assertEquals(List.of(), nothing.abilityIds());
     }
 }

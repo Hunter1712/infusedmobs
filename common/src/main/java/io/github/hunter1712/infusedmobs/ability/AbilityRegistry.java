@@ -34,23 +34,25 @@ public final class AbilityRegistry {
      * <p>
      * Effect lambdas read {@link ModConfig#get()} at fire time, so values
      * changed via {@code /infusedmobs reload} apply without a restart.
+     * HURT Abilities fire when an Infused Mob damages a player (melee or
+     * projectile); TICK refreshes every second; DEATH fires on death.
      */
     public static void registerAll() {
-        // ---- HURT abilities (fire when the mob hits a player — melee or projectile) ----
+        // ---- HURT abilities (fire when an Infused Mob hits a player — melee or projectile) ----
 
         registerHurtEffect("bane",     "Bane",     Platform.hooks().poison());
         registerHurtEffect("chill",    "Chill",    Platform.hooks().slowness());
         registerHurtEffect("decay",    "Decay",    Platform.hooks().wither());
         registerHurtEffect("hex",      "Hex",      Platform.hooks().weakness());
 
-        all("hellfire", "Hellfire", TriggerType.HURT, (mob, target, damage) ->
+        register("hellfire", "Hellfire", TriggerType.HURT, (mob, target, damage) ->
                 Platform.hooks().ignite(target, ModConfig.get().infernoFireSeconds()));
 
-        all("siphon", "Siphon", TriggerType.HURT, (mob, target, damage) -> {
+        register("siphon", "Siphon", TriggerType.HURT, (mob, target, damage) -> {
             if (damage > 0) mob.heal(damage);
         });
 
-        all("vitriol", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
+        register("vitriol", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
 
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
@@ -60,13 +62,13 @@ public final class AbilityRegistry {
         registerTickEffect("blight",   "Blight",  Platform.hooks().regeneration());
 
         // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
-        all("thorns", "Thorns", TriggerType.TICK, (mob, target, damage) -> {});
+        register("thorns", "Thorns", TriggerType.TICK, (mob, target, damage) -> {});
 
         // ---- DEATH abilities ----
 
-        all("rupture", "Rupture", TriggerType.DEATH, (mob, target, damage) -> SplitEffect.apply(mob));
+        register("rupture", "Rupture", TriggerType.DEATH, (mob, target, damage) -> SplitEffect.apply(mob));
 
-        all("combust", "Combust", TriggerType.DEATH, (mob, target, damage) -> {
+        register("combust", "Combust", TriggerType.DEATH, (mob, target, damage) -> {
             if (mob.level() instanceof ServerLevel level) {
                 double radius = ModConfig.get().combustExplosionPower() * 2.0;
                 var entities = level.getEntities(mob, mob.getBoundingBox().inflate(radius));
@@ -94,7 +96,7 @@ public final class AbilityRegistry {
      * always obtained from the platform seam, never constructed directly.
      */
     private static void registerHurtEffect(String id, String name, EffectToken effect) {
-        all(id, name, TriggerType.HURT, (mob, target, damage) ->
+        register(id, name, TriggerType.HURT, (mob, target, damage) ->
                 Platform.hooks().applyHurtEffect(target, effect,
                         ModConfig.get().hurtEffectDuration(),
                         ModConfig.get().hurtEffectAmplifier()));
@@ -105,7 +107,7 @@ public final class AbilityRegistry {
      * Duration/amplifier are read from config at fire time.
      */
     private static void registerTickEffect(String id, String name, EffectToken effect) {
-        all(id, name, TriggerType.TICK, (mob, target, damage) ->
+        register(id, name, TriggerType.TICK, (mob, target, damage) ->
                 Platform.hooks().applyTickEffect(mob, effect,
                         ModConfig.get().tickEffectDuration(),
                         ModConfig.get().tickEffectAmplifier()));
@@ -127,8 +129,8 @@ public final class AbilityRegistry {
      * Package-private: tests use it to populate the pool without
      * initialising Minecraft.
      */
-    static void all(String id, String name, TriggerType trigger,
-                    AbilityEffect effect) {
+    static void register(String id, String name, TriggerType trigger,
+                         AbilityEffect effect) {
         SHARED.register(id, name, trigger, effect);
     }
 

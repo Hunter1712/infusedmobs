@@ -9,12 +9,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * In-memory registry of Infused Mobs plus their nametag presentation.
@@ -26,7 +24,10 @@ import java.util.stream.Collectors;
  */
 public final class InfusedTracker {
 
-    private static final Map<UUID, InfusedMob> TRACKED = new HashMap<>();
+    private static final InfusedRegistry SHARED = new InfusedRegistry();
+
+    /** Greyscale colour code for Rupture split-copy nametags (no Tier). */
+    private static final String SPLIT_COPY_COLOUR = "§7";
 
     private InfusedTracker() {}
 
@@ -36,12 +37,12 @@ public final class InfusedTracker {
 
     /** Starts tracking this UUID as the given infused state. */
     public static void track(UUID id, InfusedMob infused) {
-        TRACKED.put(id, infused);
+        SHARED.track(id, infused);
     }
 
     /** Returns the tracked state for this UUID, or null if untracked. */
     public static InfusedMob find(UUID id) {
-        return TRACKED.get(id);
+        return SHARED.find(id);
     }
 
     /**
@@ -50,12 +51,12 @@ public final class InfusedTracker {
      * @return true if anything was tracked
      */
     public static boolean untrack(UUID id) {
-        return TRACKED.remove(id) != null;
+        return SHARED.untrack(id);
     }
 
     /** Clears all tracking. Test-only — live code untracks per mob. Public so shared test extensions can isolate state. */
     public static void clear() {
-        TRACKED.clear();
+        SHARED.clear();
     }
 
     // ========================================
@@ -64,30 +65,30 @@ public final class InfusedTracker {
 
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
-        InfusedMob infused = TRACKED.get(mob.getUUID());
+        InfusedMob infused = SHARED.find(mob.getUUID());
         return infused == null ? null : extractTier(infused);
     }
 
     private static MobTier extractTier(InfusedMob infused) {
-        if (infused instanceof InfusedMob.TieredMob t) return t.tier();
-        return null; // SplitCopyMob and future variants have no tier
+        if (infused instanceof InfusedMob.Tiered t) return t.tier();
+        return null; // SplitCopy and future variants have no tier
     }
 
     /** Returns abilities assigned to this mob matching the given trigger type. */
     public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
-        InfusedMob infused = TRACKED.get(mob.getUUID());
+        InfusedMob infused = SHARED.find(mob.getUUID());
         return infused == null ? List.of() : infused.forTrigger(trigger);
     }
 
     /** Returns all abilities assigned to this mob (empty list if none). */
     public static List<Ability> getAllAbilities(Mob mob) {
-        InfusedMob infused = TRACKED.get(mob.getUUID());
+        InfusedMob infused = SHARED.find(mob.getUUID());
         return infused == null ? List.of() : infused.abilities();
     }
 
     /** Returns true if this mob has an ability with the given id. */
     public static boolean hasAbility(Mob mob, String id) {
-        InfusedMob infused = TRACKED.get(mob.getUUID());
+        InfusedMob infused = SHARED.find(mob.getUUID());
         if (infused == null) return false;
         for (Ability ability : infused.abilities()) {
             if (ability.id().equals(id)) return true;
@@ -104,10 +105,7 @@ public final class InfusedTracker {
      * mid-scan) cannot throw a {@code ConcurrentModificationException}.
      */
     public static Set<UUID> getTickMobUUIDs() {
-        return TRACKED.entrySet().stream()
-                .filter(e -> !e.getValue().forTrigger(TriggerType.TICK).isEmpty())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+        return SHARED.tickMobUUIDs();
     }
 
     /**
@@ -132,15 +130,15 @@ public final class InfusedTracker {
         setNametag(mob, tier.colourCode(), abilities);
     }
 
-    /** Shows the greyscale nametag for a Rupture split copy. */
+    /** Shows the greyscale nametag for a Rupture split copy (Cinder stats, no Tier). */
     public static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
-        setNametag(mob, "§7", abilities);
+        setNametag(mob, SPLIT_COPY_COLOUR, abilities);
     }
 
     private static void applyNametagForInfused(Mob mob, InfusedMob infused) {
-        if (infused instanceof InfusedMob.TieredMob t) {
+        if (infused instanceof InfusedMob.Tiered t) {
             setTierNametag(mob, t.tier(), t.abilities());
-        } else if (infused instanceof InfusedMob.SplitCopyMob s) {
+        } else if (infused instanceof InfusedMob.SplitCopy s) {
             setSplitCopyNametag(mob, s.abilities());
         }
     }
@@ -148,11 +146,18 @@ public final class InfusedTracker {
     private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
         if (!ModConfig.get().showNametags()) return;
         List<String> names = abilities.stream().map(Ability::name).toList();
-        // Use the entity type name (e.g. "Parched") rather than getName(),
-        // which would return any previously-set custom name and cause duplication.
-        String entityName = mob.getType().getDescription().getString();
+        String entityName = entityTypeName(mob);
         mob.setCustomName(Component.literal(NametagFormatter.format(colour, names, entityName)));
         mob.setCustomNameVisible(true);
+    }
+
+    /**
+     * Base entity-type name (e.g. "Zombie") for nametags.
+     * Uses the type description rather than {@code getName()}, which would
+     * return any previously-set custom name and cause duplication.
+     */
+    private static String entityTypeName(Mob mob) {
+        return mob.getType().getDescription().getString();
     }
 
     /**
@@ -162,7 +167,7 @@ public final class InfusedTracker {
      */
     public static void refreshNametags(MinecraftServer server) {
         boolean show = ModConfig.get().showNametags();
-        for (Map.Entry<UUID, InfusedMob> entry : TRACKED.entrySet()) {
+        for (Map.Entry<UUID, InfusedMob> entry : SHARED.snapshot().entrySet()) {
             Mob mob = findMob(server, entry.getKey());
             if (mob == null) continue;
             InfusedMob infused = entry.getValue();

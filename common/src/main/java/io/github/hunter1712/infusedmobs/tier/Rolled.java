@@ -9,25 +9,82 @@ import java.util.List;
  *   <li>{@link Tiered} — the mob rolled a Tier; abilities are stored by id
  *       so the exact set is restored (no re-roll on reload).</li>
  *   <li>{@link Split} — a Rupture split copy; its own distinct variant so
- *       it is never re-rolled into a regular tiered mob (which could gain
+ *       it is never re-rolled into a regular Infused Mob (which could gain
  *       DEATH abilities and recurse).</li>
  *   <li>{@link Nothing} — the mob rolled nothing and must never roll again.</li>
  * </ul>
  * <p>
- * The static helpers are the single home of the wire rules: every storage
- * adapter (codec on 26.2, NBT on 1.21.1/1.20.1) encodes to and decodes from
- * the same ({@code kind}, {@code tier}, {@code abilityIds}) shape through
- * them. Decoding is lenient — unknown kinds, unknown or missing tiers and
- * missing ability lists all degrade to {@link Nothing} so a corrupted save
- * never fails world load.
+ * The polymorphic accessors are the single home of the wire rules: every
+ * storage adapter (codec on 26.2, NBT on 1.21.1/1.20.1) encodes through them,
+ * and {@link #decode} decodes from the same ({@code kind}, {@code tier},
+ * {@code abilityIds}) shape. Decoding is lenient — unknown kinds, unknown or
+ * missing tiers and missing ability lists all degrade to {@link Nothing} so a
+ * corrupted save never fails world load.
  */
 public sealed interface Rolled {
 
-    record Tiered(MobTier tier, List<String> abilityIds) implements Rolled {}
+    /** Stored discriminator: {@code "tiered"}, {@code "split"} or {@code "nothing"}. */
+    String kind();
 
-    record Split(List<String> abilityIds) implements Rolled {}
+    /** The Tier of a {@link Tiered} roll, otherwise null (split copies have no Tier). */
+    MobTier tier();
 
-    record Nothing() implements Rolled {}
+    /** Stored tier name, or null unless {@link Tiered} (split entries persist no tier). */
+    String tierName();
+
+    /** Stored ability ids of a {@link Tiered} or {@link Split} roll, else empty. */
+    List<String> abilityIds();
+
+    record Tiered(MobTier tier, List<String> abilityIds) implements Rolled {
+        @Override
+        public String kind() {
+            return "tiered";
+        }
+
+        @Override
+        public String tierName() {
+            return tier.name();
+        }
+    }
+
+    record Split(List<String> abilityIds) implements Rolled {
+        @Override
+        public String kind() {
+            return "split";
+        }
+
+        @Override
+        public MobTier tier() {
+            return null;
+        }
+
+        @Override
+        public String tierName() {
+            return null;
+        }
+    }
+
+    record Nothing() implements Rolled {
+        @Override
+        public String kind() {
+            return "nothing";
+        }
+
+        @Override
+        public MobTier tier() {
+            return null;
+        }
+
+        @Override
+        public String tierName() {
+            return null;
+        }
+
+        @Override
+        public List<String> abilityIds() {
+            return List.of();
+        }
+    }
 
     /**
      * Rebuilds a roll from its stored parts. Never throws and never returns
@@ -57,41 +114,5 @@ public sealed interface Rolled {
             return new Split(ids);
         }
         return new Nothing();
-    }
-
-    /** Stored discriminator: {@code "tiered"}, {@code "split"} or {@code "nothing"}. */
-    static String kindOf(Rolled rolled) {
-        if (rolled instanceof Tiered) {
-            return "tiered";
-        }
-        if (rolled instanceof Split) {
-            return "split";
-        }
-        return "nothing";
-    }
-
-    /** The Tier of a {@link Tiered} roll, otherwise null (split copies have no Tier). */
-    static MobTier tierOf(Rolled rolled) {
-        if (rolled instanceof Tiered t) {
-            return t.tier();
-        }
-        return null;
-    }
-
-    /** Stored tier name, or null unless {@link Tiered} (split entries persist no tier). */
-    static String tierNameOf(Rolled rolled) {
-        MobTier tier = tierOf(rolled);
-        return tier == null ? null : tier.name();
-    }
-
-    /** Stored ability ids of a {@link Tiered} or {@link Split} roll, else empty. */
-    static List<String> abilityIdsOf(Rolled rolled) {
-        if (rolled instanceof Tiered t) {
-            return t.abilityIds();
-        }
-        if (rolled instanceof Split s) {
-            return s.abilityIds();
-        }
-        return List.of();
     }
 }

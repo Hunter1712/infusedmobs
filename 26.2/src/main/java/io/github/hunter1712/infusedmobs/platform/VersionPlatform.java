@@ -36,6 +36,13 @@ import java.util.function.Predicate;
 /**
  * Platform adapter for 26.2 — modern identifier, Holder-based effects,
  * post-mitigation damage event and reasoned spawns.
+ * <p>
+ * Adapter size accepted: a single thin file per Versioned Source Set.
+ * Duplication across versions is inherent — Mojang/Fabric APIs diverge
+ * (Identifier versus ResourceLocation, Holder versus raw effects,
+ * AFTER_DAMAGE versus ALLOW_DAMAGE, reasoned versus plain spawns,
+ * hurtServer versus hurt, SavedDataType versus Factory/Function) — and no
+ * further thinning is possible without a preprocessor.
  */
 public final class VersionPlatform implements PlatformHooks {
     @Override
@@ -82,39 +89,37 @@ public final class VersionPlatform implements PlatformHooks {
     }
 
     @Override
-    public EffectToken slowness() { return EffectToken.of(MobEffects.SLOWNESS); }
+    public EffectToken slowness() { return new HolderToken(MobEffects.SLOWNESS); }
 
     @Override
-    public EffectToken resistance() { return EffectToken.of(MobEffects.RESISTANCE); }
+    public EffectToken resistance() { return new HolderToken(MobEffects.RESISTANCE); }
 
     @Override
-    public EffectToken strength() { return EffectToken.of(MobEffects.STRENGTH); }
+    public EffectToken strength() { return new HolderToken(MobEffects.STRENGTH); }
 
     @Override
-    public EffectToken speed() { return EffectToken.of(MobEffects.SPEED); }
+    public EffectToken speed() { return new HolderToken(MobEffects.SPEED); }
 
     @Override
-    public EffectToken poison() { return EffectToken.of(MobEffects.POISON); }
+    public EffectToken poison() { return new HolderToken(MobEffects.POISON); }
 
     @Override
-    public EffectToken wither() { return EffectToken.of(MobEffects.WITHER); }
+    public EffectToken wither() { return new HolderToken(MobEffects.WITHER); }
 
     @Override
-    public EffectToken weakness() { return EffectToken.of(MobEffects.WEAKNESS); }
+    public EffectToken weakness() { return new HolderToken(MobEffects.WEAKNESS); }
 
     @Override
-    public EffectToken regeneration() { return EffectToken.of(MobEffects.REGENERATION); }
+    public EffectToken regeneration() { return new HolderToken(MobEffects.REGENERATION); }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {
-        target.addEffect(new MobEffectInstance((Holder<MobEffect>) effect.handle(), duration, amplifier));
+        effect.applyHurt(target, duration, amplifier);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier) {
-        mob.addEffect(new MobEffectInstance((Holder<MobEffect>) effect.handle(), duration, amplifier, false, false, false));
+        effect.applyTick(mob, duration, amplifier);
     }
 
     @Override
@@ -161,5 +166,20 @@ public final class VersionPlatform implements PlatformHooks {
     @Override
     public void clearRoll(ServerLevel level, UUID uuid) {
         TierSavedData.get(level).remove(uuid);
+    }
+
+    /**
+     * Typed token carrying a modern holder effect — no casts at the boundary.
+     */
+    private record HolderToken(Holder<MobEffect> effect) implements EffectToken {
+        @Override
+        public void applyHurt(LivingEntity target, int duration, int amplifier) {
+            target.addEffect(new MobEffectInstance(effect, duration, amplifier));
+        }
+
+        @Override
+        public void applyTick(LivingEntity mob, int duration, int amplifier) {
+            mob.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false));
+        }
     }
 }
