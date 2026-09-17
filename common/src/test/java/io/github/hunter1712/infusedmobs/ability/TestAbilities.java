@@ -7,6 +7,6 @@ public final class TestAbilities {
     private TestAbilities() {}
 
     public static void register(String id, TriggerType trigger) {
-        AbilityRegistry.all(id, id, trigger, (mob, target, damage) -> {});
+        AbilityRegistry.register(id, id, trigger, (mob, target, damage) -> {});
     }
 }

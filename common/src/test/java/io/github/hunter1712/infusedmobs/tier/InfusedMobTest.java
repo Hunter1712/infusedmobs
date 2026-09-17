@@ -41,7 +41,7 @@ class InfusedMobTest {
 
         assertEquals(List.of(combust), copy.forTrigger(TriggerType.DEATH));
         assertTrue(copy.forTrigger(TriggerType.HURT).isEmpty());
-        assertTrue(copy instanceof InfusedMob.SplitCopyMob);
+        assertTrue(copy instanceof InfusedMob.SplitCopy);
     }
 
     @Test

@@ -18,9 +18,13 @@ import java.util.UUID;
  * Rolls Tiers for hostile mobs and restores persisted rolls on reload.
  * <p>
  * Each hostile mob can be assigned a Tier on spawn, which grants it
- * a random subset of abilities and stat multipliers. The full roll
+ * a random subset of Abilities and stat multipliers. The full roll
  * (Tier, abilities, or split-copy status) is persisted via
  * {@link TierSavedData} and restored exactly on world/chunk reloads.
+ * <p>
+ * Rolls are sequential independent checks in {@link MobTier} order
+ * (Cinder, then Shade, then Doom), so the vanilla share is
+ * {@code (1-0.4)*(1-0.2)*(1-0.1) ≈ 43%} at defaults — not 30%.
  * <p>
  * Gating decisions live in {@link InfusionGate} and in-memory tracking plus
  * nametag presentation in {@link InfusedTracker}; this module coordinates
@@ -47,7 +51,7 @@ public final class MobTierManager {
      * same result on world or chunk reload — never re-rolled.
      * <p>
      * Rupture split copies hold a persisted {@link Rolled.Split}
-     * entry, so they are skipped here and never become tiered mobs.
+     * entry, so they are skipped here and never become Infused Mobs.
      * <p>
      * Worlds where the mod is inactive are skipped entirely — no tier,
      * no abilities, no nametag.
@@ -182,8 +186,8 @@ public final class MobTierManager {
      * </ul>
      * The copy's status is persisted as {@link Rolled.Split}
      * BEFORE it enters the world, so the spawn handler skips it and chunk
-     * reloads restore it as a copy — it can never be re-rolled into a
-     * tiered mob.
+     * reloads restore it as a copy — it can never be re-rolled into an
+     * Infused Mob.
      */
     public static void applyCinderTierToSplitCopy(Mob copy) {
         applyCinderStats(copy);

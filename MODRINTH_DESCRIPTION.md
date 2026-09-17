@@ -16,13 +16,13 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **🟡 Shade** | 20% | 2× | 2× | 2 (any type) |
 | **🔴 Doom** | 10% | 4× | 4× | 3 (any type) |
 
-> **~30% of hostile mobs remain vanilla** — infused mobs are common but effects are weak (configurable).
+> **~40% of hostile mobs remain vanilla at defaults** — tiers roll as sequential independent checks (Cinder, then Shade, then Doom), so vanilla is `(1-0.4)×(1-0.2)×(1-0.1) ≈ 43%`. Infused mobs are common but effects are weak (configurable).
 
 ---
 
 ## ⚔️ Ability Types
 
-### HURT (fire on melee hit or projectile hit, blocked by shields)
+### HURT (fire on melee or projectile hit against a player, blocked by shields on 1.21.1/26.2)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -34,7 +34,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
 
-> **Shield blocks negate all HURT abilities.** Projectiles (arrows, fire charges, etc.) fired by infused mobs also trigger their HURT abilities on hit.
+> **Shield blocks negate all HURT abilities on 1.21.1 and 26.2.** On 1.20.1 the legacy damage event reports pre-mitigation amounts with no shield-block flag, so a fully-blocked hit still fires HURT abilities there. Projectiles (arrows, fire charges, etc.) fired by infused mobs also trigger their HURT abilities on hit.
 
 ---
 
@@ -54,7 +54,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 
 | Ability | Effect |
 |---------|--------|
-| **Rupture** | Splits into **2 Cinder-tier copies** at 60% health (each gets 1 random ability — any except Rupture itself, preventing recursion) |
+| **Rupture** | Splits into **2 copies with Cinder stats** at 60% health (grey tag, no Tier — each gets 1 random ability, any except Rupture itself, preventing recursion) |
 | **Combust** | Area damage + explosion sound at death (configurable power, default 4.0 — TNT = 4.0) |
 
 ---
@@ -68,10 +68,10 @@ All commands require **gamemaster-level permission** (level 2 ops).
 | `/infusedmobs help` | List all available subcommands |
 | `/infusedmobs nametag [on\|off]` | Toggle tier nametags globally (persisted in config) |
 | `/infusedmobs list` | List all hostile mob types that can be infused |
-| `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an infused mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) |
+| `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an Infused Mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) and require an entity argument |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
-| `/infusedmobs world add\|remove <world>` | Blacklist/unblacklist a world dimension (disables the mod there) |
-| `/infusedmobs world list` | Show all blacklisted worlds |
+| `/infusedmobs world add\|remove <world>` | Add/remove a world dimension on the World Blacklist (disables the mod there) |
+| `/infusedmobs world list` | Show the World Blacklist |
 | `/gamerule infusedmobs:enabled` | Enable/disable the mod in the current world (default `true`) |
 
 ### 🎮 Gamerules
@@ -186,7 +186,7 @@ One project page covers all supported versions — pick the file matching your g
 
 ## 🐛 Known Issues
 
-- **Split copies** from Rupture are always Cinder-tier (by design), and never roll Rupture again (recursion guard)
+- **Split copies** from Rupture have Cinder stats with a grey tag (no Tier by design), and never roll Rupture again (recursion guard)
 - **Nametags** use Minecraft color codes (§a, §e, §c, §7) — visible in vanilla
 - **Old configs** (pre-2.5.0) lack the required `abilityCount` field — they are automatically replaced with defaults on load (tier edits from before 2.5.0 are lost)
 

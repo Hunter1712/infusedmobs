@@ -14,11 +14,13 @@ One project page covers all three versions — download `infusedmobs-<mod>+<mc>.
 | **Shade** | 20% | 2 (any type) | 2× | 2× | Yellow |
 | **Doom** | 10% | 3 (any type) | 4× | 4× | Red |
 
-~30% of hostile mobs remain vanilla — infused mobs are common but effects are weak.
+~40% of hostile mobs remain vanilla at defaults — tiers roll as sequential independent checks (Cinder, then Shade, then Doom), so vanilla is `(1-0.4)×(1-0.2)×(1-0.1) ≈ 43%`. Infused mobs are common but effects are weak.
 
 ## Abilities
 
-### HURT (fire on melee hit, blocked by shields)
+HURT fires when an Infused Mob damages a player (melee or projectile); mob-vs-mob hits never trigger Abilities.
+
+### HURT (fire on melee or projectile hit against a player, blocked by shields on 1.21.1/26.2)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -29,6 +31,8 @@ One project page covers all three versions — download `infusedmobs-<mod>+<mc>.
 | **Siphon** | Heal 100% of damage dealt | — |
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
+
+> **Shield blocks negate all HURT abilities on 1.21.1 and 26.2.** On 1.20.1 the legacy damage event reports pre-mitigation amounts with no shield-block flag, so a fully-blocked hit still fires HURT abilities there.
 
 ### TICK (passive, refreshes every 1s, no particles)
 
@@ -44,7 +48,7 @@ One project page covers all three versions — download `infusedmobs-<mod>+<mc>.
 
 | Ability | Effect |
 |---------|--------|
-| **Rupture** | Split into 2 Cinder-tier copies at 60% HP (each gets 1 random ability — any except Rupture itself, preventing recursion) |
+| **Rupture** | Split into 2 copies with Cinder stats at 60% HP (grey tag, no Tier — each gets 1 random ability, any except Rupture itself, preventing recursion) |
 | **Combust** | Area damage + explosion sound (no particles / block damage, radius configurable) |
 
 ## Commands
@@ -59,7 +63,7 @@ All commands require **gamemaster-level permission** (level 2 ops).
 | `/infusedmobs world remove <world>` | Remove a world from the blacklist |
 | `/infusedmobs world list` | Show all blacklisted worlds |
 | `/infusedmobs list` | List all hostile mob types that can be infused |
-| `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an infused mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) |
+| `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an Infused Mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) and require an entity argument |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
 | `/gamerule infusedmobs:enabled` | Enable/disable the mod in the current world (default `true`) |
 

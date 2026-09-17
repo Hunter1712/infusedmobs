@@ -69,10 +69,12 @@ public final class AbilitySuggestions {
             return result;
         }
 
-        Set<String> picked = Set.copyOf(new HashSet<>(List.of(fullValue.split("\\s+"))));
+        List<String> tokens = List.of(fullValue.split("\\s+"));
 
-        // User finished a word and pressed space — suggest the next unused ability
+        // User finished a word and pressed space — suggest the next unused ability.
+        // Picked means every completed token, matched by exact token equality.
         if (hasTrailingSpace) {
+            Set<String> picked = new HashSet<>(tokens);
             String prefix = fullValue + " ";
             for (String id : allIds) {
                 if (!picked.contains(id)) {
@@ -82,14 +84,18 @@ public final class AbilitySuggestions {
             return result;
         }
 
-        // Determine the current word being typed (last segment)
+        // Determine the current word being typed (last segment); already-picked
+        // means every token before it. Skipped by token equality — including
+        // when a picked id equals the word being typed, so duplicates are
+        // never re-suggested.
         int lastSpace = fullValue.lastIndexOf(' ');
         String prefix = lastSpace >= 0 ? fullValue.substring(0, lastSpace + 1) : "";
         String currentWord = lastSpace >= 0 ? fullValue.substring(lastSpace + 1) : fullValue;
+        Set<String> picked = new HashSet<>(tokens.subList(0, Math.max(0, tokens.size() - 1)));
 
         // Only suggest when the current segment matches the start of an ability ID
         for (String id : allIds) {
-            if (picked.contains(id) && !id.equals(currentWord)) continue; // already picked
+            if (picked.contains(id)) continue; // already picked
             if (id.startsWith(currentWord)) {
                 result.add(prefix + id);
             }

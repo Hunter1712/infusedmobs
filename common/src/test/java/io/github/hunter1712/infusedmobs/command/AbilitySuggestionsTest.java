@@ -60,4 +60,23 @@ class AbilitySuggestionsTest {
 
         assertEquals(List.of("bane an"), result);
     }
+
+    @Test
+    void exactDuplicateWordIsNeverResuggested() {
+        // "bane" already picked; typing "bane" again must not re-suggest it —
+        // skipped by token equality even when the picked id equals the word.
+        assertTrue(AbilitySuggestions.nextWords("bane bane", false, IDS).isEmpty());
+    }
+
+    @Test
+    void singleExactWordStillSuggestsItself() {
+        // First word being typed is not yet picked — exact match suggests itself.
+        assertEquals(List.of("bane"), AbilitySuggestions.nextWords("bane", false, IDS));
+    }
+
+    @Test
+    void pickedPrefixIsNotResuggested() {
+        // "bane" picked; typing "b" must not offer "bane" again.
+        assertTrue(AbilitySuggestions.nextWords("bane b", false, IDS).isEmpty());
+    }
 }

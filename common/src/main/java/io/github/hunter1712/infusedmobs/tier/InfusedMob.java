@@ -11,8 +11,9 @@ import java.util.List;
  * Immutable per-mob infused state, mirroring {@link Rolled}
  * with abilities resolved to live objects and pre-indexed by trigger.
  * Split copies are a distinct variant — no null-tier polymorphism.
+ * Uses CONTEXT.md vocabulary: Infused Mob, Tier, Ability, TriggerType.
  */
-sealed interface InfusedMob {
+sealed interface InfusedMob permits InfusedMob.Tiered, InfusedMob.SplitCopy {
 
     List<Ability> abilities();
 
@@ -23,18 +24,18 @@ sealed interface InfusedMob {
         return byTrigger().getOrDefault(trigger, List.of());
     }
 
-    record TieredMob(MobTier tier, List<Ability> abilities,
+    record Tiered(MobTier tier, List<Ability> abilities,
+                  EnumMap<TriggerType, List<Ability>> byTrigger) implements InfusedMob {}
+
+    record SplitCopy(List<Ability> abilities,
                      EnumMap<TriggerType, List<Ability>> byTrigger) implements InfusedMob {}
 
-    record SplitCopyMob(List<Ability> abilities,
-                        EnumMap<TriggerType, List<Ability>> byTrigger) implements InfusedMob {}
-
     static InfusedMob tiered(MobTier tier, List<Ability> abilities) {
-        return new TieredMob(tier, abilities, index(abilities));
+        return new Tiered(tier, abilities, index(abilities));
     }
 
     static InfusedMob split(List<Ability> abilities) {
-        return new SplitCopyMob(abilities, index(abilities));
+        return new SplitCopy(abilities, index(abilities));
     }
 
     private static EnumMap<TriggerType, List<Ability>> index(List<Ability> abilities) {

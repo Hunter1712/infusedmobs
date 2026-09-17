@@ -36,10 +36,18 @@ import java.util.function.Predicate;
  * raw-effect handles, legacy pre-mitigation damage event, plain entity
  * creation and legacy armor handling.
  * <p>
+ * Adapter size accepted: a single thin file per Versioned Source Set.
+ * Duplication across versions is inherent — Mojang/Fabric APIs diverge
+ * (Identifier versus ResourceLocation, Holder versus raw effects,
+ * AFTER_DAMAGE versus ALLOW_DAMAGE, reasoned versus plain spawns,
+ * hurtServer versus hurt, SavedDataType versus Factory/Function) — and no
+ * further thinning is possible without a preprocessor.
+ * <p>
  * Accepted divergences from newer versions (exact parity is impossible
  * without the post-mitigation event): damage amounts are pre-mitigation and
  * shield blocks are not reported, so a fully-blocked hit still fires HURT
- * abilities. The handler never cancels damage.
+ * abilities. The handler never cancels damage. User docs scope shield
+ * negation to 1.21.1/26.2 for this reason.
  */
 public final class VersionPlatform implements PlatformHooks {
     @Override
@@ -85,37 +93,37 @@ public final class VersionPlatform implements PlatformHooks {
     }
 
     @Override
-    public EffectToken slowness() { return EffectToken.of(MobEffects.MOVEMENT_SLOWDOWN); }
+    public EffectToken slowness() { return new RawToken(MobEffects.MOVEMENT_SLOWDOWN); }
 
     @Override
-    public EffectToken resistance() { return EffectToken.of(MobEffects.DAMAGE_RESISTANCE); }
+    public EffectToken resistance() { return new RawToken(MobEffects.DAMAGE_RESISTANCE); }
 
     @Override
-    public EffectToken strength() { return EffectToken.of(MobEffects.DAMAGE_BOOST); }
+    public EffectToken strength() { return new RawToken(MobEffects.DAMAGE_BOOST); }
 
     @Override
-    public EffectToken speed() { return EffectToken.of(MobEffects.MOVEMENT_SPEED); }
+    public EffectToken speed() { return new RawToken(MobEffects.MOVEMENT_SPEED); }
 
     @Override
-    public EffectToken poison() { return EffectToken.of(MobEffects.POISON); }
+    public EffectToken poison() { return new RawToken(MobEffects.POISON); }
 
     @Override
-    public EffectToken wither() { return EffectToken.of(MobEffects.WITHER); }
+    public EffectToken wither() { return new RawToken(MobEffects.WITHER); }
 
     @Override
-    public EffectToken weakness() { return EffectToken.of(MobEffects.WEAKNESS); }
+    public EffectToken weakness() { return new RawToken(MobEffects.WEAKNESS); }
 
     @Override
-    public EffectToken regeneration() { return EffectToken.of(MobEffects.REGENERATION); }
+    public EffectToken regeneration() { return new RawToken(MobEffects.REGENERATION); }
 
     @Override
     public void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {
-        target.addEffect(new MobEffectInstance((MobEffect) effect.handle(), duration, amplifier));
+        effect.applyHurt(target, duration, amplifier);
     }
 
     @Override
     public void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier) {
-        mob.addEffect(new MobEffectInstance((MobEffect) effect.handle(), duration, amplifier, false, false, false));
+        effect.applyTick(mob, duration, amplifier);
     }
 
     @Override
@@ -161,5 +169,20 @@ public final class VersionPlatform implements PlatformHooks {
     @Override
     public void clearRoll(ServerLevel level, UUID uuid) {
         TierSavedData.get(level).remove(uuid);
+    }
+
+    /**
+     * Typed token carrying a legacy raw effect — no casts at the boundary.
+     */
+    private record RawToken(MobEffect effect) implements EffectToken {
+        @Override
+        public void applyHurt(LivingEntity target, int duration, int amplifier) {
+            target.addEffect(new MobEffectInstance(effect, duration, amplifier));
+        }
+
+        @Override
+        public void applyTick(LivingEntity mob, int duration, int amplifier) {
+            mob.addEffect(new MobEffectInstance(effect, duration, amplifier, false, false, false));
+        }
     }
 }
