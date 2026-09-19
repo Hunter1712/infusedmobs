@@ -1,7 +1,7 @@
 package io.github.hunter1712.infusedmobs.ability;
 
 /**
- * Test-only helper to populate the Ability pool without Minecraft bootstrap.
+ * Test-only helper to populate the shared Ability pool without Minecraft bootstrap.
  */
 public final class TestAbilities {
     private TestAbilities() {}
