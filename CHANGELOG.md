@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Mob Blacklist** — `mobBlacklist` config field (entity type ids, e.g. `minecraft:spider`) excludes types from natural Tier rolls; explicit `/infusedmobs summon` bypasses it as operator intent. Applies on `/infusedmobs reload`, no restart needed.
+- **Mob Blacklist** — `mobBlacklist` config field (entity type ids, e.g. `minecraft:spider`) excludes types from natural Tier rolls; explicit `/infusedmobs summon` bypasses it as operator intent. Managed at runtime via `/infusedmobs mob add|remove <entity>` and `/infusedmobs mob list` (tab-completes hostile types). Applies on `/infusedmobs reload`, no restart needed.
 
 ### Changed
 - Internal deepening with no behaviour change: single Infusion seam behind the roll coordinator, extracted Combust effect, narrowed platform seam (`spawn` plus `effectToken`), Tier parsing owned by the Tier contract, config pool bound passed in by init.
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Bare `/infusedmobs` now shows help (previously did nothing despite help text advertising `/infusedmobs` — show this help).
 - **Tier-share correctness fix** — rolls are now a single uniform decision (Doom, then Shade, then Cinder intervals), so effective shares equal the documented contract: 40% Cinder / 20% Shade / 10% Doom with 30% vanilla. Previously sequential independent checks gave ~40% / ~12% / ~4.8% with ~43% vanilla — pack balance now matches the docs. No config change needed; custom spawn chances keep working as interval sizes with rarest first.
-- **Thorns honesty fix** — Thorns is now a reactive HURT Ability (fires when the Infused Mob is damaged by a player, reflecting 15% back) instead of a passive TICK no-op with a cross-trigger side-channel. Passive iteration only visits mobs it can actually affect; shield-blocked hits fire nothing; reflection never re-triggers.
+- **Thorns honesty fix** — Thorns is now a reactive HURT Ability (fires when the Infused Mob is damaged by a player, reflecting 15% back) instead of a passive TICK no-op with a cross-trigger side-channel. Passive iteration only visits mobs it can actually affect; shield-blocked hits fire nothing on 1.21.1/26.2 (on 1.20.1 the legacy damage event cannot report blocks, so a blocked hit still fires); reflection never re-triggers.
 - **Split-copy Cinder parity fix** — Rupture split copies now grant the full documented Cinder experience treatment through the same health/XP path as Tiered rolls (previously Cinder health only, vanilla XP).
 
 ## [2.7.1] - 2026-08-02

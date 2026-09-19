@@ -23,6 +23,7 @@ Needs: fresh world, cheats on, op level 2. Report failures as: version + steps +
 - [ ] `/infusedmobs nametag off` hides ALL tier tags (abilities still fire); `/infusedmobs nametag on` restores them.
 - [ ] `/infusedmobs world add minecraft:the_nether` -> nether mobs spawn vanilla and summon is refused there with a clear message.
 - [ ] `/infusedmobs world list` shows the entry; `/infusedmobs world remove minecraft:the_nether` re-enables the mod there.
+- [ ] `/infusedmobs mob add minecraft:spider` -> spiders spawn vanilla; `mob list` shows it; `mob remove minecraft:spider` re-enables natural infusion.
 - [ ] `/gamerule infusedmobs:enabled false` disables the mod fully (vanilla spawns, summon refused); true re-enables. Blacklist + gamerule combine correctly.
 
 ## Persistence

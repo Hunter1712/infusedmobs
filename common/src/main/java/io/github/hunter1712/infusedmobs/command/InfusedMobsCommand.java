@@ -89,6 +89,26 @@ public final class InfusedMobsCommand {
                                 .executes(InfusedMobsCommand::worldList))
                         .executes(InfusedMobsCommand::worldList))
 
+                // --- mob ---
+                .then(Commands.literal("mob")
+                        .then(Commands.literal("add")
+                                .then(Commands.argument("entity",
+                                                ResourceArgument.resource(buildContext, Registries.ENTITY_TYPE))
+                                        .suggests(InfusedMobsCommand::suggestHostileEntities)
+                                        .executes(ctx -> mobAdd(ctx,
+                                                ResourceArgument.getSummonableEntityType(ctx, "entity")
+                                                        .value()))))
+                        .then(Commands.literal("remove")
+                                .then(Commands.argument("entity",
+                                                ResourceArgument.resource(buildContext, Registries.ENTITY_TYPE))
+                                        .suggests(InfusedMobsCommand::suggestHostileEntities)
+                                        .executes(ctx -> mobRemove(ctx,
+                                                ResourceArgument.getSummonableEntityType(ctx, "entity")
+                                                        .value()))))
+                        .then(Commands.literal("list")
+                                .executes(InfusedMobsCommand::mobList))
+                        .executes(InfusedMobsCommand::mobList))
+
                 // --- reload ---
                 .then(Commands.literal("reload")
                         .executes(InfusedMobsCommand::executeReload))
@@ -111,17 +131,7 @@ public final class InfusedMobsCommand {
                                         null)) // default zombie
                                 .then(Commands.argument("entity",
                                                 ResourceArgument.resource(buildContext, Registries.ENTITY_TYPE))
-                                        .suggests((ctx, builder) -> {
-                                            for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-                                                if (isInfusable(type)) {
-                                                    String key = Platform.hooks().entityKey(type);
-                                                    if (key != null) {
-                                                        builder.suggest(key);
-                                                    }
-                                                }
-                                            }
-                                            return builder.buildFuture();
-                                        })
+                                        .suggests(InfusedMobsCommand::suggestHostileEntities)
                                         .executes(ctx -> summon(ctx,
                                                 StringArgumentType.getString(ctx, "tier"),
                                                 ResourceArgument.getSummonableEntityType(ctx, "entity")
@@ -162,6 +172,10 @@ public final class InfusedMobsCommand {
                 "§f/infusedmobs world add|remove <world> §7— blacklist a world (disables the mod there)"));
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs world list §7— show blacklisted worlds"));
+        source.sendSystemMessage(Component.literal(
+                "§f/infusedmobs mob add|remove <entity> §7— blacklist a mob type (stays vanilla)"));
+        source.sendSystemMessage(Component.literal(
+                "§f/infusedmobs mob list §7— show blacklisted mob types"));
         source.sendSystemMessage(Component.literal(
                 "§f/gamerule infusedmobs:enabled [true|false] §7— enable/disable the mod in this world"));
         source.sendSystemMessage(Component.literal(
@@ -267,6 +281,93 @@ public final class InfusedMobsCommand {
             source.sendSystemMessage(Component.literal("§f - " + world));
         }
         return 1;
+    }
+
+    // ========================================
+    // /infusedmobs mob add|remove <entity> | list
+    // ========================================
+
+    /** Adds a mob type to the blacklist and persists. */
+    private static int mobAdd(CommandContext<CommandSourceStack> ctx, EntityType<?> entityType) {
+        return mutateMobBlacklist(ctx.getSource(), entityType, true);
+    }
+
+    /** Removes a mob type from the blacklist and persists. */
+    private static int mobRemove(CommandContext<CommandSourceStack> ctx, EntityType<?> entityType) {
+        return mutateMobBlacklist(ctx.getSource(), entityType, false);
+    }
+
+    /** Shared add/remove behind {@code mob add|remove}: edits, persists, and reports. */
+    private static int mutateMobBlacklist(CommandSourceStack source, EntityType<?> entityType, boolean add) {
+        String entityId = Platform.hooks().entityKey(entityType);
+        if (entityId == null) {
+            source.sendFailure(Component.literal("§cThat entity type is not registered."));
+            return 0;
+        }
+
+        ModConfig.Instance current = ModConfig.get();
+        if (current.isMobBlacklisted(entityId) == add) {
+            if (add) {
+                source.sendSuccess(() -> Component.literal(
+                        "§eMob §f" + entityId + " §eis already on the blacklist."), false);
+                return 1;
+            }
+            source.sendFailure(Component.literal(
+                    "§cMob §f" + entityId + " §cis not on the blacklist."));
+            return 0;
+        }
+
+        List<String> updated = new ArrayList<>(current.mobBlacklist());
+        if (add) {
+            updated.add(entityId);
+        } else {
+            updated.removeIf(entityId::equals);
+        }
+        ModConfig.swapInstance(current.withMobBlacklist(updated));
+
+        if (add) {
+            source.sendSuccess(() -> Component.literal(
+                    "§eAdded §f" + entityId + " §eto the blacklist. "
+                            + "It now always spawns vanilla."), true);
+        } else {
+            source.sendSuccess(() -> Component.literal(
+                    "§eRemoved §f" + entityId + " §efrom the blacklist. "
+                            + "It can now infuse naturally."), true);
+        }
+        return 1;
+    }
+
+    /** Lists all mob types currently on the blacklist. */
+    private static int mobList(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        List<String> blacklist = ModConfig.get().mobBlacklist();
+
+        if (blacklist.isEmpty()) {
+            source.sendSuccess(() -> Component.literal(
+                    "§eThe mob blacklist is empty — every hostile mob can infuse."), false);
+            return 1;
+        }
+
+        source.sendSuccess(() -> Component.literal(
+                "§eMob blacklist (" + blacklist.size() + "):"), false);
+        for (String entity : blacklist) {
+            source.sendSystemMessage(Component.literal("§f - " + entity));
+        }
+        return 1;
+    }
+
+    /** Tab-completion provider suggesting hostile (infusable) entity ids. */
+    private static CompletableFuture<Suggestions> suggestHostileEntities(
+            CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+            if (isInfusable(type)) {
+                String key = Platform.hooks().entityKey(type);
+                if (key != null) {
+                    builder.suggest(key);
+                }
+            }
+        }
+        return builder.buildFuture();
     }
 
     /** Tab-completion provider suggesting loaded world dimension ids + the current world. */
