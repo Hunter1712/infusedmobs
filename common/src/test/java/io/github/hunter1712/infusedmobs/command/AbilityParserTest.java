@@ -31,4 +31,16 @@ class AbilityParserTest {
                 parsed.abilities().stream().map(Ability::id).toList());
         assertEquals(List.of("nope"), parsed.unknown());
     }
+
+    @Test
+    void matchesIdsCaseInsensitively() {
+        TestAbilities.register("bane", TriggerType.HURT);
+        TestAbilities.register("ward", TriggerType.TICK);
+
+        AbilityParser.Parsed parsed = AbilityParser.parse("Bane WARD Nope");
+
+        assertEquals(List.of("bane", "ward"),
+                parsed.abilities().stream().map(Ability::id).toList());
+        assertEquals(List.of("nope"), parsed.unknown());
+    }
 }

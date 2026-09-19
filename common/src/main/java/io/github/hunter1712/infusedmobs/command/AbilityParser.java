@@ -6,6 +6,7 @@ import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -21,6 +22,7 @@ final class AbilityParser {
         if (raw == null || raw.isBlank()) return new Parsed(List.of(), List.of());
         List<String> ids = Arrays.stream(raw.trim().split("\\s+"))
                 .filter(part -> !part.isEmpty())
+                .map(part -> part.toLowerCase(Locale.ROOT))
                 .toList();
         if (ids.isEmpty()) return new Parsed(List.of(), List.of());
 
