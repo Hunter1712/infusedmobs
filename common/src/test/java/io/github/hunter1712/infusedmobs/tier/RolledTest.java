@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -38,6 +39,23 @@ class RolledTest {
     @Test
     void splitWithMissingAbilityIdsDefaultsToEmpty() {
         assertEquals(new Rolled.Split(List.of()), Rolled.decode("split", null, null));
+    }
+
+    @Test
+    void directConstructionCopiesAbilityIds() {
+        List<String> ids = new ArrayList<>(List.of("bane"));
+
+        var tiered = new Rolled.Tiered(MobTier.CINDER, ids);
+        var split = new Rolled.Split(ids);
+        ids.add("ward");
+
+        assertEquals(List.of("bane"), tiered.abilityIds());
+        assertEquals(List.of("bane"), split.abilityIds());
+    }
+
+    @Test
+    void tieredRejectsNullTier() {
+        assertThrows(NullPointerException.class, () -> new Rolled.Tiered(null, List.of()));
     }
 
     @Test

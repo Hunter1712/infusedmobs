@@ -1,6 +1,7 @@
 package io.github.hunter1712.infusedmobs.tier;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The immutable result of a mob's roll — the persisted source of truth shared
@@ -33,6 +34,11 @@ public sealed interface Rolled {
     List<String> abilityIds();
 
     record Tiered(MobTier tier, List<String> abilityIds) implements Rolled {
+        public Tiered {
+            Objects.requireNonNull(tier, "tier");
+            abilityIds = List.copyOf(abilityIds);
+        }
+
         @Override
         public String kind() {
             return "tiered";
@@ -45,6 +51,10 @@ public sealed interface Rolled {
     }
 
     record Split(List<String> abilityIds) implements Rolled {
+        public Split {
+            abilityIds = List.copyOf(abilityIds);
+        }
+
         @Override
         public String kind() {
             return "split";

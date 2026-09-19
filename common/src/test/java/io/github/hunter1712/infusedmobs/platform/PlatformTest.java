@@ -27,4 +27,9 @@ class PlatformTest {
 
         assertSame(adapter, Platform.hooks());
     }
+
+    @Test
+    void rejectsNullProvider() {
+        assertThrows(NullPointerException.class, () -> Platform.setProvider(null));
+    }
 }

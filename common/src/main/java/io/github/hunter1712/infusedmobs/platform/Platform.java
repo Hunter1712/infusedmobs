@@ -1,5 +1,7 @@
 package io.github.hunter1712.infusedmobs.platform;
 
+import java.util.Objects;
+
 /**
  * Holds the active {@link PlatformHooks} implementation.
  * <p>
@@ -14,7 +16,7 @@ public final class Platform {
 
     /** Installs the active implementation. Init and tests only. */
     public static void setProvider(PlatformHooks hooks) {
-        provider = hooks;
+        provider = Objects.requireNonNull(hooks, "hooks");
     }
 
     /** Clears the active implementation. Test-only. */
