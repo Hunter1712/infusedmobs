@@ -1,6 +1,7 @@
 package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
+import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
@@ -66,7 +67,7 @@ public final class MobHurtTrigger {
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
         if (!(source.getEntity() instanceof Player player)) return;
         for (Ability ability : InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.HURT)) {
-            if (!ability.id().equals("thorns")) continue;
+            if (!ability.id().equals(AbilityRegistry.THORNS_ID)) continue;
             ability.effect().apply(mob, player, damageTaken);
             break;
         }
@@ -79,7 +80,7 @@ public final class MobHurtTrigger {
         // Gate on abilities rather than tier so Rupture split copies
         // (which have no tier) still fire their HURT abilities.
         List<Ability> hurtAbilities = InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.HURT).stream()
-                .filter(ability -> !ability.id().equals("thorns"))
+                .filter(ability -> !ability.id().equals(AbilityRegistry.THORNS_ID))
                 .toList();
         if (hurtAbilities.isEmpty()) return;
 
@@ -90,14 +91,24 @@ public final class MobHurtTrigger {
      * Resolves the attacking mob from a damage source, accounting for both
      * direct melee hits and projectile attacks (arrows, tridents, fireballs).
      */
-    private static Mob findAttackingMob(DamageSource source) {
+    static Mob findAttackingMob(DamageSource source) {
         Entity attacker = source.getEntity();
-        // Direct melee hit
-        if (attacker instanceof Mob mob) return mob;
-        // Projectile from a mob (arrow, trident, fire charge, etc.)
-        if (attacker instanceof Projectile projectile
-                && projectile.getOwner() instanceof Mob mob) return mob;
-        return null;
+        Entity owner = attacker instanceof Projectile projectile ? projectile.getOwner() : null;
+        if (!isMobAttack(attacker instanceof Mob, attacker instanceof Projectile, owner instanceof Mob)) {
+            return null;
+        }
+        return attacker instanceof Mob mob ? mob : (Mob) owner;
+    }
+
+    /**
+     * Pure attack-classification truth table behind {@link #findAttackingMob}:
+     * a direct mob is an attack, otherwise only a mob-owned projectile is.
+     * Lives on plain booleans so unit tests pin the melee / mob-projectile /
+     * non-mob / null matrix without Minecraft bootstrap; the caller only
+     * extracts the three flags from the damage source.
+     */
+    static boolean isMobAttack(boolean attackerIsMob, boolean attackerIsProjectile, boolean ownerIsMob) {
+        return attackerIsMob || (attackerIsProjectile && ownerIsMob);
     }
 
     /** Fires the given HURT abilities for the mob, passing the damage amount through. */

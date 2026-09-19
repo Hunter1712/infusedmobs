@@ -1,10 +1,8 @@
 package io.github.hunter1712.infusedmobs.tier;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -44,11 +42,6 @@ public final class TierRollStore {
      */
     public boolean remove(UUID uuid) {
         return rolls.remove(uuid) != null;
-    }
-
-    /** Live entries for serialization. */
-    public Set<Map.Entry<UUID, Rolled>> entries() {
-        return Collections.unmodifiableSet(rolls.entrySet());
     }
 
     /** Defensive copy of every tracked roll, for serialization. */

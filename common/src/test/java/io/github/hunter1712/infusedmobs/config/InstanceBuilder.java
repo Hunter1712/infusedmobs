@@ -50,6 +50,21 @@ public final class InstanceBuilder {
         return this;
     }
 
+    public InstanceBuilder hurtAmplifier(int amplifier) {
+        hurtEffectAmplifier = amplifier;
+        return this;
+    }
+
+    public InstanceBuilder tickAmplifier(int amplifier) {
+        tickEffectAmplifier = amplifier;
+        return this;
+    }
+
+    public InstanceBuilder explosion(float power) {
+        combustExplosionPower = power;
+        return this;
+    }
+
     public InstanceBuilder blacklist(List<String> blacklist) {
         worldBlacklist = blacklist;
         return this;

@@ -29,6 +29,9 @@ public final class AbilityRegistry {
     // Registration
     // ========================================
 
+    /** The Thorns Ability id, shared by registration and both HURT trigger branches. */
+    public static final String THORNS_ID = "thorns";
+
     /** Fraction of incoming damage reflected by the Thorns Ability. */
     private static final float THORNS_REFLECT_FRACTION = 0.15f;
 
@@ -60,7 +63,7 @@ public final class AbilityRegistry {
 
         register("vitriol", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
 
-        register("thorns", "Thorns", TriggerType.HURT, AbilityRegistry::reflectThorns);
+        register(THORNS_ID, "Thorns", TriggerType.HURT, AbilityRegistry::reflectThorns);
 
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 

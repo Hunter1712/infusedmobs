@@ -130,7 +130,7 @@ public final class InfusedMobsCommand {
                                                          StringArgumentType.greedyString())
                                                  .suggests(AbilitySuggestions::suggest)
                                                  .executes(ctx -> {
-                                                     AbilityParse parsed = parseAbilities(
+                                                     AbilityParser.Parsed parsed = AbilityParser.parse(
                                                              StringArgumentType.getString(ctx, "abilities"));
                                                      if (!parsed.unknown().isEmpty()) {
                                                          sendUnknownAbilities(ctx, parsed.unknown());
@@ -410,20 +410,8 @@ public final class InfusedMobsCommand {
         return 1;
     }
 
-    /** Result of parsing a space-separated ability argument. */
-    record AbilityParse(List<Ability> abilities, List<String> unknown) {}
-
     /**
-     * Parses a space-separated ability string, resolving valid IDs and
-     * collecting unknown ones (deduplicated, in input order). No I/O —
-     * the caller decides how to respond.
-     */
-    static AbilityParse parseAbilities(String raw) {
-        AbilityParser.Parsed parsed = AbilityParser.parse(raw);
-        return new AbilityParse(parsed.abilities(), parsed.unknown());
-    }
-
-    /** Reports unknown ability IDs with closest-match hints. */
+     * Reports unknown ability IDs with closest-match hints. */
     private static void sendUnknownAbilities(CommandContext<CommandSourceStack> ctx, List<String> unknown) {
         List<String> allIds = AbilityRegistry.getAllAbilityIds();
         StringBuilder msg = new StringBuilder();
