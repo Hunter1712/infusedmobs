@@ -18,6 +18,12 @@ class NametagFormatterTest {
     }
 
     @Test
+    void emptyAbilitiesRenderCleanNametag() {
+        assertEquals("§aZombie",
+                NametagFormatter.format("§a", List.of(), "Zombie"));
+    }
+
+    @Test
     void tierColoursPreserved() {
         assertEquals("§aBane §fZombie",
                 NametagFormatter.format(MobTier.CINDER.colourCode(), List.of("Bane"), "Zombie"));

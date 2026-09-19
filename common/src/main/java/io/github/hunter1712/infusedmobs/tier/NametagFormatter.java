@@ -11,6 +11,7 @@ final class NametagFormatter {
     private NametagFormatter() {}
 
     static String format(String colour, List<String> abilityNames, String entityName) {
+        if (abilityNames.isEmpty()) return colour + entityName;
         return colour + String.join("§7, ", abilityNames) + " §f" + entityName;
     }
 }

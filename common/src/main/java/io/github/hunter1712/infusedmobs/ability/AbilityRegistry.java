@@ -127,7 +127,7 @@ public final class AbilityRegistry {
      */
     private static void damageArmor(Mob mob, LivingEntity target, float damage) {
         if (!(target instanceof ServerPlayer player)) return;
-        ServerLevel level = (ServerLevel) player.level();
+        if (!(player.level() instanceof ServerLevel level)) return;
         int armorDamage = ModConfig.get().acidArmorDamage();
         Platform.hooks().damageArmor(player, level, armorDamage);
     }
