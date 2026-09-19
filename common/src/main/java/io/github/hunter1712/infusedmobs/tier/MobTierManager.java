@@ -2,9 +2,11 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
+import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.platform.Platform;
 
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
@@ -12,6 +14,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -27,10 +30,12 @@ import java.util.UUID;
  * configured spawn chances — 40% Cinder / 20% Shade / 10% Doom with
  * 30% vanilla at defaults.
  * <p>
- * Gating decisions live in {@link InfusionGate} and in-memory tracking plus
- * nametag presentation in {@link InfusedTracker}; this module coordinates
- * rolls, persistence and health between them. Tracking is cleaned up when
- * the mob dies.
+ * Gating decisions live in {@link InfusionGate}; this module is the single
+ * Infusion interface callers cross (rolls, persistence, health, queries,
+ * nametags). In-memory tracking plus nametag presentation live in
+ * {@link InfusedTracker} as its implementation — callers use this module,
+ * not the tracker, so Tier + Ability + nametag bugs concentrate here.
+ * Tracking is cleaned up when the mob dies.
  */
 public final class MobTierManager {
 
@@ -233,5 +238,63 @@ public final class MobTierManager {
         if (mob.level() instanceof ServerLevel serverLevel) {
             Platform.hooks().clearRoll(serverLevel, uuid);
         }
+    }
+
+    // ========================================
+    // Queries — single Infusion read seam behind the tracker
+    // ========================================
+
+    /** Returns the tier assigned to this mob, or null (split copy / untracked). */
+    public static MobTier getTier(Mob mob) {
+        return InfusedTracker.getTier(mob);
+    }
+
+    /** Returns true if this mob is tracked as a Rupture split copy (Cinder stats, no Tier). */
+    public static boolean isSplitCopy(Mob mob) {
+        return InfusedTracker.isSplitCopy(mob);
+    }
+
+    /** Returns true if this mob has an ability with the given id. */
+    public static boolean hasAbility(Mob mob, String id) {
+        return InfusedTracker.hasAbility(mob, id);
+    }
+
+    /** Returns abilities assigned to this mob matching the given trigger type. */
+    public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
+        return InfusedTracker.getAbilitiesByTrigger(mob, trigger);
+    }
+
+    /** Returns all abilities assigned to this mob (empty list if none). */
+    public static List<Ability> getAllAbilities(Mob mob) {
+        return InfusedTracker.getAllAbilities(mob);
+    }
+
+    /**
+     * Returns the UUIDs of tracked mobs that have at least one TICK ability.
+     * Used by the TICK trigger to iterate only the mobs it can affect.
+     */
+    public static Set<UUID> getTickMobUUIDs() {
+        return InfusedTracker.getTickMobUUIDs();
+    }
+
+    /**
+     * Looks up a mob by UUID across all loaded server levels.
+     * Returns null if the mob is not found or dead.
+     */
+    public static Mob findMob(MinecraftServer server, UUID uuid) {
+        return InfusedTracker.findMob(server, uuid);
+    }
+
+    /**
+     * Applies or removes nametags for all tracked mobs based on the
+     * current nametag setting. Called when the toggle changes via command.
+     */
+    public static void refreshNametags(MinecraftServer server) {
+        InfusedTracker.refreshNametags(server);
+    }
+
+    /** Clears all tracking. Test-only — live code untracks per mob. */
+    public static void clearForTests() {
+        InfusedTracker.clear();
     }
 }

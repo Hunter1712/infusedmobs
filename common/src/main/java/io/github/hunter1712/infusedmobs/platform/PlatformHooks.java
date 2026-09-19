@@ -31,6 +31,12 @@ import java.util.function.Predicate;
  */
 public interface PlatformHooks {
 
+    /** Why an entity is spawned — Rupture split copies vs summon command. */
+    enum SpawnKind {
+        REINFORCEMENT,
+        COMMAND
+    }
+
     // ---- Dimension ----
 
     /** String form of the dimension id for gating checks. */
@@ -38,11 +44,11 @@ public interface PlatformHooks {
 
     // ---- Spawn ----
 
-    /** Creates a split-copy entity in the level. */
-    <T extends Entity> T spawnEntity(EntityType<T> type, ServerLevel level);
-
-    /** Creates an entity for the summon command. */
-    Entity spawnForCommand(EntityType<?> type, ServerLevel level);
+    /**
+     * Creates an entity in the level for the given reason (split-copy
+     * reinforcement vs command summon).
+     */
+    <T extends Entity> T spawn(EntityType<T> type, ServerLevel level, SpawnKind kind);
 
     /** Registry key of an entity type as string, or null if unregistered. */
     String entityKey(EntityType<?> type);
@@ -63,21 +69,14 @@ public interface PlatformHooks {
 
     // ---- Status-effect tokens ----
 
-    EffectToken slowness();
-
-    EffectToken resistance();
-
-    EffectToken strength();
-
-    EffectToken speed();
-
-    EffectToken poison();
-
-    EffectToken wither();
-
-    EffectToken weakness();
-
-    EffectToken regeneration();
+    /**
+     * Typed handle for a version-specific status effect: {@code "slowness"},
+     * {@code "resistance"}, {@code "strength"}, {@code "speed"},
+     * {@code "poison"}, {@code "wither"}, {@code "weakness"} or
+     * {@code "regeneration"}. Fails fast on unknown ids — registration keys
+     * are static, so a typo is a dev error, not a runtime condition.
+     */
+    EffectToken effectToken(String id);
 
     /** Applies a HURT effect token to the target (pure passthrough — default, no version content). */
     default void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {

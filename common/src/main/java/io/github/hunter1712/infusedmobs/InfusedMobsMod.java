@@ -29,10 +29,11 @@ public class InfusedMobsMod implements ModInitializer {
 
         Platform.setProvider(new VersionPlatform());
         // Registration precedes config load: per-Tier ability counts clamp
-        // against the live Ability pool size, so the pool must exist first.
+        // against the live Ability pool size, so the pool must exist first
+        // and its size is passed in — config never pulls the pool itself.
         // Effect lambdas read config lazily at fire time, so order is safe.
         AbilityRegistry.registerAll();
-        ModConfig.load();
+        ModConfig.load(AbilityRegistry.getAllAbilityIds().size());
         ModGameRules.register();
         MobTickTrigger.register();
         MobHurtTrigger.register();

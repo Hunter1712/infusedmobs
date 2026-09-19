@@ -2,7 +2,7 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
-import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
+import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.world.entity.Mob;
@@ -17,7 +17,7 @@ import java.util.UUID;
  * Every second, looks up each tick-capable mob by UUID across server levels
  * and applies its TICK abilities (Resistance, Strength, Speed, Regen).
  * Only mobs that actually have TICK abilities are processed — see
- * {@link InfusedTracker#getTickMobUUIDs()}.
+ * {@link MobTierManager#getTickMobUUIDs()}.
  */
 public final class MobTickTrigger {
 
@@ -32,14 +32,14 @@ public final class MobTickTrigger {
             tickCounter = (tickCounter + 1) % TICK_INTERVAL;
             if (tickCounter != 0) return;
 
-            Set<UUID> tracked = InfusedTracker.getTickMobUUIDs();
+            Set<UUID> tracked = MobTierManager.getTickMobUUIDs();
             if (tracked.isEmpty()) return;
 
             for (UUID uuid : tracked) {
-                Mob mob = InfusedTracker.findMob(server, uuid);
+                Mob mob = MobTierManager.findMob(server, uuid);
                 if (mob == null) continue;
 
-                List<Ability> abilities = InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.TICK);
+                List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.TICK);
                 for (Ability ability : abilities) {
                     ability.effect().apply(mob, null, 0f);
                 }

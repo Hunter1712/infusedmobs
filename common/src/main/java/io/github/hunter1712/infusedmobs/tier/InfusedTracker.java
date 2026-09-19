@@ -17,10 +17,13 @@ import java.util.UUID;
 /**
  * In-memory registry of Infused Mobs plus their nametag presentation.
  * <p>
- * Tier rolls and persistence coordination live in {@link MobTierManager} and
- * gating in {@link InfusionGate}; this module only tracks which mobs are
- * infused, answers queries about them, and shows or hides their Tier
- * nametags. Tracking is cleaned up when the mob dies or despawns.
+ * Implementation behind the single Infusion interface in
+ * {@link MobTierManager}: live code crosses the manager's seam, never this
+ * module directly. Tier rolls and persistence coordination live in
+ * {@link MobTierManager} and gating in {@link InfusionGate}; this module
+ * only tracks which mobs are infused, answers queries about them, and shows
+ * or hides their Tier nametags. Tracking is cleaned up when the mob dies
+ * or despawns.
  */
 public final class InfusedTracker {
 

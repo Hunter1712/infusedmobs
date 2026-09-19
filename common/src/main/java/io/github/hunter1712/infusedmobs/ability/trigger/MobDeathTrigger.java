@@ -2,7 +2,6 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
-import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -32,7 +31,7 @@ public final class MobDeathTrigger {
         LivingEntity killer = source.getEntity() instanceof LivingEntity living ? living : null;
 
         // Fire ALL DEATH abilities
-        List<Ability> abilities = InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.DEATH);
+        List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.DEATH);
         for (Ability ability : abilities) {
             ability.effect().apply(mob, killer, 0f);
         }

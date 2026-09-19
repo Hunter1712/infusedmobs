@@ -2,6 +2,8 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 
+import java.util.Locale;
+
 /**
  * Occult-themed tiers that a hostile mob can spawn with.
  * Each tier defines its spawn probability, total ability count,
@@ -50,5 +52,20 @@ public enum MobTier {
             case SHADE -> "§e";
             case DOOM -> "§c";
         };
+    }
+
+    /**
+     * Parses a Tier name case-insensitively (e.g. summon input).
+     * Derived from the enum so adding a Tier works without touching callers.
+     *
+     * @return the Tier, or null for null/unknown names
+     */
+    public static MobTier parse(String name) {
+        if (name == null) return null;
+        try {
+            return MobTier.valueOf(name.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

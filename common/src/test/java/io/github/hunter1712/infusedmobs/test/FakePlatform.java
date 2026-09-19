@@ -37,8 +37,8 @@ public final class FakePlatform implements PlatformHooks {
     public String dimensionId = "minecraft:overworld";
 
     /** Recorded calls for spawn/combat conformance. */
-    public int spawnEntityCalls;
-    public int spawnForCommandCalls;
+    public int spawnCalls;
+    public SpawnKind lastSpawnKind;
     public int hurtApplications;
     public int tickApplications;
     public int damageArmorCalls;
@@ -83,14 +83,9 @@ public final class FakePlatform implements PlatformHooks {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T spawnEntity(EntityType<T> type, ServerLevel level) {
-        spawnEntityCalls++;
-        return null;
-    }
-
-    @Override
-    public Entity spawnForCommand(EntityType<?> type, ServerLevel level) {
-        spawnForCommandCalls++;
+    public <T extends Entity> T spawn(EntityType<T> type, ServerLevel level, SpawnKind kind) {
+        spawnCalls++;
+        lastSpawnKind = kind;
         return null;
     }
 
@@ -120,28 +115,9 @@ public final class FakePlatform implements PlatformHooks {
     }
 
     @Override
-    public EffectToken slowness() { return new FakeToken("slowness"); }
-
-    @Override
-    public EffectToken resistance() { return new FakeToken("resistance"); }
-
-    @Override
-    public EffectToken strength() { return new FakeToken("strength"); }
-
-    @Override
-    public EffectToken speed() { return new FakeToken("speed"); }
-
-    @Override
-    public EffectToken poison() { return new FakeToken("poison"); }
-
-    @Override
-    public EffectToken wither() { return new FakeToken("wither"); }
-
-    @Override
-    public EffectToken weakness() { return new FakeToken("weakness"); }
-
-    @Override
-    public EffectToken regeneration() { return new FakeToken("regeneration"); }
+    public EffectToken effectToken(String id) {
+        return new FakeToken(id);
+    }
 
     @Override
     public void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {

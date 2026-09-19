@@ -10,30 +10,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Contract for World Blacklist normalisation.
+ * Contract for World Blacklist normalisation, through the config interface.
  */
 class BlacklistNormalizerTest {
 
     @Test
     void trimsDedupsDropsBlanksAndNulls() {
-        List<String> result = BlacklistNormalizer.normalise(Arrays.asList(
+        List<String> result = InstanceBuilder.valid().build().withWorldBlacklist(Arrays.asList(
                 "  minecraft:overworld  ",
                 "minecraft:the_nether",
                 "minecraft:overworld",
                 "",
-                null));
+                null)).worldBlacklist();
 
         assertEquals(List.of("minecraft:overworld", "minecraft:the_nether"), result);
     }
 
     @Test
     void nullReturnsEmpty() {
-        assertTrue(BlacklistNormalizer.normalise(null).isEmpty());
+        assertTrue(InstanceBuilder.valid().build().withWorldBlacklist(null).worldBlacklist().isEmpty());
     }
 
     @Test
     void returnsImmutableList() {
-        List<String> result = BlacklistNormalizer.normalise(List.of("minecraft:overworld"));
+        List<String> result = InstanceBuilder.valid().build()
+                .withWorldBlacklist(List.of("minecraft:overworld")).worldBlacklist();
 
         assertThrows(UnsupportedOperationException.class,
                 () -> result.add("minecraft:the_end"));

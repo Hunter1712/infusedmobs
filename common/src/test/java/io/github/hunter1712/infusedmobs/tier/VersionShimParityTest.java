@@ -69,11 +69,10 @@ class VersionShimParityTest {
         // registration, and persistence hooks. Checked by reflection so a
         // dropped or re-typed seam method fails here, not in game.
         List<String> expected = List.of(
-                "dimensionId", "spawnEntity", "spawnForCommand",
+                "dimensionId", "spawn",
                 "entityKey", "defaultEntity",
                 "gamemasterPermission", "worldIdArgument", "worldIdFromCommand",
-                "slowness", "resistance", "strength", "speed",
-                "poison", "wither", "weakness", "regeneration",
+                "effectToken",
                 "applyHurtEffect", "applyTickEffect",
                 "damageArmor", "reflectThorns", "hurtFromExplosion", "ignite",
                 "registerHurtTrigger",
@@ -126,14 +125,14 @@ class VersionShimParityTest {
         FakePlatform fake = new FakePlatform();
         Platform.setProvider(fake);
 
-        assertNull(Platform.hooks().spawnEntity(null, null),
+        assertNull(Platform.hooks().spawn(null, null, PlatformHooks.SpawnKind.REINFORCEMENT),
                 "spawn creation must stay callable through the seam");
-        assertNull(Platform.hooks().spawnForCommand(null, null),
+        assertNull(Platform.hooks().spawn(null, null, PlatformHooks.SpawnKind.COMMAND),
                 "command spawn must stay callable through the seam");
-        assertEquals(1, fake.spawnEntityCalls,
-                "split-copy spawn diverged through the seam");
-        assertEquals(1, fake.spawnForCommandCalls,
-                "command spawn diverged through the seam");
+        assertEquals(2, fake.spawnCalls,
+                "spawn creation diverged through the seam");
+        assertEquals(PlatformHooks.SpawnKind.COMMAND, fake.lastSpawnKind,
+                "spawn kind diverged through the seam");
     }
 
     // ========================================
@@ -146,9 +145,9 @@ class VersionShimParityTest {
         Platform.setProvider(fake);
 
         // The path the Ability registry actually calls at fire time.
-        var hurt = fake.poison();
+        var hurt = fake.effectToken("poison");
         Platform.hooks().applyHurtEffect(null, hurt, 60, 0);
-        var tick = fake.resistance();
+        var tick = fake.effectToken("resistance");
         Platform.hooks().applyTickEffect(null, tick, 60, 0);
 
         assertEquals(1, fake.hurtApplications,
@@ -157,9 +156,10 @@ class VersionShimParityTest {
                 "TICK application diverged through the seam");
 
         Set<String> distinct = new HashSet<>();
-        for (var token : List.of(fake.slowness(), fake.resistance(), fake.strength(),
-                fake.speed(), fake.poison(), fake.wither(), fake.weakness(),
-                fake.regeneration())) {
+        for (String id : List.of("slowness", "resistance", "strength",
+                "speed", "poison", "wither", "weakness",
+                "regeneration")) {
+            var token = fake.effectToken(id);
             assertNotNull(token, "effect handle diverged through the seam");
             distinct.add(((FakePlatform.FakeToken) token).name);
         }
@@ -444,15 +444,16 @@ class VersionShimParityTest {
         // pure helpers covered by dedicated suites; here the guard executes
         // the wiring surface they plug into (tier parsing with null for
         // unknown tiers, closest-match typo hints).
-        Class<?> commands = Class.forName(
-                "io.github.hunter1712.infusedmobs.command.InfusedMobsCommand");
-        Method parseTier = commands.getDeclaredMethod("parseTier", String.class);
-        parseTier.setAccessible(true);
+        Class<?> tiers = Class.forName(
+                "io.github.hunter1712.infusedmobs.tier.MobTier");
+        Method parseTier = tiers.getDeclaredMethod("parse", String.class);
         assertEquals(MobTier.CINDER, parseTier.invoke(null, "cinder"),
                 "tier parsing diverged");
         assertNull(parseTier.invoke(null, "legendary"),
                 "unknown tier handling diverged");
-        Method findClosest = commands.getDeclaredMethod("findClosest",
+        Class<?> matcher = Class.forName(
+                "io.github.hunter1712.infusedmobs.command.FuzzyMatcher");
+        Method findClosest = matcher.getDeclaredMethod("closest",
                 String.class, List.class);
         findClosest.setAccessible(true);
         assertEquals("bane", findClosest.invoke(null, "ban",

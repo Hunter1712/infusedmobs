@@ -4,7 +4,7 @@ import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.platform.Platform;
-import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
+import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -66,7 +66,7 @@ public final class MobHurtTrigger {
     /** Player hit an Infused Mob — fire its Thorns Ability exactly once if present. */
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
         if (!(source.getEntity() instanceof Player player)) return;
-        if (!InfusedTracker.hasAbility(mob, AbilityRegistry.THORNS_ID)) return;
+        if (!MobTierManager.hasAbility(mob, AbilityRegistry.THORNS_ID)) return;
         Ability thorns = AbilityRegistry.getById(AbilityRegistry.THORNS_ID);
         if (thorns == null) return;
         thorns.effect().apply(mob, player, damageTaken);
@@ -78,7 +78,7 @@ public final class MobHurtTrigger {
         if (mob == null) return;
         // Gate on abilities rather than tier so Rupture split copies
         // (which have no tier) still fire their HURT abilities.
-        List<Ability> hurtAbilities = InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.HURT).stream()
+        List<Ability> hurtAbilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT).stream()
                 .filter(ability -> !ability.id().equals(AbilityRegistry.THORNS_ID))
                 .toList();
         if (hurtAbilities.isEmpty()) return;
