@@ -1,9 +1,11 @@
 package io.github.hunter1712.infusedmobs.tier;
 
-import io.github.hunter1712.infusedmobs.ability.Ability;
+import io.github.hunter1712.infusedmobs.ability.TestAbilities;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.test.IsolatedState;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Set;
@@ -16,26 +18,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Behaviour tests for {@link InfusedRegistry}, the UUID-keyed live Infused
- * Mob state behind {@link MobTierManager}.
+ * Behaviour tests for {@link InfusedRegistry}, the UUID-keyed live roll
+ * state behind {@link MobTierManager}.
  * <p>
  * Each test instantiates a fresh registry — no shared state, no manual reset.
+ * Ability ids resolve through the global pool, isolated per test.
  */
+@ExtendWith(IsolatedState.class)
 class InfusedRegistryTest {
-
-    private static Ability ability(String id, TriggerType trigger) {
-        return new Ability(id, id, trigger, (mob, target, damage) -> {});
-    }
 
     @Test
     void trackAndFindRoundTrip() {
         var registry = new InfusedRegistry();
         var id = UUID.randomUUID();
-        var infused = InfusedMob.tiered(MobTier.DOOM, List.of(ability("bane", TriggerType.HURT)));
+        var rolled = new Rolled.Tiered(MobTier.DOOM, List.of("bane", "rupture"));
 
-        registry.track(id, infused);
+        registry.track(id, rolled);
 
-        assertEquals(infused, registry.find(id));
+        assertEquals(rolled, registry.find(id));
     }
 
     @Test
@@ -46,9 +46,9 @@ class InfusedRegistryTest {
     @Test
     void trackRejectsNulls() {
         var registry = new InfusedRegistry();
-        var infused = InfusedMob.split(List.of());
+        var rolled = new Rolled.Split(List.of());
 
-        assertThrows(NullPointerException.class, () -> registry.track(null, infused));
+        assertThrows(NullPointerException.class, () -> registry.track(null, rolled));
         assertThrows(NullPointerException.class, () -> registry.track(UUID.randomUUID(), null));
     }
 
@@ -56,7 +56,7 @@ class InfusedRegistryTest {
     void untrackExistingForgets() {
         var registry = new InfusedRegistry();
         var id = UUID.randomUUID();
-        registry.track(id, InfusedMob.split(List.of()));
+        registry.track(id, new Rolled.Split(List.of()));
 
         assertTrue(registry.untrack(id));
         assertNull(registry.find(id));
@@ -72,22 +72,22 @@ class InfusedRegistryTest {
         var a = new InfusedRegistry();
         var b = new InfusedRegistry();
         var id = UUID.randomUUID();
-        a.track(id, InfusedMob.split(List.of()));
+        a.track(id, new Rolled.Split(List.of()));
 
         assertNull(b.find(id));
     }
 
     @Test
     void tickScanReturnsOnlyTickCapableMobs() {
+        TestAbilities.register("bane", TriggerType.HURT);
+        TestAbilities.register("wraith", TriggerType.TICK);
         var registry = new InfusedRegistry();
         var tickId = UUID.randomUUID();
         var hurtId = UUID.randomUUID();
         var bareId = UUID.randomUUID();
-        registry.track(tickId, InfusedMob.tiered(MobTier.SHADE,
-                List.of(ability("bane", TriggerType.HURT), ability("wraith", TriggerType.TICK))));
-        registry.track(hurtId, InfusedMob.tiered(MobTier.CINDER,
-                List.of(ability("bane", TriggerType.HURT))));
-        registry.track(bareId, InfusedMob.split(List.of()));
+        registry.track(tickId, new Rolled.Tiered(MobTier.SHADE, List.of("bane", "wraith")));
+        registry.track(hurtId, new Rolled.Tiered(MobTier.CINDER, List.of("bane")));
+        registry.track(bareId, new Rolled.Split(List.of()));
 
         Set<UUID> tickMobs = registry.tickMobUUIDs();
 
@@ -97,7 +97,7 @@ class InfusedRegistryTest {
     @Test
     void clearEmptiesRegistry() {
         var registry = new InfusedRegistry();
-        registry.track(UUID.randomUUID(), InfusedMob.split(List.of()));
+        registry.track(UUID.randomUUID(), new Rolled.Split(List.of()));
         registry.clear();
 
         assertTrue(registry.tickMobUUIDs().isEmpty());
@@ -110,9 +110,8 @@ class InfusedRegistryTest {
         var splitId = UUID.randomUUID();
         var tieredId = UUID.randomUUID();
         var missingId = UUID.randomUUID();
-        registry.track(splitId, InfusedMob.split(List.of()));
-        registry.track(tieredId, InfusedMob.tiered(MobTier.CINDER,
-                List.of(ability("bane", TriggerType.HURT))));
+        registry.track(splitId, new Rolled.Split(List.of()));
+        registry.track(tieredId, new Rolled.Tiered(MobTier.CINDER, List.of("bane")));
 
         assertTrue(registry.isSplitCopy(splitId),
                 "split copy must report as split copy for Cinder XP treatment");

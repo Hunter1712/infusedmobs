@@ -152,10 +152,6 @@ public final class InfusedMobsCommand {
     /** Shows available commands. */
     private static int executeHelp(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        String tierNames = String.join(", ",
-                Arrays.stream(MobTier.values())
-                        .map(t -> t.name().toLowerCase(Locale.ROOT))
-                        .toList());
         source.sendSystemMessage(Component.literal(
                 "§e--- InfusedMobs Commands ---"));
         source.sendSystemMessage(Component.literal(
@@ -175,7 +171,7 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs summon <tier> [entity] [abilities] §7— spawn an Infused Mob at crosshair (abilities require an entity)"));
         source.sendSystemMessage(Component.literal(
-                "§8Tiers: " + tierNames + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
+                "§8Tiers: " + tierOptions() + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
         return 1;
     }
 

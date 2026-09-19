@@ -92,8 +92,7 @@ public final class MobTierManager {
         if (tier != null) {
             ModConfig.TierConfig tierConfig = config.forTier(tier);
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(tierConfig.abilityCount());
-            trackTiered(mob, tier, abilities);
-            Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Tiered(tier, idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, uuid, trackTiered(mob, tier, abilities));
             return;
         }
 
@@ -122,26 +121,30 @@ public final class MobTierManager {
         if (serverLevel != null && InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) {
             return false;
         }
-        trackTiered(mob, tier, abilities);
+        Rolled.Tiered rolled = trackTiered(mob, tier, abilities);
 
         if (serverLevel != null) {
-            Platform.hooks().storeRoll(serverLevel, mob.getUUID(), new Rolled.Tiered(tier, idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, mob.getUUID(), rolled);
         }
         return true;
     }
 
-    /** Tracks a tiered roll: registry entry, health multiplier, tier nametag. */
-    private static void trackTiered(Mob mob, MobTier tier, List<Ability> abilities) {
-        SHARED.track(mob.getUUID(), InfusedMob.tiered(tier, abilities));
+    /** Tracks a tiered roll: registry entry, health multiplier, tier nametag. Returns the persisted roll. */
+    private static Rolled.Tiered trackTiered(Mob mob, MobTier tier, List<Ability> abilities) {
+        Rolled.Tiered rolled = new Rolled.Tiered(tier, idsOf(abilities));
+        SHARED.track(mob.getUUID(), rolled);
         applyHealthMultiplier(mob, ModConfig.get().forTier(tier));
         setTierNametag(mob, tier, abilities);
+        return rolled;
     }
 
-    /** Tracks a split copy: registry entry, Cinder stats, greyscale nametag. */
-    private static void trackSplit(Mob mob, List<Ability> abilities) {
-        SHARED.track(mob.getUUID(), InfusedMob.split(abilities));
+    /** Tracks a split copy: registry entry, Cinder stats, greyscale nametag. Returns the persisted roll. */
+    private static Rolled.Split trackSplit(Mob mob, List<Ability> abilities) {
+        Rolled.Split rolled = new Rolled.Split(idsOf(abilities));
+        SHARED.track(mob.getUUID(), rolled);
         applyCinderStats(mob);
         setSplitCopyNametag(mob, abilities);
+        return rolled;
     }
 
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
@@ -208,9 +211,9 @@ public final class MobTierManager {
     public static void applyCinderTierToSplitCopy(Mob copy) {
         List<Ability> abilities = AbilityRegistry.getRandomAbilities(1, "rupture");
 
-        trackSplit(copy, abilities);
+        Rolled.Split rolled = trackSplit(copy, abilities);
         if (copy.level() instanceof ServerLevel serverLevel) {
-            Platform.hooks().storeRoll(serverLevel, copy.getUUID(), new Rolled.Split(idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, copy.getUUID(), rolled);
         }
     }
 
@@ -240,7 +243,7 @@ public final class MobTierManager {
 
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
-        return SHARED.find(mob.getUUID()) instanceof InfusedMob.Tiered tiered ? tiered.tier() : null;
+        return SHARED.find(mob.getUUID()) instanceof Rolled.Tiered tiered ? tiered.tier() : null;
     }
 
     /** Returns true if this mob is tracked as a Rupture split copy (Cinder stats, no Tier). */
@@ -250,24 +253,21 @@ public final class MobTierManager {
 
     /** Returns true if this mob has an ability with the given id. */
     public static boolean hasAbility(Mob mob, String id) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
-        if (infused == null) return false;
-        for (Ability ability : infused.abilities()) {
+        for (Ability ability : liveAbilities(mob.getUUID())) {
             if (ability.id().equals(id)) return true;
         }
         return false;
     }
 
-    /** Returns abilities assigned to this mob matching the given trigger type. */
-    public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
-        return infused == null ? List.of() : infused.forTrigger(trigger);
+    /** Resolves the tracked roll's ability ids to live objects (empty when untracked). */
+    private static List<Ability> liveAbilities(UUID uuid) {
+        Rolled rolled = SHARED.find(uuid);
+        return rolled == null ? List.of() : AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
     }
 
-    /** Returns all abilities assigned to this mob (empty list if none). */
-    public static List<Ability> getAllAbilities(Mob mob) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
-        return infused == null ? List.of() : infused.abilities();
+    /** Returns abilities assigned to this mob matching the given trigger type. */
+    public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
+        return AbilityRegistry.forTrigger(liveAbilities(mob.getUUID()), trigger);
     }
 
     /**
@@ -333,16 +333,17 @@ public final class MobTierManager {
      */
     public static void refreshNametags(MinecraftServer server) {
         boolean show = ModConfig.get().showNametags();
-        for (Map.Entry<UUID, InfusedMob> entry : SHARED.snapshot().entrySet()) {
+        for (Map.Entry<UUID, Rolled> entry : SHARED.snapshot().entrySet()) {
             Mob mob = findMob(server, entry.getKey());
             if (mob == null) continue;
-            InfusedMob infused = entry.getValue();
+            Rolled rolled = entry.getValue();
 
             if (show) {
-                if (infused instanceof InfusedMob.Tiered tiered) {
-                    setTierNametag(mob, tiered.tier(), tiered.abilities());
-                } else if (infused instanceof InfusedMob.SplitCopy splitCopy) {
-                    setSplitCopyNametag(mob, splitCopy.abilities());
+                List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
+                if (rolled instanceof Rolled.Tiered tiered) {
+                    setTierNametag(mob, tiered.tier(), abilities);
+                } else if (rolled instanceof Rolled.Split) {
+                    setSplitCopyNametag(mob, abilities);
                 }
             } else {
                 mob.setCustomName(null);
