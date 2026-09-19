@@ -161,22 +161,10 @@ public final class InfusedTracker {
 
     private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
         if (!ModConfig.get().showNametags()) return;
-        if (hasForeignName(mob)) return;
         List<String> names = abilities.stream().map(Ability::name).toList();
         String entityName = entityTypeName(mob);
         mob.setCustomName(Component.literal(NametagFormatter.format(colour, names, entityName)));
         mob.setCustomNameVisible(true);
-    }
-
-    /**
-     * True when the mob carries a custom name this mod did not set
-     * (e.g. another mod's display name) — those are never overwritten.
-     */
-    private static boolean hasForeignName(Mob mob) {
-        if (!mob.hasCustomName()) return false;
-        Component customName = mob.getCustomName();
-        if (customName == null) return false;
-        return !NametagFormatter.owns(customName.getString(), entityTypeName(mob));
     }
 
     /**
@@ -202,9 +190,7 @@ public final class InfusedTracker {
 
             if (show) {
                 applyNametagForInfused(mob, infused);
-            } else if (!hasForeignName(mob)) {
-                // Only clear nametags this mod owns — foreign display
-                // names (other mods) are left alone.
+            } else {
                 mob.setCustomName(null);
                 mob.setCustomNameVisible(false);
             }

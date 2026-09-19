@@ -101,16 +101,13 @@ class ModConfigClampTest {
     void malformedBlacklistIdsAreDropped() {
         var instance = InstanceBuilder.valid()
                 .blacklist(List.of("minecraft:overworld", "overworld"))
-                .mobBlacklist(List.of("minecraft:spider", "spider"))
                 .build();
 
         ModConfig.Instance fixed = clamped(instance);
         assertEquals(List.of("minecraft:overworld"), fixed.worldBlacklist());
-        assertEquals(List.of("minecraft:spider"), fixed.mobBlacklist());
         List<String> warnings = clampWarnings(instance);
-        assertEquals(2, warnings.size());
+        assertEquals(1, warnings.size());
         assertTrue(warnings.get(0).contains("worldBlacklist"));
-        assertTrue(warnings.get(1).contains("mobBlacklist"));
     }
 
     @Test

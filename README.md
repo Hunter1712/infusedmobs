@@ -79,8 +79,6 @@ Tier nametags can be hidden globally via the config file or the in-game command:
 
 When disabled, infused mobs appear with their vanilla names — abilities still apply, you just won't see the tier tag.
 
-Mobs already carrying a custom name from another mod keep it: foreign display names are never overwritten or cleared.
-
 ### World Blacklist
 
 Disable the mod in specific worlds (dimensions) via a blacklist. In blacklisted worlds, mobs spawn as vanilla — no tiers, no abilities, no nametags, and `/infusedmobs summon` is refused.
@@ -92,16 +90,6 @@ Disable the mod in specific worlds (dimensions) via a blacklist. In blacklisted 
 ```
 
 Manage at runtime with `/infusedmobs world add|remove <world>` (tab-completes loaded dimension ids; the `minecraft:` namespace is optional, e.g. `overworld` = `minecraft:overworld`). The blacklist is persisted to `config/infusedmobs.json`.
-
-### Mob Blacklist
-
-Exclude specific mob types from natural infusion via the `mobBlacklist` config field (entity type ids — vanilla or modded). Blacklisted types always spawn vanilla — no tiers, no abilities, no nametags. Explicit `/infusedmobs summon` bypasses the list as operator intent. Takes effect on `/infusedmobs reload`, no restart needed.
-
-```json
-{
-  "mobBlacklist": ["minecraft:spider", "spiders:polymerized_spider"]
-}
-```
 
 ### Gamerules
 
