@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -64,5 +65,25 @@ class InfusedMobTest {
         assertTrue(infused.forTrigger(TriggerType.TICK).isEmpty());
         assertTrue(infused.forTrigger(TriggerType.HURT).isEmpty());
         assertTrue(infused.forTrigger(TriggerType.DEATH).isEmpty());
+    }
+
+    @Test
+    void factoriesIsolateCallerListMutation() {
+        Ability bane = ability("bane", TriggerType.HURT);
+        java.util.List<Ability> source = new java.util.ArrayList<>(List.of(bane));
+
+        InfusedMob infused = InfusedMob.tiered(MobTier.CINDER, source);
+        source.clear();
+
+        assertEquals(List.of(bane), infused.abilities());
+        assertEquals(List.of(bane), infused.forTrigger(TriggerType.HURT));
+    }
+
+    @Test
+    void triggerIndexIsUnmodifiable() {
+        InfusedMob infused = InfusedMob.tiered(MobTier.CINDER, List.of(ability("bane", TriggerType.HURT)));
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> infused.byTrigger().put(TriggerType.TICK, List.of()));
     }
 }

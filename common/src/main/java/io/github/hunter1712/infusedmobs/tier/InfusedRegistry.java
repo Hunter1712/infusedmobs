@@ -4,6 +4,7 @@ import io.github.hunter1712.infusedmobs.ability.TriggerType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,6 +23,8 @@ public final class InfusedRegistry {
 
     /** Starts tracking this UUID as the given infused state. */
     public void track(UUID id, InfusedMob infused) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(infused, "infused");
         tracked.put(id, infused);
     }
 
