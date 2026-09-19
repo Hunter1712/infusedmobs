@@ -62,6 +62,8 @@ All commands require **gamemaster-level permission** (level 2 ops).
 | `/infusedmobs world add <world>` | Add a world to the blacklist (disables the mod there) |
 | `/infusedmobs world remove <world>` | Remove a world from the blacklist |
 | `/infusedmobs world list` | Show all blacklisted worlds |
+| `/infusedmobs mob add\|remove <entity>` | Add/remove a mob type on the Mob Blacklist (stays vanilla) |
+| `/infusedmobs mob list` | Show all blacklisted mob types |
 | `/infusedmobs list` | List all hostile mob types that can be infused |
 | `/infusedmobs summon <tier> [entity] [abilities]` | Spawn an Infused Mob at crosshair (defaults to zombie). Abilities are optional space-separated IDs (e.g., `bane thorns`) and require an entity argument |
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
@@ -93,7 +95,7 @@ Manage at runtime with `/infusedmobs world add|remove <world>` (tab-completes lo
 
 ### Mob Blacklist
 
-Exclude specific mob types from natural infusion via the `mobBlacklist` config field (entity type ids — vanilla or modded). Blacklisted types always spawn vanilla — no tiers, no abilities, no nametags. Explicit `/infusedmobs summon` bypasses the list as operator intent. Takes effect on `/infusedmobs reload`, no restart needed.
+Exclude specific mob types from natural infusion via the `mobBlacklist` config field (entity type ids — vanilla or modded). Blacklisted types always spawn vanilla — no tiers, no abilities, no nametags. Explicit `/infusedmobs summon` bypasses the list as operator intent. Manage at runtime with `/infusedmobs mob add|remove <entity>` and `/infusedmobs mob list` (tab-completes hostile types). Takes effect on `/infusedmobs reload`, no restart needed.
 
 ```json
 {

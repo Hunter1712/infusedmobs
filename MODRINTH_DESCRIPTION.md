@@ -72,6 +72,8 @@ All commands require **gamemaster-level permission** (level 2 ops).
 | `/infusedmobs reload` | Reload `config/infusedmobs.json` from disk at runtime |
 | `/infusedmobs world add\|remove <world>` | Add/remove a world dimension on the World Blacklist (disables the mod there) |
 | `/infusedmobs world list` | Show the World Blacklist |
+| `/infusedmobs mob add\|remove <entity>` | Add/remove a mob type on the Mob Blacklist (stays vanilla) |
+| `/infusedmobs mob list` | Show the Mob Blacklist |
 | `/gamerule infusedmobs:enabled` | Enable/disable the mod in the current world (default `true`) |
 
 ### 🎮 Gamerules
