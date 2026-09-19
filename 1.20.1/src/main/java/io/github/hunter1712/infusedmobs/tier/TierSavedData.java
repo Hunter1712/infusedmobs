@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
