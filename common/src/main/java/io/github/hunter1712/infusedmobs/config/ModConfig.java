@@ -151,10 +151,11 @@ public final class ModConfig {
             float combustExplosionPower,
             boolean showNametags,
             List<String> worldBlacklist,
+            List<String> mobBlacklist,
             int configVersion
     ) {
         /** Bump when config fields change so {@link #backfillFromDefaults()} knows what to fill. */
-        private static final int CURRENT_CONFIG_VERSION = 3;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed
+        private static final int CURRENT_CONFIG_VERSION = 4;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed, v4 = mobBlacklist
 
         /** Strict validity predicate pinned by tests. Load clamps instead of rejecting (see {@link #clamped}). */
         boolean isValid() {
@@ -164,7 +165,9 @@ public final class ModConfig {
                     && infernoFireSeconds > 0 && acidArmorDamage > 0
                     && combustExplosionPower > 0
                     && (worldBlacklist == null
-                            || worldBlacklist.stream().allMatch(Instance::isValidWorldId));
+                            || worldBlacklist.stream().allMatch(Instance::isValidResourceId))
+                    && (mobBlacklist == null
+                            || mobBlacklist.stream().allMatch(Instance::isValidResourceId));
         }
 
         private static boolean isTierValid(TierConfig tc) {
@@ -175,14 +178,15 @@ public final class ModConfig {
         }
 
         /**
-         * Returns true if {@code worldId} is a non-blank, non-null world identifier.
-         * Used by {@link #isValid()} to reject malformed blacklist entries.
+         * Returns true if {@code id} is a non-blank, non-null resource identifier.
+         * Used by {@link #isValid()} to reject malformed World Blacklist and
+         * Mob Blacklist entries.
          */
-        private static boolean isValidWorldId(String worldId) {
-            if (worldId == null) return false;
-            String trimmed = worldId.trim();
+        private static boolean isValidResourceId(String id) {
+            if (id == null) return false;
+            String trimmed = id.trim();
             if (trimmed.isEmpty()) return false;
-            // A world id looks like "minecraft:overworld" — must contain a colon
+            // A resource id looks like "minecraft:overworld" — must contain a colon
             // and have non-empty namespace + path halves.
             int colon = trimmed.indexOf(':');
             if (colon <= 0 || colon >= trimmed.length() - 1) return false;
@@ -238,7 +242,8 @@ public final class ModConfig {
                     clampMin("acidArmorDamage", acidArmorDamage, 1, warnings),
                     clampExplosion(combustExplosionPower, warnings),
                     showNametags,
-                    clampedBlacklist(worldBlacklist, warnings),
+                    clampedBlacklist("worldBlacklist", worldBlacklist, warnings),
+                    clampedBlacklist("mobBlacklist", mobBlacklist, warnings),
                     configVersion);
         }
 
@@ -308,11 +313,11 @@ public final class ModConfig {
             return power;
         }
 
-        private static List<String> clampedBlacklist(List<String> blacklist, List<String> warnings) {
+        private static List<String> clampedBlacklist(String field, List<String> blacklist, List<String> warnings) {
             List<String> normalised = normaliseBlacklist(blacklist);
-            List<String> kept = normalised.stream().filter(Instance::isValidWorldId).toList();
+            List<String> kept = normalised.stream().filter(Instance::isValidResourceId).toList();
             if (kept.size() != normalised.size()) {
-                warnings.add("Config field 'worldBlacklist' dropped malformed ids " + normalised
+                warnings.add("Config field '" + field + "' dropped malformed ids " + normalised
                         + " — kept " + kept + ".");
             }
             return kept;
@@ -326,7 +331,7 @@ public final class ModConfig {
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
                     combustExplosionPower, show,
-                    worldBlacklist, configVersion
+                    worldBlacklist, mobBlacklist, configVersion
             );
         }
 
@@ -342,7 +347,7 @@ public final class ModConfig {
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
                     combustExplosionPower, showNametags,
-                    normaliseBlacklist(blacklist), configVersion
+                    normaliseBlacklist(blacklist), mobBlacklist, configVersion
             );
         }
 
@@ -356,6 +361,37 @@ public final class ModConfig {
             if (worldId == null || worldBlacklist == null) return false;
             String trimmed = worldId.trim();
             for (String entry : worldBlacklist) {
+                if (entry != null && entry.equals(trimmed)) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Returns a copy with a new Mob Blacklist.
+         * The list is defensively copied and normalised (trimmed, blanks
+         * removed, duplicates collapsed preserving first-seen order).
+         */
+        public Instance withMobBlacklist(List<String> blacklist) {
+            return new Instance(
+                    cinder, shade, doom,
+                    hurtEffectDuration, hurtEffectAmplifier,
+                    tickEffectDuration, tickEffectAmplifier,
+                    infernoFireSeconds, acidArmorDamage,
+                    combustExplosionPower, showNametags,
+                    worldBlacklist, normaliseBlacklist(blacklist), configVersion
+            );
+        }
+
+        /**
+         * Returns true if the given entity type id is on the Mob Blacklist.
+         * {@code entityId} should be the string form of an entity type's
+         * resource location (e.g. {@code "minecraft:spider"}).
+         * Matching is case-sensitive and trims the input.
+         */
+        public boolean isMobBlacklisted(String entityId) {
+            if (entityId == null || mobBlacklist == null) return false;
+            String trimmed = entityId.trim();
+            for (String entry : mobBlacklist) {
                 if (entry != null && entry.equals(trimmed)) return true;
             }
             return false;
@@ -383,36 +419,44 @@ public final class ModConfig {
                     4.0f,    // combustExplosionPower
                     true,    // showNametags
                     List.of(),// worldBlacklist — empty by default (mod active everywhere)
+                    List.of(),// mobBlacklist — empty by default (every hostile mob can infuse)
                     CURRENT_CONFIG_VERSION
             );
         }
 
         /**
-         * Backfills fields missing from an older config file (pre-2.7.0)
-         * with their default values, preserving all existing tier/effect
-         * settings. Called on the clamped instance during {@link ModConfig#load(int)}.
+         * Backfills fields missing from an older config file (pre-2.7.0,
+         * pre-mob-blacklist) with their default values, preserving all
+         * existing tier/effect settings. Called on the clamped instance
+         * during {@link ModConfig#load(int)}.
          * <p>
          * Without this, upgrading from 2.6.0 would leave
-         * {@code worldBlacklist} null. Older files may also carry a
+         * {@code worldBlacklist} null (and pre-2.8.0 files leave
+         * {@code mobBlacklist} null). Older files may also carry a
          * {@code showAnnouncements} field — Gson ignores unknown fields,
          * so the removed field is simply dropped.
          */
         Instance backfillFromDefaults() {
             if (configVersion >= CURRENT_CONFIG_VERSION) {
-                // Already current — just ensure worldBlacklist isn't null.
-                return worldBlacklist == null
+                // Already current — just ensure the blacklists aren't null.
+                Instance filled = worldBlacklist == null
                         ? withWorldBlacklist(List.of())
                         : this;
+                return filled.mobBlacklist == null
+                        ? filled.withMobBlacklist(List.of())
+                        : filled;
             }
             // Older config — fill in the new fields with defaults.
-            List<String> backfilledBlacklist = (worldBlacklist == null) ? List.of() : normaliseBlacklist(worldBlacklist);
+            List<String> backfilledWorlds = (worldBlacklist == null) ? List.of() : normaliseBlacklist(worldBlacklist);
+            List<String> backfilledMobs = (mobBlacklist == null) ? List.of() : normaliseBlacklist(mobBlacklist);
             return new Instance(
                     cinder, shade, doom,
                     hurtEffectDuration, hurtEffectAmplifier,
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
                     combustExplosionPower, showNametags,
-                    backfilledBlacklist,
+                    backfilledWorlds,
+                    backfilledMobs,
                     CURRENT_CONFIG_VERSION
             );
         }

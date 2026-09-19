@@ -8,32 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Multi-version builds from one repo** — Gradle multi-project `common` + `1.20.1`/`1.21.1`/`26.2` (`settings.gradle:12`, `common/build.gradle:32` `srcDir`, `26.2/build.gradle:32` `srcDir` shims) producing `infusedmobs-<mod>+<mc>.jar` (`2.7.1+1.20.1`, `+1.21.1`, `+26.2`) via `gradle build` (one clone, one command). `fabric.mod.json` declares `minecraft:~<mc>` and `java >=17/21/25`, `infusedmobs.mixins.json` `JAVA_17/21/25`.
-- **CI matrix** — `.github/workflows/build.yml:12` `fail-fast` matrix `common:25`, `26.2:25`, `1.21.1:21`, `1.20.1:17` plus `aggregate` `gradle build` to verify all three overlays; single Modrinth project page with one file per game version (`+mc` suffix) and game-version filter.
-
-#### 1.20.1
-- Overlay with Java 17, `minecraft ~1.20.1` (`1.20.1/gradle.properties:1`, `fabric.mod.json:27`), `JAVA_17` mixins, real `1.20.1` mappings via `fabric-loom-remap` + MojMap (`1.20.1/build.gradle` `mappings loom.officialMojangMappings()`, `modImplementation` loader/Fabric API `0.92.0+1.20.1`); Gamerule Gate `infusedmobs:enabled` via legacy Fabric `GameRuleRegistry`/`GameRuleFactory` (`GameRules.Key<BooleanValue>`) with the same `!blacklisted && gamerule` semantics, so datapacks toggling the rule see the same effect; persistence via legacy NBT path (`DimensionDataStorage#computeIfAbsent`, single-arg `save(CompoundTag)`) with same field names `rolls/kind/tier/abilityIds`; `location()` dimension, plain `create(Level)` spawn, raw-`MobEffect` effects + `hurt()` damage + `setSecondsOnFire` ignite via `AbilityHelper`, `ResourceLocationArgument` commands; HURT trigger via `ALLOW_DAMAGE` (`HurtTriggerHelper`, pre-mitigation amount, `blocked=false` — exact after-damage parity is #9).
-- Effect handles are version-neutral `Object` (`AbilityRegistry` routes all effects — poison/wither/weakness/regeneration included — through `AbilityHelper` accessors; 26.2/1.21.1 cast to `Holder<MobEffect>`, 1.20.1 to raw `MobEffect`) and HURT registration goes through `HurtTriggerHelper` (`AFTER_DAMAGE` on 26.2/1.21.1) so `common` compiles against all three mappings.
-- Local builds work with the system `gradle` binary as well as `./gradlew` (same scripts; wrapper stays canonical for CI).
-
-#### 1.21.1
-- Overlay with Java 21, `minecraft ~1.21.1` (`1.21.1/gradle.properties:1`), `JAVA_21` mixins, real `1.21.1` mappings via `fabric-loom-remap` + MojMap (`1.21.1/build.gradle`); Gamerule Gate `infusedmobs:enabled` via Fabric `GameRuleRegistry`/`GameRuleFactory`; persistence via NBT `CompoundTag` Factory path with same field names `rolls/kind/tier/abilityIds`; `location()` dimension, `hurt()` damage, `Holder<MobEffect>` effects (1.21.1 MojMap names via `AbilityHelper`).
-
-#### 26.2
-- Baseline unchanged; now also built via `common` shim indirection (`MobTierManager.java:60` `DimensionHelper.getId`, `TierSavedData.get`, `AbilityHelper`/`SpawnHelper`).
+- **Mob Blacklist** — `mobBlacklist` config field (entity type ids, e.g. `minecraft:spider`) excludes types from natural Tier rolls; explicit `/infusedmobs summon` bypasses it as operator intent. Applies on `/infusedmobs reload`, no restart needed.
 
 ### Changed
-- `MobTierManager` now delegates dimension and storage via shims (`DimensionHelper`, `TierSavedData.get`) and `isEnabled` (`ModGameRules.java:60`); `AbilityRegistry` delegates to `AbilityHelper`; `SplitEffect` to `SpawnHelper`, `MobHurtTrigger` to `AbilityHelper.reflectThorns` and `HurtTriggerHelper.register`.
-- Tier persistence rules live once in `common` (`tier/Rolled.java` decode/encode helpers + `tier/TierRollStore.java` in-memory map) with thin codec/NBT adapters per version; corrupted-save fallback is covered by behaviour tests instead of source-text checks.
-- `MobTierManager` slimmed to roll/restore/health flows: gating decisions moved to `tier/InfusionGate.java` (`status(level)` → ACTIVE/WORLD_BLACKLISTED/RULE_DISABLED) and the in-memory Infused Mob registry + nametag presentation to `tier/InfusedTracker.java`, which triggers and commands query directly.
-- Docs/code vocab audit: `InfusedMob.TieredMob`→`Tiered` and `SplitCopyMob`→`SplitCopy` (CONTEXT.md avoids "Tiered Mob"), `AbilityRegistry.all`→`register`, split-copy grey extracted to `SPLIT_COPY_COLOUR`, entity-type name helper hides the `getType().getDescription()` chain; Javadoc now uses Infused Mob / Tier / Ability / TriggerType / World Blacklist / Gamerule Gate consistently.
-- Docs synced to code: HURT documented as offensive melee-or-projectile plus reactive Thorns, Rupture copies documented as full Cinder health and XP with grey tag and no Tier, summon abilities documented as requiring an entity argument, vanilla share corrected to ~30% (single-roll 40%/20%/10%).
+- Internal deepening with no behaviour change: single Infusion seam behind the roll coordinator, extracted Combust effect, narrowed platform seam (`spawn` plus `effectToken`), Tier parsing owned by the Tier contract, config pool bound passed in by init.
+- Shield docs now scope negation to 1.21.1/26.2 with the 1.20.1 legacy-event carve-out stated outright.
 
 ### Fixed
 - Bare `/infusedmobs` now shows help (previously did nothing despite help text advertising `/infusedmobs` — show this help).
 - **Tier-share correctness fix** — rolls are now a single uniform decision (Doom, then Shade, then Cinder intervals), so effective shares equal the documented contract: 40% Cinder / 20% Shade / 10% Doom with 30% vanilla. Previously sequential independent checks gave ~40% / ~12% / ~4.8% with ~43% vanilla — pack balance now matches the docs. No config change needed; custom spawn chances keep working as interval sizes with rarest first.
 - **Thorns honesty fix** — Thorns is now a reactive HURT Ability (fires when the Infused Mob is damaged by a player, reflecting 15% back) instead of a passive TICK no-op with a cross-trigger side-channel. Passive iteration only visits mobs it can actually affect; shield-blocked hits fire nothing; reflection never re-triggers.
 - **Split-copy Cinder parity fix** — Rupture split copies now grant the full documented Cinder experience treatment through the same health/XP path as Tiered rolls (previously Cinder health only, vanilla XP).
+- Foreign custom names (other mods' display names) are never overwritten or cleared by Tier nametags — neither on assign nor on toggle-off.
 
 ## [2.7.1] - 2026-08-02
 

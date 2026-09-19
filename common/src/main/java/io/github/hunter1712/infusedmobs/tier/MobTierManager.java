@@ -65,6 +65,7 @@ public final class MobTierManager {
     public static void assignTier(Mob mob) {
         if (!(mob.level() instanceof ServerLevel serverLevel)) return;
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
+        if (isMobBlacklisted(mob)) return;  // Config Mob Blacklist — these types never infuse
         if (InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) return;
         if (InfusedTracker.find(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
 
@@ -170,6 +171,12 @@ public final class MobTierManager {
 
     private static List<String> idsOf(List<Ability> abilities) {
         return abilities.stream().map(Ability::id).toList();
+    }
+
+    /** True when the mob's entity type is on the config Mob Blacklist (unregistered types never match). */
+    private static boolean isMobBlacklisted(Mob mob) {
+        String key = Platform.hooks().entityKey(mob.getType());
+        return key != null && ModConfig.get().isMobBlacklisted(key);
     }
 
     private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tierConfig) {

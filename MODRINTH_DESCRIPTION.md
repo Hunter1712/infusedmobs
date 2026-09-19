@@ -123,7 +123,8 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
   "acidArmorDamage": 4,
   "combustExplosionPower": 4.0,
   "worldBlacklist": [],
-  "configVersion": 3
+  "mobBlacklist": [],
+  "configVersion": 4
 }
 ```
 
@@ -143,6 +144,7 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 | `acidArmorDamage` | Durability damage per armor slot from Vitriol |
 | `combustExplosionPower` | Explosion strength (TNT = 4.0) |
 | `worldBlacklist` | Dimension IDs where the mod is disabled (e.g. `"minecraft:overworld"`) — managed in-game via `/infusedmobs world add\|remove\|list` |
+| `mobBlacklist` | Entity type IDs excluded from natural infusion (e.g. `"minecraft:spider"`) — JSON-only, explicit summon bypasses it |
 
 > **Note:** Values are validated on load — e.g. `spawnChance` and `abilityCount` must be greater than 0. An invalid config is replaced with defaults (with a warning in the log), so tier edits are preserved across upgrades but not past validation errors.
 
