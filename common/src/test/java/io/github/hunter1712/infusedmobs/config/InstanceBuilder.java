@@ -22,8 +22,7 @@ public final class InstanceBuilder {
     private float combustExplosionPower = 4.0f;
     private boolean showNametags = true;
     private List<String> worldBlacklist = List.of();
-    private List<String> mobBlacklist = List.of();
-    private int configVersion = 4;
+    private int configVersion = 3;
 
     private InstanceBuilder() {}
 
@@ -71,11 +70,6 @@ public final class InstanceBuilder {
         return this;
     }
 
-    public InstanceBuilder mobBlacklist(List<String> blacklist) {
-        mobBlacklist = blacklist;
-        return this;
-    }
-
     public InstanceBuilder version(int version) {
         configVersion = version;
         return this;
@@ -88,6 +82,6 @@ public final class InstanceBuilder {
                 tickEffectDuration, tickEffectAmplifier,
                 infernoFireSeconds, acidArmorDamage,
                 combustExplosionPower, showNametags,
-                worldBlacklist, mobBlacklist, configVersion);
+                worldBlacklist, configVersion);
     }
 }

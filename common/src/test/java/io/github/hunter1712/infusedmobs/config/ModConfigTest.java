@@ -227,64 +227,6 @@ class ModConfigTest {
     }
 
     // ========================================
-    // mobBlacklist
-    // ========================================
-
-    @Test
-    void mobBlacklistDefaultsToEmpty() {
-        ModConfig.Instance defaults = ModConfig.Instance.defaults();
-        assertNotNull(defaults.mobBlacklist());
-        assertTrue(defaults.mobBlacklist().isEmpty());
-    }
-
-    @Test
-    void isMobBlacklistedMatchesExactEntry() {
-        ModConfig.Instance cfg = ModConfig.Instance.defaults()
-                .withMobBlacklist(List.of("minecraft:spider"));
-        assertTrue(cfg.isMobBlacklisted("minecraft:spider"));
-        assertFalse(cfg.isMobBlacklisted("minecraft:zombie"));
-    }
-
-    @Test
-    void isMobBlacklistedTrimsInputHandlesNullAndEmpty() {
-        ModConfig.Instance cfg = ModConfig.Instance.defaults()
-                .withMobBlacklist(List.of("minecraft:spider"));
-        assertTrue(cfg.isMobBlacklisted("  minecraft:spider  "));
-        assertFalse(cfg.isMobBlacklisted(null));
-        assertFalse(ModConfig.Instance.defaults().isMobBlacklisted("minecraft:spider"));
-    }
-
-    @Test
-    void withMobBlacklistNormalisesEntries() {
-        ModConfig.Instance cfg = ModConfig.Instance.defaults()
-                .withMobBlacklist(Arrays.asList(
-                        "  minecraft:spider  ",
-                        "spiders:polymerized_spider",
-                        "minecraft:spider",
-                        "",
-                        null
-                ));
-        assertEquals(List.of("minecraft:spider", "spiders:polymerized_spider"), cfg.mobBlacklist());
-    }
-
-    @Test
-    void withMobBlacklistNullReturnsEmptyList() {
-        ModConfig.Instance cfg = ModConfig.Instance.defaults()
-                .withMobBlacklist(null);
-        assertNotNull(cfg.mobBlacklist());
-        assertTrue(cfg.mobBlacklist().isEmpty());
-    }
-
-    @Test
-    void withMobBlacklistPreservesWorldBlacklist() {
-        ModConfig.Instance original = ModConfig.Instance.defaults()
-                .withWorldBlacklist(List.of("minecraft:overworld"));
-        ModConfig.Instance updated = original.withMobBlacklist(List.of("minecraft:spider"));
-        assertEquals(List.of("minecraft:overworld"), updated.worldBlacklist());
-        assertEquals(List.of("minecraft:spider"), updated.mobBlacklist());
-    }
-
-    // ========================================
     // backfillFromDefaults (upgrade path)
     // ========================================
 
@@ -298,9 +240,7 @@ class ModConfigTest {
         ModConfig.Instance upgraded = oldConfig.backfillFromDefaults();
         assertNotNull(upgraded.worldBlacklist());
         assertTrue(upgraded.worldBlacklist().isEmpty());
-        assertNotNull(upgraded.mobBlacklist());
-        assertTrue(upgraded.mobBlacklist().isEmpty());
-        assertEquals(4, upgraded.configVersion());
+        assertEquals(3, upgraded.configVersion());
         // Tier settings preserved
         assertEquals(VALID_TIER, upgraded.cinder());
     }
@@ -313,19 +253,17 @@ class ModConfigTest {
 
         ModConfig.Instance backfilled = current.backfillFromDefaults();
         assertEquals(List.of("minecraft:overworld"), backfilled.worldBlacklist());
-        assertEquals(4, backfilled.configVersion());
+        assertEquals(3, backfilled.configVersion());
     }
 
     @Test
     void backfillFromDefaultsFillsNullBlacklistOnCurrentVersion() {
         // Edge case: configVersion is current but worldBlacklist is null
         // (e.g. hand-edited JSON missing the field). Should be filled to empty.
-        var cfg = InstanceBuilder.valid().blacklist(null).version(4).build();
+        var cfg = InstanceBuilder.valid().blacklist(null).version(3).build();
 
         ModConfig.Instance backfilled = cfg.backfillFromDefaults();
         assertNotNull(backfilled.worldBlacklist());
         assertTrue(backfilled.worldBlacklist().isEmpty());
-        assertNotNull(backfilled.mobBlacklist());
-        assertTrue(backfilled.mobBlacklist().isEmpty());
     }
 }
