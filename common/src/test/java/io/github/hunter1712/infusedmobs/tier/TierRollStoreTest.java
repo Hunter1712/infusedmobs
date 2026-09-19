@@ -64,22 +64,18 @@ class TierRollStoreTest {
     }
 
     @Test
-    void entriesExposeEveryRoll() {
+    void snapshotExposesEveryRoll() {
         var store = new TierRollStore();
         var tieredId = UUID.randomUUID();
         var splitId = UUID.randomUUID();
         store.put(tieredId, new Rolled.Tiered(MobTier.CINDER, List.of()));
         store.put(splitId, new Rolled.Split(List.of("ward")));
 
-        var entries = store.entries();
+        var snapshot = store.snapshot();
 
-        assertEquals(2, entries.size());
-        assertTrue(entries.stream().anyMatch(e ->
-                e.getKey().equals(tieredId)
-                        && e.getValue().equals(new Rolled.Tiered(MobTier.CINDER, List.of()))));
-        assertTrue(entries.stream().anyMatch(e ->
-                e.getKey().equals(splitId)
-                        && e.getValue().equals(new Rolled.Split(List.of("ward")))));
+        assertEquals(2, snapshot.size());
+        assertEquals(new Rolled.Tiered(MobTier.CINDER, List.of()), snapshot.get(tieredId));
+        assertEquals(new Rolled.Split(List.of("ward")), snapshot.get(splitId));
     }
 
     @Test

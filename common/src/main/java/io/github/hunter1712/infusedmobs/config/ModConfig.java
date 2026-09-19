@@ -1,9 +1,11 @@
 package io.github.hunter1712.infusedmobs.config;
 
+import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,8 +30,7 @@ public final class ModConfig {
 
     private static Instance instance;
     private static final Logger LOGGER = LoggerFactory.getLogger("infusedmobs");
-    private static final Gson GSON_PRETTY = new GsonBuilder().setPrettyPrinting().create();
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private ModConfig() {}
 
@@ -50,9 +52,19 @@ public final class ModConfig {
         if (Files.exists(configPath)) {
             try {
                 String json = Files.readString(configPath);
-                Instance parsed = GSON.fromJson(json, Instance.class);
-                if (parsed != null && parsed.isValid()) {
-                    instance = parsed.backfillFromDefaults();
+                Instance parsed;
+                try {
+                    parsed = GSON.fromJson(json, Instance.class);
+                } catch (JsonSyntaxException malformed) {
+                    LOGGER.warn("Config file {} is malformed JSON — rewriting with defaults.", configPath);
+                    parsed = null;
+                }
+                if (parsed != null) {
+                    Instance fixed = parsed.clamped(poolSize()).backfillFromDefaults();
+                    instance = fixed;
+                    if (!fixed.equals(parsed)) {
+                        save();
+                    }
                     return;
                 }
                 LOGGER.warn("Config file {} is invalid — rewriting with defaults.", configPath);
@@ -63,6 +75,11 @@ public final class ModConfig {
 
         instance = Instance.defaults();
         writeDefaults(configPath);
+    }
+
+    /** Live Ability pool size, the upper bound for per-Tier ability counts. */
+    private static int poolSize() {
+        return AbilityRegistry.getAllAbilityIds().size();
     }
 
     /** Returns the current config instance. Never null after {@link #load()}. */
@@ -84,7 +101,7 @@ public final class ModConfig {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("infusedmobs.json");
         try {
             Files.createDirectories(configPath.getParent());
-            String json = GSON_PRETTY.toJson(instance);
+            String json = GSON.toJson(instance);
             Files.writeString(configPath, json);
         } catch (IOException e) {
             // Non-critical — in-memory config is still correct, but log so
@@ -96,7 +113,7 @@ public final class ModConfig {
     private static void writeDefaults(Path path) {
         try {
             Files.createDirectories(path.getParent());
-            String json = GSON_PRETTY.toJson(Instance.defaults());
+            String json = GSON.toJson(Instance.defaults());
             Files.writeString(path, json);
         } catch (IOException e) {
             // Defaults are already set in memory — file is non-critical, but log.
@@ -138,7 +155,7 @@ public final class ModConfig {
         /** Bump when config fields change so {@link #backfillFromDefaults()} knows what to fill. */
         private static final int CURRENT_CONFIG_VERSION = 3;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed
 
-        /** Returns true if all fields deserialised with valid values. */
+        /** Strict validity predicate pinned by tests. Load clamps instead of rejecting (see {@link #clamped}). */
         boolean isValid() {
             return cinder != null && shade != null && doom != null
                     && isTierValid(cinder) && isTierValid(shade) && isTierValid(doom)
@@ -169,6 +186,135 @@ public final class ModConfig {
             int colon = trimmed.indexOf(':');
             if (colon <= 0 || colon >= trimmed.length() - 1) return false;
             return true;
+        }
+
+        /** HURT/TICK effect amplifier range — vanilla caps at V (4), one headroom. */
+        private static final int MAX_AMPLIFIER = 5;
+
+        /** Combust explosion power range — 0.5 is a pop, 10 dwarfs TNT (4.0). */
+        private static final float MIN_EXPLOSION_POWER = 0.5f;
+        private static final float MAX_EXPLOSION_POWER = 10.0f;
+
+        /**
+         * Returns a copy with every out-of-range value clamped to its nearest
+         * bound, logging one warning per fix naming the field with old and new
+         * values. A single bad field no longer discards the whole file.
+         * <p>
+         * Bounds: Tier spawn chance in (0, 1] (non-positive falls back to the
+         * Tier default — the open bound has no nearest valid value),
+         * per-Tier ability count in [1, {@code abilityPoolSize}], HURT/TICK
+         * amplifiers in [0, 5], Combust power in [0.5, 10]. Positive
+         * durations, multipliers at or above 1.0 and colon-shaped World
+         * Blacklist ids keep their existing rules; malformed ids are dropped.
+         *
+         * @param abilityPoolSize live Ability pool size (upper count bound)
+         */
+        Instance clamped(int abilityPoolSize) {
+            List<String> warnings = new ArrayList<>();
+            Instance fixed = clamped(abilityPoolSize, warnings);
+            for (String warning : warnings) {
+                LOGGER.warn(warning);
+            }
+            return fixed;
+        }
+
+        /**
+         * Clamp worker collecting warnings instead of logging, so tests pin
+         * the warnings without a log harness. Idempotent: clamping a clamped
+         * instance changes nothing and warns nothing.
+         */
+        Instance clamped(int abilityPoolSize, List<String> warnings) {
+            int upperCount = Math.max(1, abilityPoolSize);
+            return new Instance(
+                    clampedTier("cinder", cinder, MobTier.CINDER, upperCount, warnings),
+                    clampedTier("shade", shade, MobTier.SHADE, upperCount, warnings),
+                    clampedTier("doom", doom, MobTier.DOOM, upperCount, warnings),
+                    clampMin("hurtEffectDuration", hurtEffectDuration, 1, warnings),
+                    clampRange("hurtEffectAmplifier", hurtEffectAmplifier, 0, MAX_AMPLIFIER, warnings),
+                    clampMin("tickEffectDuration", tickEffectDuration, 1, warnings),
+                    clampRange("tickEffectAmplifier", tickEffectAmplifier, 0, MAX_AMPLIFIER, warnings),
+                    clampMin("infernoFireSeconds", infernoFireSeconds, 1, warnings),
+                    clampMin("acidArmorDamage", acidArmorDamage, 1, warnings),
+                    clampExplosion(combustExplosionPower, warnings),
+                    showNametags,
+                    clampedBlacklist(worldBlacklist, warnings),
+                    configVersion);
+        }
+
+        private static TierConfig clampedTier(String name, TierConfig tier, MobTier fallback,
+                                              int upperCount, List<String> warnings) {
+            if (tier == null) {
+                warnings.add("Config field '" + name + "' is missing — using defaults " + fallback.defaultConfig() + ".");
+                return fallback.defaultConfig();
+            }
+            double chance = tier.spawnChance();
+            if (Double.isNaN(chance) || chance <= 0) {
+                warnings.add("Config field '" + name + ".spawnChance' out of range (" + chance
+                        + ") — using default " + fallback.spawnChance() + ".");
+                chance = fallback.spawnChance();
+            } else if (chance > 1) {
+                warnings.add("Config field '" + name + ".spawnChance' out of range (" + chance
+                        + ") — clamped to 1.0.");
+                chance = 1.0;
+            }
+            int count = Math.min(Math.max(tier.abilityCount(), 1), upperCount);
+            if (count != tier.abilityCount()) {
+                warnings.add("Config field '" + name + ".abilityCount' out of range (" + tier.abilityCount()
+                        + ") — clamped to " + count + ".");
+            }
+            double health = tier.healthMultiplier();
+            if (Double.isNaN(health) || health < 1.0) {
+                warnings.add("Config field '" + name + ".healthMultiplier' out of range (" + health
+                        + ") — clamped to 1.0.");
+                health = 1.0;
+            }
+            double xp = tier.xpMultiplier();
+            if (Double.isNaN(xp) || xp < 1.0) {
+                warnings.add("Config field '" + name + ".xpMultiplier' out of range (" + xp
+                        + ") — clamped to 1.0.");
+                xp = 1.0;
+            }
+            return new TierConfig(chance, count, health, xp);
+        }
+
+        private static int clampMin(String field, int value, int min, List<String> warnings) {
+            if (value < min) {
+                warnings.add("Config field '" + field + "' out of range (" + value
+                        + ") — clamped to " + min + ".");
+                return min;
+            }
+            return value;
+        }
+
+        private static int clampRange(String field, int value, int min, int max, List<String> warnings) {
+            if (value < min || value > max) {
+                int fixed = Math.min(Math.max(value, min), max);
+                warnings.add("Config field '" + field + "' out of range (" + value
+                        + ") — clamped to " + fixed + ".");
+                return fixed;
+            }
+            return value;
+        }
+
+        private static float clampExplosion(float power, List<String> warnings) {
+            if (Float.isNaN(power) || power < MIN_EXPLOSION_POWER || power > MAX_EXPLOSION_POWER) {
+                float fixed = Float.isNaN(power) ? MIN_EXPLOSION_POWER
+                        : Math.min(Math.max(power, MIN_EXPLOSION_POWER), MAX_EXPLOSION_POWER);
+                warnings.add("Config field 'combustExplosionPower' out of range (" + power
+                        + ") — clamped to " + fixed + ".");
+                return fixed;
+            }
+            return power;
+        }
+
+        private static List<String> clampedBlacklist(List<String> blacklist, List<String> warnings) {
+            List<String> normalised = normaliseBlacklist(blacklist);
+            List<String> kept = normalised.stream().filter(Instance::isValidWorldId).toList();
+            if (kept.size() != normalised.size()) {
+                warnings.add("Config field 'worldBlacklist' dropped malformed ids " + normalised
+                        + " — kept " + kept + ".");
+            }
+            return kept;
         }
 
         /** Returns a copy with a new showNametags value. */
@@ -243,7 +389,7 @@ public final class ModConfig {
         /**
          * Backfills fields missing from an older config file (pre-2.7.0)
          * with their default values, preserving all existing tier/effect
-         * settings. Called after a successful {@link #isValid()} check.
+         * settings. Called on the clamped instance during {@link #load()}.
          * <p>
          * Without this, upgrading from 2.6.0 would leave
          * {@code worldBlacklist} null. Older files may also carry a

@@ -88,7 +88,7 @@ public final class TierSavedData extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         CompoundTag rollsTag = new CompoundTag();
-        for (Map.Entry<UUID, Rolled> storedEntry : store.entries()) {
+        for (Map.Entry<UUID, Rolled> storedEntry : store.snapshot().entrySet()) {
             CompoundTag entry = new CompoundTag();
             Rolled rolled = storedEntry.getValue();
             entry.putString("kind", rolled.kind());

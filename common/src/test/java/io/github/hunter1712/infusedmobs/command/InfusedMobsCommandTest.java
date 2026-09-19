@@ -18,26 +18,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class InfusedMobsCommandTest {
 
     // ========================================
-    // parseAbilities
+    // AbilityParser (single parse shape for the summon command)
     // ========================================
 
     @Test
     void parseAbilitiesNullOrBlankReturnsEmpty() {
-        assertTrue(InfusedMobsCommand.parseAbilities(null).unknown().isEmpty());
-        assertTrue(InfusedMobsCommand.parseAbilities("").unknown().isEmpty());
-        assertTrue(InfusedMobsCommand.parseAbilities("   ").unknown().isEmpty());
+        assertTrue(AbilityParser.parse(null).unknown().isEmpty());
+        assertTrue(AbilityParser.parse("").unknown().isEmpty());
+        assertTrue(AbilityParser.parse("   ").unknown().isEmpty());
     }
 
     @Test
     void parseAbilitiesCollectsUnknownIdsInOrder() {
-        InfusedMobsCommand.AbilityParse parsed = InfusedMobsCommand.parseAbilities("bane thorns");
+        AbilityParser.Parsed parsed = AbilityParser.parse("bane thorns");
         assertTrue(parsed.abilities().isEmpty());
         assertEquals(List.of("bane", "thorns"), parsed.unknown());
     }
 
     @Test
     void parseAbilitiesDeduplicatesAndIgnoresExtraWhitespace() {
-        InfusedMobsCommand.AbilityParse parsed = InfusedMobsCommand.parseAbilities("  bane   bane  ");
+        AbilityParser.Parsed parsed = AbilityParser.parse("  bane   bane  ");
         assertEquals(List.of("bane"), parsed.unknown());
     }
 

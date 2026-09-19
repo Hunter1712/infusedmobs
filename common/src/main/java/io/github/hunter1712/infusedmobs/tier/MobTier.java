@@ -1,8 +1,5 @@
 package io.github.hunter1712.infusedmobs.tier;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
-
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 
 /**
@@ -18,25 +15,6 @@ public enum MobTier {
     CINDER(0.4,  1, 1.5, 1.5),
     SHADE(0.2,   2, 2.0, 2.0),
     DOOM(0.1,    3, 4.0, 4.0);
-
-    /**
-     * Codec for serialising tier values to / from disk.
-     * <p>
-     * Decoding an unknown tier name (corrupted or hand-edited save data)
-     * reports a {@link DataResult#error} instead of throwing — callers
-     * degrade gracefully instead of failing world load.
-     */
-    public static final Codec<MobTier> CODEC = Codec.STRING.flatXmap(
-            MobTier::parse,
-            tier -> DataResult.success(tier.name()));
-
-    private static DataResult<MobTier> parse(String name) {
-        try {
-            return DataResult.success(valueOf(name));
-        } catch (IllegalArgumentException e) {
-            return DataResult.error(() -> "Unknown mob tier: '" + name + "'");
-        }
-    }
 
     private final double spawnChance;
     private final int abilityCount;

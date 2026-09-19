@@ -44,10 +44,19 @@ public final class SplitEffect {
     }
 
     /** Positions the copy at a diagonal offset from the original mob. */
-    private static void placeCopy(Mob copy, LivingEntity original, int index) {
-        double sign = (index == 0) ? -1.0 : 1.0;
-        copy.setPos(original.getX() + sign * COPY_OFFSET,
+    static void placeCopy(Mob copy, LivingEntity original, int index) {
+        double offset = copyOffset(index);
+        copy.setPos(original.getX() + offset,
                     original.getY(),
-                    original.getZ() + sign * COPY_OFFSET);
+                    original.getZ() + offset);
+    }
+
+    /**
+     * Pure copy-placement offset behind {@link #placeCopy}: copy 0 lands on
+     * the negative diagonal, every later copy on the positive one. Plain
+     * arithmetic so unit tests pin the spawn geometry without bootstrap.
+     */
+    static double copyOffset(int index) {
+        return (index == 0 ? -1.0 : 1.0) * COPY_OFFSET;
     }
 }

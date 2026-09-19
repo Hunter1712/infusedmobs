@@ -28,21 +28,23 @@ public final class TierSavedData extends SavedData {
 
     /**
      * DTO bridging the shared {@link Rolled} model to a flat serialisable
-     * record ({@code kind} discriminates the variants). The wire rules live
-     * in {@link Rolled#decode} and its polymorphic accessors — this record
-     * is only codec plumbing.
+     * record ({@code kind} discriminates the variants). The Tier name rides
+     * as plain text and resolves once in {@link Rolled#decode} — the single
+     * lenient Tier parsing path, so unknown or missing tiers degrade to an
+     * empty roll exactly like the NBT adapters.
      */
-    record DTO(String kind, MobTier tier, List<String> abilityIds) {
+    record DTO(String kind, String tierName, List<String> abilityIds) {
 
         static DTO fromRolled(Rolled rolled) {
-            MobTier tier = rolled instanceof Rolled.Tiered tiered ? tiered.tier() : null;
-            return new DTO(rolled.kind(), tier, rolled.abilityIds());
+            return new DTO(rolled.kind(),
+                    rolled instanceof Rolled.Tiered tiered ? tiered.tierName() : null,
+                    rolled.abilityIds());
         }
 
         Rolled toRolled() {
-            // A null tier (corrupted save / unknown tier value) degrades to
-            // Nothing inside Rolled.decode rather than crashing or NPE-ing later.
-            return Rolled.decode(kind, tier == null ? null : tier.name(), abilityIds);
+            // A null or unknown tier name degrades to Nothing inside
+            // Rolled.decode rather than crashing or NPE-ing later.
+            return Rolled.decode(kind, tierName, abilityIds);
         }
     }
 
@@ -53,24 +55,15 @@ public final class TierSavedData extends SavedData {
                 // Unknown kind maps to Nothing via Rolled.decode, so corrupted
                 // saves never fail world load.
                 Codec.STRING.optionalFieldOf("kind", "nothing").forGetter(DTO::kind),
-                // Lenient tier: decoded as raw string then resolved in
+                // Lenient tier: decoded as raw string then resolved once in
                 // Rolled.decode, so an unknown tier name falls back to
-                // Nothing. Using MobTier.CODEC directly would fail the whole
-                // decode on corrupted saves instead of degrading gracefully.
+                // Nothing. Resolving here as well would parse every Tier
+                // name twice on each roll load for no benefit.
                 Codec.STRING.optionalFieldOf("tier").forGetter(dto ->
-                        Optional.ofNullable(dto.tier() == null ? null : dto.tier().name())),
+                        Optional.ofNullable(dto.tierName())),
                 Codec.STRING.listOf().optionalFieldOf("abilityIds", List.of()).forGetter(DTO::abilityIds)
-        ).apply(instance, (kind, tierName, abilityIds) -> {
-            MobTier tier = null;
-            if (tierName.isPresent()) {
-                try {
-                    tier = MobTier.valueOf(tierName.get());
-                } catch (IllegalArgumentException ignored) {
-                    tier = null;
-                }
-            }
-            return new DTO(kind, tier, abilityIds);
-        })).xmap(DTO::toRolled, DTO::fromRolled);
+        ).apply(instance, (kind, tierName, abilityIds) -> new DTO(kind, tierName.orElse(null), abilityIds))
+        ).xmap(DTO::toRolled, DTO::fromRolled);
 
     static final Codec<TierSavedData> CODEC = RecordCodecBuilder.<TierSavedData>create(instance ->
             instance.group(
