@@ -28,6 +28,10 @@ _Avoid_: Event Type, Ability Type, Trigger
 A config list of dimension ids (e.g. `minecraft:overworld`) where infusion is disabled for that dimension.
 _Avoid_: Dimension Blacklist, World Ban, Blacklisted World
 
+**Mob Blacklist**:
+A config list of entity type ids (e.g. `minecraft:spider`) excluded from natural Tier rolls; the summon command bypasses it as explicit operator intent.
+_Avoid_: Entity Blacklist, Mob Ban
+
 **Gamerule Gate**:
 A per-save boolean gamerule `infusedmobs:enabled` combined per dimension with the World Blacklist; infusion is active in a dimension only if that dimension is not blacklisted and the gamerule is true.
 _Avoid_: Enabled Flag, Global Toggle
