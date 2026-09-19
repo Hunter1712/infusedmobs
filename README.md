@@ -91,6 +91,16 @@ Disable the mod in specific worlds (dimensions) via a blacklist. In blacklisted 
 
 Manage at runtime with `/infusedmobs world add|remove <world>` (tab-completes loaded dimension ids; the `minecraft:` namespace is optional, e.g. `overworld` = `minecraft:overworld`). The blacklist is persisted to `config/infusedmobs.json`.
 
+### Mob Blacklist
+
+Exclude specific mob types from natural infusion via the `mobBlacklist` config field (entity type ids — vanilla or modded). Blacklisted types always spawn vanilla — no tiers, no abilities, no nametags. Explicit `/infusedmobs summon` bypasses the list as operator intent. Takes effect on `/infusedmobs reload`, no restart needed.
+
+```json
+{
+  "mobBlacklist": ["minecraft:spider", "spiders:polymerized_spider"]
+}
+```
+
 ### Gamerules
 
 The same control is exposed as a per-world gamerule, so modpack makers can set it at launch (datapack JSON, gamerule-modifying mods) or in-game:

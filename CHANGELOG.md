@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Mob Blacklist** — `mobBlacklist` config field (entity type ids, e.g. `minecraft:spider`) excludes types from natural Tier rolls; explicit `/infusedmobs summon` bypasses it as operator intent. Applies on `/infusedmobs reload`, no restart needed.
+
 ### Changed
 - Internal deepening with no behaviour change: single Infusion seam behind the roll coordinator, extracted Combust effect, narrowed platform seam (`spawn` plus `effectToken`), Tier parsing owned by the Tier contract, config pool bound passed in by init.
 - Shield docs now scope negation to 1.21.1/26.2 with the 1.20.1 legacy-event carve-out stated outright.
