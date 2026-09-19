@@ -47,5 +47,5 @@ A small file duplicated per version where Mojang/Fabric APIs diverge (e.g. `game
 _Avoid_: Version-specific file, Compat layer
 
 **Artifact Suffix**:
-The `+mc` qualifier appended to `mod_version` for published jars (`2.7.1+1.20.1`, `2.7.1+1.21.1`, `2.7.1+26.2`) so Modrinth channels stay distinct.
+The `+mc` qualifier appended to `mod_version` for published jars (`2.8.0+1.20.1`, `2.8.0+1.21.1`, `2.8.0+26.2`) so Modrinth channels stay distinct.
 _Avoid_: Version suffix, Build suffix
