@@ -1,6 +1,7 @@
 package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
+import io.github.hunter1712.infusedmobs.ability.TestAbilities;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.ability.trigger.MobDeathTrigger;
 import io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger;
@@ -9,10 +10,6 @@ import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.platform.PlatformHooks;
 import io.github.hunter1712.infusedmobs.test.FakePlatform;
 import io.github.hunter1712.infusedmobs.test.IsolatedState;
-
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * text. Each Versioned Source Set adapter implements this same interface:
  * the real 26.2 adapter is exercised directly here, the 1.21.1 and 1.20.1
  * adapters are held to the same contract by the hurt-reporting doubles and
- * the NBT field contract below, and all three compile against their own
+ * the shared lenient decode pinned in RolledTest, and all three compile against their own
  * game APIs in CI (holder versus raw effects, identifier versus resource
  * location arguments, post-mitigation versus legacy damage events, reasoned
  * versus plain spawns, codec versus Factory versus Function persistence).
@@ -228,7 +225,7 @@ class VersionShimParityTest {
     }
 
     // ========================================
-    // 8. Persistence — hooks plus the NBT field contract
+    // 8. Persistence hooks through the seam
     // ========================================
 
     @Test
@@ -266,67 +263,6 @@ class VersionShimParityTest {
             assertNull(fake.loadRoll(null, tieredId),
                     "persistence cleanup diverged through the seam");
         }
-    }
-
-    @Test
-    void nbtFieldContractMatchesCodec() {
-        // Both NBT storage mechanics (Factory and Function paths) persist
-        // the same (rolls, kind, tier, abilityIds) fields the codec path
-        // writes, and decode through the same shared roll model with real
-        // NBT types — so saves stay conceptually compatible across versions
-        // and corrupted entries degrade instead of failing world load.
-        var tiered = new Rolled.Tiered(MobTier.DOOM, List.of("bane", "rupture"));
-        var split = new Rolled.Split(List.of("siphon"));
-        var nothing = new Rolled.Nothing();
-
-        CompoundTag rollsTag = new CompoundTag();
-        rollsTag.put("tiered-id", toNbtEntry(tiered));
-        rollsTag.put("split-id", toNbtEntry(split));
-        rollsTag.put("nothing-id", toNbtEntry(nothing));
-        CompoundTag tag = new CompoundTag();
-        tag.put("rolls", rollsTag);
-
-        assertEquals(tiered, fromNbtEntry(tag.getCompoundOrEmpty("rolls").getCompoundOrEmpty("tiered-id")),
-                "NBT tiered round-trip diverged from codec behavior");
-        assertEquals(split, fromNbtEntry(tag.getCompoundOrEmpty("rolls").getCompoundOrEmpty("split-id")),
-                "NBT split round-trip diverged from codec behavior");
-        assertEquals(nothing, fromNbtEntry(tag.getCompoundOrEmpty("rolls").getCompoundOrEmpty("nothing-id")),
-                "NBT nothing round-trip diverged from codec behavior");
-
-        // Split entries carry no tier field, matching the codec shape.
-        assertTrue(!tag.getCompoundOrEmpty("rolls").getCompoundOrEmpty("split-id").contains("tier"),
-                "split NBT must not carry a tier field");
-        // Missing kind and unknown tier degrade, matching codec leniency.
-        assertTrue(fromNbtEntry(new CompoundTag()) instanceof Rolled.Nothing,
-                "NBT missing kind must degrade to nothing");
-        CompoundTag corrupt = new CompoundTag();
-        corrupt.putString("kind", "tiered");
-        corrupt.putString("tier", "ULTRA");
-        assertTrue(fromNbtEntry(corrupt) instanceof Rolled.Nothing,
-                "NBT unknown tier must degrade to nothing");
-    }
-
-    private static CompoundTag toNbtEntry(Rolled rolled) {
-        CompoundTag entry = new CompoundTag();
-        entry.putString("kind", rolled.kind());
-        if (rolled instanceof Rolled.Tiered tiered) {
-            entry.putString("tier", tiered.tierName());
-        }
-        ListTag list = new ListTag();
-        for (String abilityId : rolled.abilityIds()) list.add(StringTag.valueOf(abilityId));
-        entry.put("abilityIds", list);
-        return entry;
-    }
-
-    private static Rolled fromNbtEntry(CompoundTag entry) {
-        String kind = entry.getString("kind").orElse(null);
-        String tierName = entry.getString("tier").orElse(null);
-        List<String> abilityIds = List.of();
-        if (entry.contains("abilityIds")) {
-            abilityIds = entry.getListOrEmpty("abilityIds").stream()
-                    .map(tagEntry -> tagEntry.asString().orElse("")).toList();
-        }
-        return Rolled.decode(kind, tierName, abilityIds);
     }
 
     // ========================================
@@ -415,11 +351,10 @@ class VersionShimParityTest {
     void tickCapableScanThroughSeam() {
         // TICK + DEATH triggers live in common and iterate only tick-capable
         // mobs — stable across versions, exercised without bootstrap.
+        TestAbilities.register("wraith", TriggerType.TICK);
         var registry = new InfusedRegistry();
         var tickId = UUID.randomUUID();
-        registry.track(tickId, InfusedMob.tiered(MobTier.SHADE,
-                List.of(new io.github.hunter1712.infusedmobs.ability.Ability(
-                        "wraith", "Wraith", TriggerType.TICK, (mob, target, damage) -> {}))));
+        registry.track(tickId, new Rolled.Tiered(MobTier.SHADE, List.of("wraith")));
 
         assertEquals(java.util.Set.of(tickId), registry.tickMobUUIDs(),
                 "TICK scan diverged through the seam");

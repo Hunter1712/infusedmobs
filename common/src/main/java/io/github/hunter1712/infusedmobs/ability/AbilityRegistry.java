@@ -192,6 +192,18 @@ public final class AbilityRegistry {
     }
 
     /**
+     * Returns the abilities in {@code abilities} matching the given trigger,
+     * in order. Pure list filter behind trigger queries — no registry state.
+     */
+    public static List<Ability> forTrigger(List<Ability> abilities, TriggerType trigger) {
+        List<Ability> result = new ArrayList<>(abilities.size());
+        for (Ability ability : abilities) {
+            if (ability.trigger() == trigger) result.add(ability);
+        }
+        return result;
+    }
+
+    /**
      * Returns all registered ability IDs (e.g., "bane", "thorns", "rupture").
      * Useful for command tab-completions.
      */

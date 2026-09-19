@@ -194,4 +194,42 @@ class AbilityRegistryTest {
         assertTrue(registry.allIds().isEmpty());
         assertTrue(registry.random(1).isEmpty());
     }
+
+    // ========================================
+    // forTrigger — pure trigger filter
+    // ========================================
+
+    private static Ability ability(String id, TriggerType trigger) {
+        return new Ability(id, id, trigger, (mob, target, damage) -> {});
+    }
+
+    @Test
+    void forTriggerGroupsByTrigger() {
+        Ability bane = ability("bane", TriggerType.HURT);
+        Ability thorns = ability("thorns", TriggerType.HURT);
+        Ability ward = ability("ward", TriggerType.TICK);
+        List<Ability> abilities = List.of(bane, thorns, ward);
+
+        assertEquals(List.of(bane, thorns), AbilityRegistry.forTrigger(abilities, TriggerType.HURT));
+        assertEquals(List.of(ward), AbilityRegistry.forTrigger(abilities, TriggerType.TICK));
+        assertTrue(AbilityRegistry.forTrigger(abilities, TriggerType.DEATH).isEmpty());
+    }
+
+    @Test
+    void thornsOnlyIsNeverTickCapable() {
+        // Thorns is reactive HURT, never passive: a thorns-only mob must not
+        // appear in the tick scan, so passive iteration only visits mobs it
+        // can actually affect.
+        List<Ability> abilities = List.of(ability("thorns", TriggerType.HURT));
+
+        assertEquals(abilities, AbilityRegistry.forTrigger(abilities, TriggerType.HURT));
+        assertTrue(AbilityRegistry.forTrigger(abilities, TriggerType.TICK).isEmpty());
+    }
+
+    @Test
+    void forTriggerEmptyStaysEmpty() {
+        assertTrue(AbilityRegistry.forTrigger(List.of(), TriggerType.HURT).isEmpty());
+        assertTrue(AbilityRegistry.forTrigger(List.of(), TriggerType.TICK).isEmpty());
+        assertTrue(AbilityRegistry.forTrigger(List.of(), TriggerType.DEATH).isEmpty());
+    }
 }

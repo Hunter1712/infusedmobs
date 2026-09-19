@@ -80,7 +80,7 @@ public final class ModConfig {
         }
 
         instance = Instance.defaults();
-        writeDefaults(configPath);
+        save();
     }
 
     /** Returns the current config instance. Never null after {@link #load(int)}. */
@@ -108,17 +108,6 @@ public final class ModConfig {
             // Non-critical — in-memory config is still correct, but log so
             // silent disk failures are diagnosable.
             LOGGER.warn("Could not write config file {} — in-memory values remain active.", configPath, e);
-        }
-    }
-
-    private static void writeDefaults(Path path) {
-        try {
-            Files.createDirectories(path.getParent());
-            String json = GSON.toJson(Instance.defaults());
-            Files.writeString(path, json);
-        } catch (IOException e) {
-            // Defaults are already set in memory — file is non-critical, but log.
-            LOGGER.warn("Could not write default config file {}.", path, e);
         }
     }
 
