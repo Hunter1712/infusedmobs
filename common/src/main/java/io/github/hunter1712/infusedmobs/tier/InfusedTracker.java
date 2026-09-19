@@ -65,13 +65,16 @@ public final class InfusedTracker {
 
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
-        return infused == null ? null : extractTier(infused);
+        return extractTier(findInfused(mob));
+    }
+
+    private static InfusedMob findInfused(Mob mob) {
+        return SHARED.find(mob.getUUID());
     }
 
     private static MobTier extractTier(InfusedMob infused) {
         if (infused instanceof InfusedMob.Tiered tiered) return tiered.tier();
-        return null; // SplitCopy and future variants have no tier
+        return null; // Untracked, SplitCopy and future variants have no tier
     }
 
     /** Returns true if this UUID is tracked as a Rupture split copy (Cinder stats, no Tier). */
@@ -86,19 +89,19 @@ public final class InfusedTracker {
 
     /** Returns abilities assigned to this mob matching the given trigger type. */
     public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
+        InfusedMob infused = findInfused(mob);
         return infused == null ? List.of() : infused.forTrigger(trigger);
     }
 
     /** Returns all abilities assigned to this mob (empty list if none). */
     public static List<Ability> getAllAbilities(Mob mob) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
+        InfusedMob infused = findInfused(mob);
         return infused == null ? List.of() : infused.abilities();
     }
 
     /** Returns true if this mob has an ability with the given id. */
     public static boolean hasAbility(Mob mob, String id) {
-        InfusedMob infused = SHARED.find(mob.getUUID());
+        InfusedMob infused = findInfused(mob);
         if (infused == null) return false;
         for (Ability ability : infused.abilities()) {
             if (ability.id().equals(id)) return true;
@@ -183,7 +186,6 @@ public final class InfusedTracker {
             InfusedMob infused = entry.getValue();
 
             if (show) {
-                if (infused.abilities().isEmpty()) continue;
                 applyNametagForInfused(mob, infused);
             } else {
                 mob.setCustomName(null);
