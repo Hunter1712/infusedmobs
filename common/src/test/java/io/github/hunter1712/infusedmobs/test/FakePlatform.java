@@ -56,8 +56,6 @@ public final class FakePlatform implements PlatformHooks {
     /** Records token applications without touching Minecraft state. */
     public final class FakeToken implements EffectToken {
         public final String name;
-        public int hurtCalls;
-        public int tickCalls;
 
         FakeToken(String name) {
             this.name = name;
@@ -65,13 +63,11 @@ public final class FakePlatform implements PlatformHooks {
 
         @Override
         public void applyHurt(LivingEntity target, int duration, int amplifier) {
-            hurtCalls++;
             hurtApplications++;
         }
 
         @Override
         public void applyTick(LivingEntity mob, int duration, int amplifier) {
-            tickCalls++;
             tickApplications++;
         }
     }
@@ -117,18 +113,6 @@ public final class FakePlatform implements PlatformHooks {
     @Override
     public EffectToken effectToken(String id) {
         return new FakeToken(id);
-    }
-
-    @Override
-    public void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {
-        hurtApplications++;
-        if (effect instanceof FakeToken fake) fake.hurtCalls++;
-    }
-
-    @Override
-    public void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier) {
-        tickApplications++;
-        if (effect instanceof FakeToken fake) fake.tickCalls++;
     }
 
     @Override

@@ -69,7 +69,7 @@ public final class AbilitySuggestions {
             return result;
         }
 
-        List<String> tokens = List.of(fullValue.split("\\s+"));
+        List<String> tokens = AbilityParser.words(fullValue);
 
         // User finished a word and pressed space — suggest the next unused ability.
         // Picked means every completed token, matched by exact token equality.

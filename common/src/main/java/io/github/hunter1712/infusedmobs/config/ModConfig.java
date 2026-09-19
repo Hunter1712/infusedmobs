@@ -157,29 +157,9 @@ public final class ModConfig {
         /** Bump when config fields change so {@link #backfillFromDefaults()} knows what to fill. */
         private static final int CURRENT_CONFIG_VERSION = 4;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed, v4 = mobBlacklist
 
-        /** Strict validity predicate pinned by tests. Load clamps instead of rejecting (see {@link #clamped}). */
-        boolean isValid() {
-            return cinder != null && shade != null && doom != null
-                    && isTierValid(cinder) && isTierValid(shade) && isTierValid(doom)
-                    && hurtEffectDuration > 0 && tickEffectDuration > 0
-                    && infernoFireSeconds > 0 && acidArmorDamage > 0
-                    && combustExplosionPower > 0
-                    && (worldBlacklist == null
-                            || worldBlacklist.stream().allMatch(Instance::isValidResourceId))
-                    && (mobBlacklist == null
-                            || mobBlacklist.stream().allMatch(Instance::isValidResourceId));
-        }
-
-        private static boolean isTierValid(TierConfig tc) {
-            return tc.spawnChance() > 0
-                    && tc.abilityCount() > 0
-                    && tc.healthMultiplier() >= 1.0
-                    && tc.xpMultiplier() >= 1.0;
-        }
-
         /**
          * Returns true if {@code id} is a non-blank, non-null resource identifier.
-         * Used by {@link #isValid()} to reject malformed World Blacklist and
+         * Used by the blacklist clamp to drop malformed World Blacklist and
          * Mob Blacklist entries.
          */
         private static boolean isValidResourceId(String id) {
@@ -341,14 +321,7 @@ public final class ModConfig {
          * removed, duplicates collapsed preserving first-seen order).
          */
         public Instance withWorldBlacklist(List<String> blacklist) {
-            return new Instance(
-                    cinder, shade, doom,
-                    hurtEffectDuration, hurtEffectAmplifier,
-                    tickEffectDuration, tickEffectAmplifier,
-                    infernoFireSeconds, acidArmorDamage,
-                    combustExplosionPower, showNametags,
-                    normaliseBlacklist(blacklist), mobBlacklist, configVersion
-            );
+            return withBlacklists(normaliseBlacklist(blacklist), mobBlacklist);
         }
 
         /**
@@ -358,12 +331,7 @@ public final class ModConfig {
          * Matching is case-sensitive and trims the input.
          */
         public boolean isWorldBlacklisted(String worldId) {
-            if (worldId == null || worldBlacklist == null) return false;
-            String trimmed = worldId.trim();
-            for (String entry : worldBlacklist) {
-                if (entry != null && entry.equals(trimmed)) return true;
-            }
-            return false;
+            return isListed(worldBlacklist, worldId);
         }
 
         /**
@@ -372,14 +340,7 @@ public final class ModConfig {
          * removed, duplicates collapsed preserving first-seen order).
          */
         public Instance withMobBlacklist(List<String> blacklist) {
-            return new Instance(
-                    cinder, shade, doom,
-                    hurtEffectDuration, hurtEffectAmplifier,
-                    tickEffectDuration, tickEffectAmplifier,
-                    infernoFireSeconds, acidArmorDamage,
-                    combustExplosionPower, showNametags,
-                    worldBlacklist, normaliseBlacklist(blacklist), configVersion
-            );
+            return withBlacklists(worldBlacklist, normaliseBlacklist(blacklist));
         }
 
         /**
@@ -389,12 +350,7 @@ public final class ModConfig {
          * Matching is case-sensitive and trims the input.
          */
         public boolean isMobBlacklisted(String entityId) {
-            if (entityId == null || mobBlacklist == null) return false;
-            String trimmed = entityId.trim();
-            for (String entry : mobBlacklist) {
-                if (entry != null && entry.equals(trimmed)) return true;
-            }
-            return false;
+            return isListed(mobBlacklist, entityId);
         }
 
         /** Returns the tier config matching the given enum member. */
@@ -459,6 +415,28 @@ public final class ModConfig {
                     backfilledMobs,
                     CURRENT_CONFIG_VERSION
             );
+        }
+
+        /** Shared combiner behind {@link #withWorldBlacklist} and {@link #withMobBlacklist}. */
+        private Instance withBlacklists(List<String> worlds, List<String> mobs) {
+            return new Instance(
+                    cinder, shade, doom,
+                    hurtEffectDuration, hurtEffectAmplifier,
+                    tickEffectDuration, tickEffectAmplifier,
+                    infernoFireSeconds, acidArmorDamage,
+                    combustExplosionPower, showNametags,
+                    worlds, mobs, configVersion
+            );
+        }
+
+        /** Shared exact-match scan behind {@link #isWorldBlacklisted} and {@link #isMobBlacklisted}. */
+        private static boolean isListed(List<String> blacklist, String id) {
+            if (id == null || blacklist == null) return false;
+            String trimmed = id.trim();
+            for (String entry : blacklist) {
+                if (entry != null && entry.equals(trimmed)) return true;
+            }
+            return false;
         }
 
         /**

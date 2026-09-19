@@ -209,45 +209,48 @@ public final class InfusedMobsCommand {
 
     /** Adds a world to the blacklist and persists. */
     private static int worldAdd(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack source = ctx.getSource();
-        String worldId = Platform.hooks().worldIdFromCommand(ctx, "world");
-
-        ModConfig.Instance current = ModConfig.get();
-        if (current.isWorldBlacklisted(worldId)) {
-            source.sendSuccess(() -> Component.literal(
-                    "§eWorld §f" + worldId + " §eis already on the blacklist."), false);
-            return 1;
-        }
-
-        List<String> updated = new ArrayList<>(current.worldBlacklist());
-        updated.add(worldId);
-        ModConfig.swapInstance(current.withWorldBlacklist(updated));
-
-        source.sendSuccess(() -> Component.literal(
-                "§eAdded §f" + worldId + " §eto the blacklist. "
-                        + "The mod is now disabled there."), true);
-        return 1;
+        return mutateWorldBlacklist(ctx, true);
     }
 
     /** Removes a world from the blacklist and persists. */
     private static int worldRemove(CommandContext<CommandSourceStack> ctx) {
+        return mutateWorldBlacklist(ctx, false);
+    }
+
+    /** Shared add/remove behind {@code world add|remove}: edits, persists, and reports. */
+    private static int mutateWorldBlacklist(CommandContext<CommandSourceStack> ctx, boolean add) {
         CommandSourceStack source = ctx.getSource();
         String worldId = Platform.hooks().worldIdFromCommand(ctx, "world");
 
         ModConfig.Instance current = ModConfig.get();
-        if (!current.isWorldBlacklisted(worldId)) {
+        if (current.isWorldBlacklisted(worldId) == add) {
+            if (add) {
+                source.sendSuccess(() -> Component.literal(
+                        "§eWorld §f" + worldId + " §eis already on the blacklist."), false);
+                return 1;
+            }
             source.sendFailure(Component.literal(
                     "§cWorld §f" + worldId + " §cis not on the blacklist."));
             return 0;
         }
 
         List<String> updated = new ArrayList<>(current.worldBlacklist());
-        updated.removeIf(worldId::equals);
+        if (add) {
+            updated.add(worldId);
+        } else {
+            updated.removeIf(worldId::equals);
+        }
         ModConfig.swapInstance(current.withWorldBlacklist(updated));
 
-        source.sendSuccess(() -> Component.literal(
-                "§eRemoved §f" + worldId + " §efrom the blacklist. "
-                        + "The mod is now active there."), true);
+        if (add) {
+            source.sendSuccess(() -> Component.literal(
+                    "§eAdded §f" + worldId + " §eto the blacklist. "
+                            + "The mod is now disabled there."), true);
+        } else {
+            source.sendSuccess(() -> Component.literal(
+                    "§eRemoved §f" + worldId + " §efrom the blacklist. "
+                            + "The mod is now active there."), true);
+        }
         return 1;
     }
 

@@ -6,6 +6,7 @@ import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.platform.Platform;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
@@ -13,7 +14,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,14 +33,17 @@ import java.util.UUID;
  * <p>
  * Gating decisions live in {@link InfusionGate}; this module is the single
  * Infusion interface callers cross (rolls, persistence, health, queries,
- * nametags). In-memory tracking plus nametag presentation live in
- * {@link InfusedTracker} as its implementation — callers use this module,
- * not the tracker, so Tier + Ability + nametag bugs concentrate here.
- * Tracking is cleaned up when the mob dies.
+ * nametags), backed by a shared {@link InfusedRegistry}. In-memory state
+ * is cleaned up when the mob dies or despawns.
  */
 public final class MobTierManager {
 
     private static final float SPLIT_HEALTH_FRACTION = 0.6f;
+
+    private static final InfusedRegistry SHARED = new InfusedRegistry();
+
+    /** Greyscale colour code for Rupture split-copy nametags (no Tier). */
+    private static final String SPLIT_COPY_COLOUR = "§7";
 
     private MobTierManager() {}
 
@@ -67,14 +71,14 @@ public final class MobTierManager {
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
         if (isMobBlacklisted(mob)) return;  // Config Mob Blacklist — these types never infuse
         if (InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) return;
-        if (InfusedTracker.find(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
+        if (SHARED.find(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
 
         UUID uuid = mob.getUUID();
 
         // If this UUID already rolled in a previous session, restore that result exactly
         Rolled rolled = Platform.hooks().loadRoll(serverLevel, uuid);
         if (rolled != null) {
-            restoreRolled(mob, uuid, rolled);
+            restoreRolled(mob, rolled);
             return;
         }
 
@@ -88,11 +92,8 @@ public final class MobTierManager {
         if (tier != null) {
             ModConfig.TierConfig tierConfig = config.forTier(tier);
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(tierConfig.abilityCount());
-            InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
+            trackTiered(mob, tier, abilities);
             Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Tiered(tier, idsOf(abilities)));
-
-            applyHealthMultiplier(mob, tierConfig);
-            InfusedTracker.setTierNametag(mob, tier, abilities);
             return;
         }
 
@@ -121,52 +122,41 @@ public final class MobTierManager {
         if (serverLevel != null && InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) {
             return false;
         }
-        UUID uuid = mob.getUUID();
-        InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
-
-        ModConfig.TierConfig tierConfig = ModConfig.get().forTier(tier);
-        applyHealthMultiplier(mob, tierConfig);
-        InfusedTracker.setTierNametag(mob, tier, abilities);
+        trackTiered(mob, tier, abilities);
 
         if (serverLevel != null) {
-            Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Tiered(tier, idsOf(abilities)));
+            Platform.hooks().storeRoll(serverLevel, mob.getUUID(), new Rolled.Tiered(tier, idsOf(abilities)));
         }
         return true;
     }
 
+    /** Tracks a tiered roll: registry entry, health multiplier, tier nametag. */
+    private static void trackTiered(Mob mob, MobTier tier, List<Ability> abilities) {
+        SHARED.track(mob.getUUID(), InfusedMob.tiered(tier, abilities));
+        applyHealthMultiplier(mob, ModConfig.get().forTier(tier));
+        setTierNametag(mob, tier, abilities);
+    }
+
+    /** Tracks a split copy: registry entry, Cinder stats, greyscale nametag. */
+    private static void trackSplit(Mob mob, List<Ability> abilities) {
+        SHARED.track(mob.getUUID(), InfusedMob.split(abilities));
+        applyCinderStats(mob);
+        setSplitCopyNametag(mob, abilities);
+    }
+
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
-    private static void restoreRolled(Mob mob, UUID uuid, Rolled rolled) {
+    private static void restoreRolled(Mob mob, Rolled rolled) {
         if (rolled instanceof Rolled.Tiered tieredRoll) {
-            restoreTiered(mob, uuid, tieredRoll);
+            trackTiered(mob, tieredRoll.tier(), resolveAbilities(tieredRoll.abilityIds()));
         } else if (rolled instanceof Rolled.Split splitRoll) {
-            restoreSplit(mob, uuid, splitRoll);
+            trackSplit(mob, resolveAbilities(splitRoll.abilityIds()));
         } else if (rolled instanceof Rolled.Nothing) {
             // Rolled nothing — leave the mob vanilla.
         }
     }
 
-    private static void restoreTiered(Mob mob, UUID uuid, Rolled.Tiered tieredRoll) {
-        List<Ability> abilities = resolveAbilities(tieredRoll.abilityIds());
-        InfusedTracker.track(uuid, InfusedMob.tiered(tieredRoll.tier(), abilities));
-        ModConfig.TierConfig tierConfig = ModConfig.get().forTier(tieredRoll.tier());
-        applyHealthMultiplier(mob, tierConfig);
-        InfusedTracker.setTierNametag(mob, tieredRoll.tier(), abilities);
-    }
-
-    private static void restoreSplit(Mob mob, UUID uuid, Rolled.Split splitRoll) {
-        List<Ability> abilities = resolveAbilities(splitRoll.abilityIds());
-        InfusedTracker.track(uuid, InfusedMob.split(abilities));
-        // Re-apply the Cinder HP boost — otherwise a chunk reload
-        // silently deflates the copy back to vanilla max health.
-        applyCinderStats(mob);
-        InfusedTracker.setSplitCopyNametag(mob, abilities);
-    }
-
     private static List<Ability> resolveAbilities(List<String> abilityIds) {
-        return abilityIds.stream()
-                .map(AbilityRegistry::getById)
-                .filter(Objects::nonNull)
-                .toList();
+        return AbilityRegistry.getAbilitiesByIds(abilityIds);
     }
 
     private static List<String> idsOf(List<Ability> abilities) {
@@ -216,15 +206,12 @@ public final class MobTierManager {
      * Infused Mob.
      */
     public static void applyCinderTierToSplitCopy(Mob copy) {
-        applyCinderStats(copy);
-
         List<Ability> abilities = AbilityRegistry.getRandomAbilities(1, "rupture");
 
-        InfusedTracker.track(copy.getUUID(), InfusedMob.split(abilities));
+        trackSplit(copy, abilities);
         if (copy.level() instanceof ServerLevel serverLevel) {
             Platform.hooks().storeRoll(serverLevel, copy.getUUID(), new Rolled.Split(idsOf(abilities)));
         }
-        InfusedTracker.setSplitCopyNametag(copy, abilities);
     }
 
     /** Applies the Cinder health multiplier and sets the copy to 60% of its boosted max. */
@@ -239,7 +226,7 @@ public final class MobTierManager {
     /** Removes all tracking for this mob (called on death or despawn). */
     public static void removeMob(Mob mob) {
         UUID uuid = mob.getUUID();
-        InfusedTracker.untrack(uuid);
+        SHARED.untrack(uuid);
 
         // Clean up persistent state so it doesn't grow unboundedly
         if (mob.level() instanceof ServerLevel serverLevel) {
@@ -248,32 +235,39 @@ public final class MobTierManager {
     }
 
     // ========================================
-    // Queries — single Infusion read seam behind the tracker
+    // Queries
     // ========================================
 
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
-        return InfusedTracker.getTier(mob);
+        return SHARED.find(mob.getUUID()) instanceof InfusedMob.Tiered tiered ? tiered.tier() : null;
     }
 
     /** Returns true if this mob is tracked as a Rupture split copy (Cinder stats, no Tier). */
     public static boolean isSplitCopy(Mob mob) {
-        return InfusedTracker.isSplitCopy(mob);
+        return SHARED.isSplitCopy(mob.getUUID());
     }
 
     /** Returns true if this mob has an ability with the given id. */
     public static boolean hasAbility(Mob mob, String id) {
-        return InfusedTracker.hasAbility(mob, id);
+        InfusedMob infused = SHARED.find(mob.getUUID());
+        if (infused == null) return false;
+        for (Ability ability : infused.abilities()) {
+            if (ability.id().equals(id)) return true;
+        }
+        return false;
     }
 
     /** Returns abilities assigned to this mob matching the given trigger type. */
     public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
-        return InfusedTracker.getAbilitiesByTrigger(mob, trigger);
+        InfusedMob infused = SHARED.find(mob.getUUID());
+        return infused == null ? List.of() : infused.forTrigger(trigger);
     }
 
     /** Returns all abilities assigned to this mob (empty list if none). */
     public static List<Ability> getAllAbilities(Mob mob) {
-        return InfusedTracker.getAllAbilities(mob);
+        InfusedMob infused = SHARED.find(mob.getUUID());
+        return infused == null ? List.of() : infused.abilities();
     }
 
     /**
@@ -281,7 +275,7 @@ public final class MobTierManager {
      * Used by the TICK trigger to iterate only the mobs it can affect.
      */
     public static Set<UUID> getTickMobUUIDs() {
-        return InfusedTracker.getTickMobUUIDs();
+        return SHARED.tickMobUUIDs();
     }
 
     /**
@@ -289,7 +283,48 @@ public final class MobTierManager {
      * Returns null if the mob is not found or dead.
      */
     public static Mob findMob(MinecraftServer server, UUID uuid) {
-        return InfusedTracker.findMob(server, uuid);
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.getEntity(uuid) instanceof Mob mob && mob.isAlive()) {
+                return mob;
+            }
+        }
+        return null;
+    }
+
+    /** Clears all tracking. Test-only — live code untracks per mob. */
+    public static void clearForTests() {
+        SHARED.clear();
+    }
+
+    // ========================================
+    // Nametag presentation
+    // ========================================
+
+    /** Shows the Tier nametag for a freshly assigned or restored mob. */
+    private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
+        setNametag(mob, tier.colourCode(), abilities);
+    }
+
+    /** Shows the greyscale nametag for a Rupture split copy (Cinder stats, no Tier). */
+    private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
+        setNametag(mob, SPLIT_COPY_COLOUR, abilities);
+    }
+
+    private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
+        if (!ModConfig.get().showNametags()) return;
+        List<String> names = abilities.stream().map(Ability::name).toList();
+        String entityName = entityTypeName(mob);
+        mob.setCustomName(Component.literal(NametagFormatter.format(colour, names, entityName)));
+        mob.setCustomNameVisible(true);
+    }
+
+    /**
+     * Base entity-type name (e.g. "Zombie") for nametags.
+     * Uses the type description rather than {@code getName()}, which would
+     * return any previously-set custom name and cause duplication.
+     */
+    private static String entityTypeName(Mob mob) {
+        return mob.getType().getDescription().getString();
     }
 
     /**
@@ -297,11 +332,22 @@ public final class MobTierManager {
      * current nametag setting. Called when the toggle changes via command.
      */
     public static void refreshNametags(MinecraftServer server) {
-        InfusedTracker.refreshNametags(server);
-    }
+        boolean show = ModConfig.get().showNametags();
+        for (Map.Entry<UUID, InfusedMob> entry : SHARED.snapshot().entrySet()) {
+            Mob mob = findMob(server, entry.getKey());
+            if (mob == null) continue;
+            InfusedMob infused = entry.getValue();
 
-    /** Clears all tracking. Test-only — live code untracks per mob. */
-    public static void clearForTests() {
-        InfusedTracker.clear();
+            if (show) {
+                if (infused instanceof InfusedMob.Tiered tiered) {
+                    setTierNametag(mob, tiered.tier(), tiered.abilities());
+                } else if (infused instanceof InfusedMob.SplitCopy splitCopy) {
+                    setSplitCopyNametag(mob, splitCopy.abilities());
+                }
+            } else {
+                mob.setCustomName(null);
+                mob.setCustomNameVisible(false);
+            }
+        }
     }
 }

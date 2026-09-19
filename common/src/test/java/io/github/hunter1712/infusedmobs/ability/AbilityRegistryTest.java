@@ -156,4 +156,42 @@ class AbilityRegistryTest {
 
         assertEquals(List.of("bane"), result.stream().map(Ability::id).toList());
     }
+
+    // ========================================
+    // Instance isolation (fresh registry per test, no reset)
+    // ========================================
+
+    private static AbilityRegistry registryWith(String... ids) {
+        AbilityRegistry registry = new AbilityRegistry();
+        for (String id : ids) {
+            registry.add(id, id, TriggerType.HURT, (mob, target, damage) -> {});
+        }
+        return registry;
+    }
+
+    @Test
+    void instancesAreIsolated() {
+        AbilityRegistry a = registryWith("bane");
+        AbilityRegistry b = new AbilityRegistry();
+
+        assertEquals(1, a.allIds().size());
+        assertTrue(b.allIds().isEmpty());
+    }
+
+    @Test
+    void duplicateRegistrationFailsFast() {
+        AbilityRegistry registry = registryWith("bane");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> registry.add("bane", "Bane", TriggerType.HURT, (mob, target, damage) -> {}));
+    }
+
+    @Test
+    void clearEmptiesRegistry() {
+        AbilityRegistry registry = registryWith("bane");
+        registry.clear();
+
+        assertTrue(registry.allIds().isEmpty());
+        assertTrue(registry.random(1).isEmpty());
+    }
 }
