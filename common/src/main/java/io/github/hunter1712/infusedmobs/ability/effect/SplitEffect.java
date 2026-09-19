@@ -53,13 +53,11 @@ public final class SplitEffect {
     }
 
     /**
-     * Pure copy-placement offset behind {@link #placeCopy}: copies alternate
-     * sides of the diagonal with growing magnitude, so the current two-copy
-     * behavior (-1.5, +1.5) is preserved while any future count spreads
-     * instead of stacking on one spot. Plain arithmetic so unit tests pin
-     * the spawn geometry without bootstrap.
+     * Pure copy-placement offset behind {@link #placeCopy}: first copy takes
+     * the negative diagonal, second the positive one. Plain arithmetic so
+     * unit tests pin the spawn geometry without bootstrap.
      */
     static double copyOffset(int index) {
-        return (index % 2 == 0 ? -1.0 : 1.0) * COPY_OFFSET * ((index / 2) + 1);
+        return index == 0 ? -COPY_OFFSET : COPY_OFFSET;
     }
 }

@@ -18,10 +18,18 @@ final class AbilityParser {
 
     record Parsed(List<Ability> abilities, List<String> unknown) {}
 
-    static Parsed parse(String raw) {
-        if (raw == null || raw.isBlank()) return new Parsed(List.of(), List.of());
-        List<String> ids = Arrays.stream(raw.trim().split("\\s+"))
+    /** Splits on whitespace, dropping blanks — shared with {@link AbilitySuggestions}. */
+    static List<String> words(String value) {
+        if (value == null) return List.of();
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return List.of();
+        return Arrays.stream(trimmed.split("\\s+"))
                 .filter(part -> !part.isEmpty())
+                .toList();
+    }
+
+    static Parsed parse(String raw) {
+        List<String> ids = words(raw).stream()
                 .map(part -> part.toLowerCase(Locale.ROOT))
                 .toList();
         if (ids.isEmpty()) return new Parsed(List.of(), List.of());

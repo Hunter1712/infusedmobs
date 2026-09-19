@@ -20,10 +20,4 @@ class SplitEffectTest {
     void secondCopyTakesPositiveDiagonal() {
         assertEquals(1.5, SplitEffect.copyOffset(1));
     }
-
-    @Test
-    void laterCopiesSpreadInsteadOfStacking() {
-        assertEquals(-3.0, SplitEffect.copyOffset(2));
-        assertEquals(3.0, SplitEffect.copyOffset(3));
-    }
 }

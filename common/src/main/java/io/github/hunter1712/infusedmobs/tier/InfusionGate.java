@@ -16,8 +16,6 @@ import net.minecraft.server.level.ServerLevel;
  */
 public final class InfusionGate {
 
-    private static final GatingDecision SHARED = new GatingDecision();
-
     private InfusionGate() {}
 
     /**
@@ -37,11 +35,13 @@ public final class InfusionGate {
     public static Status status(ServerLevel level) {
         boolean blacklisted = ModConfig.get().isWorldBlacklisted(Platform.hooks().dimensionId(level));
         boolean enabled = ModGameRules.isEnabled(level.getServer());
-        return SHARED.decide(blacklisted, enabled, ModGameRules.defaultValue());
+        return status(blacklisted, enabled);
     }
 
     /** Pure decision helper — unit-testable without Minecraft bootstrap. */
     static Status status(boolean worldBlacklisted, Boolean storedEnabled) {
-        return SHARED.decide(worldBlacklisted, storedEnabled, ModGameRules.defaultValue());
+        if (worldBlacklisted) return Status.WORLD_BLACKLISTED;
+        boolean enabled = ModGameRules.resolveRule(storedEnabled, ModGameRules.defaultValue());
+        return enabled ? Status.ACTIVE : Status.RULE_DISABLED;
     }
 }

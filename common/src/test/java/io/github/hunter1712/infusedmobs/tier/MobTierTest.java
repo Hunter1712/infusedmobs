@@ -98,4 +98,13 @@ class MobTierTest {
                     () -> "defaults().forTier(" + tier + ") should equal the enum defaults");
         }
     }
+
+    @Test
+    void splitCopiesCarryCinderXpTreatment() {
+        // Split copies have no Tier but carry full Cinder stats, so they
+        // grant the documented Cinder experience treatment (see LivingEntityMixin).
+        assertEquals(MobTier.CINDER.xpMultiplier(),
+                ModConfig.Instance.defaults().forTier(MobTier.CINDER).xpMultiplier(),
+                "split-copy XP must equal the Cinder rule");
+    }
 }

@@ -10,12 +10,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Instantiable Infused Mob registry: the UUID-keyed core behind the static
- * {@link InfusedTracker} facade.
- * <p>
- * Live code uses the shared facade for one-liner call sites; tests
- * instantiate a fresh registry per case with no manual reset, matching the
- * {@link io.github.hunter1712.infusedmobs.ability.AbilityPool} pattern.
+ * UUID-keyed Infused Mob registry: live per-mob state behind the single
+ * Infusion interface in {@link MobTierManager} (which also owns nametag
+ * presentation). Tests instantiate a fresh registry per case with no
+ * manual reset.
  */
 public final class InfusedRegistry {
 
@@ -45,6 +43,11 @@ public final class InfusedRegistry {
     /** Clears all tracking. */
     public void clear() {
         tracked.clear();
+    }
+
+    /** Returns true if this UUID is tracked as a Rupture split copy (Cinder stats, no Tier). */
+    public boolean isSplitCopy(UUID id) {
+        return find(id) instanceof InfusedMob.SplitCopy;
     }
 
     /**

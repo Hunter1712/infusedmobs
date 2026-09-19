@@ -11,18 +11,28 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Global facade over the shared mob ability pool.
- * Delegates to a shared {@link AbilityPool} instance so call sites stay
- * one-liners while tests can instantiate isolated pools directly.
+ * Global Ability pool: registration, id lookup in input order,
+ * random draw with exclusions, and id listing.
+ * <p>
+ * Live code uses the shared static facade for one-liner call sites; tests
+ * instantiate a fresh registry per case with no manual reset.
  */
 public final class AbilityRegistry {
 
-    private static final AbilityPool SHARED = new AbilityPool();
+    private final List<Ability> all = new ArrayList<>();
+    private final Map<String, Ability> byId = new HashMap<>();
 
-    private AbilityRegistry() {}
+    private static final AbilityRegistry SHARED = new AbilityRegistry();
 
     // ========================================
     // Registration
@@ -86,7 +96,7 @@ public final class AbilityRegistry {
      */
     private static void registerHurtEffect(String id, String name, EffectToken effect) {
         register(id, name, TriggerType.HURT, (mob, target, damage) ->
-                Platform.hooks().applyHurtEffect(target, effect,
+                effect.applyHurt(target,
                         ModConfig.get().hurtEffectDuration(),
                         ModConfig.get().hurtEffectAmplifier()));
     }
@@ -97,7 +107,7 @@ public final class AbilityRegistry {
      */
     private static void registerTickEffect(String id, String name, EffectToken effect) {
         register(id, name, TriggerType.TICK, (mob, target, damage) ->
-                Platform.hooks().applyTickEffect(mob, effect,
+                effect.applyTick(mob,
                         ModConfig.get().tickEffectDuration(),
                         ModConfig.get().tickEffectAmplifier()));
     }
@@ -129,17 +139,17 @@ public final class AbilityRegistry {
     }
 
     /**
-     * Builds and registers a single ability. Fails fast on duplicate ids.
-     * Package-private: tests use it to populate the pool without
+     * Builds and registers a single ability on the shared pool. Fails fast on
+     * duplicate ids. Package-private: tests use it to populate the pool without
      * initialising Minecraft.
      */
     static void register(String id, String name, TriggerType trigger,
                          AbilityEffect effect) {
-        SHARED.register(id, name, trigger, effect);
+        SHARED.add(id, name, trigger, effect);
     }
 
     /**
-     * Test hook — clears the registered pool. Not for production use.
+     * Test hook — clears the shared pool. Not for production use.
      * Public so shared test extensions can isolate state without reflection.
      */
     public static void resetForTests() {
@@ -187,5 +197,52 @@ public final class AbilityRegistry {
      */
     public static List<String> getAllAbilityIds() {
         return SHARED.allIds();
+    }
+
+    // ========================================
+    // Instance core — a fresh registry per test, no manual reset
+    // ========================================
+
+    public void add(String id, String name, TriggerType trigger, AbilityEffect effect) {
+        if (byId.containsKey(id)) {
+            throw new IllegalArgumentException("Duplicate ability id: '" + id + "'");
+        }
+        Ability ability = new Ability(id, name, trigger, effect);
+        all.add(ability);
+        byId.put(id, ability);
+    }
+
+    public void clear() {
+        all.clear();
+        byId.clear();
+    }
+
+    public List<Ability> random(int count, String... excludedIds) {
+        if (count <= 0 || all.isEmpty()) return List.of();
+        List<Ability> pool = new ArrayList<>(all);
+        if (excludedIds.length > 0) {
+            Set<String> excluded = new HashSet<>(List.of(excludedIds));
+            pool.removeIf(a -> excluded.contains(a.id()));
+        }
+        if (pool.isEmpty()) return List.of();
+        Collections.shuffle(pool, ThreadLocalRandom.current());
+        return Collections.unmodifiableList(pool.subList(0, Math.min(count, pool.size())));
+    }
+
+    public List<Ability> byIds(List<String> ids) {
+        List<Ability> result = new ArrayList<>(ids.size());
+        for (String id : ids) {
+            Ability ability = byId.get(id);
+            if (ability != null) result.add(ability);
+        }
+        return result;
+    }
+
+    public Ability byId(String id) {
+        return byId.get(id);
+    }
+
+    public List<String> allIds() {
+        return all.stream().map(Ability::id).toList();
     }
 }

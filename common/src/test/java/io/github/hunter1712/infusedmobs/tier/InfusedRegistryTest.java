@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Behaviour tests for {@link InfusedRegistry}, the instantiable Infused Mob
- * registry core behind the static {@link InfusedTracker} facade.
+ * Behaviour tests for {@link InfusedRegistry}, the UUID-keyed live Infused
+ * Mob state behind {@link MobTierManager}.
  * <p>
  * Each test instantiates a fresh registry — no shared state, no manual reset.
  */
@@ -102,5 +102,23 @@ class InfusedRegistryTest {
 
         assertTrue(registry.tickMobUUIDs().isEmpty());
         assertNull(registry.find(UUID.randomUUID()));
+    }
+
+    @Test
+    void splitCopyQueryDistinguishesVariants() {
+        var registry = new InfusedRegistry();
+        var splitId = UUID.randomUUID();
+        var tieredId = UUID.randomUUID();
+        var missingId = UUID.randomUUID();
+        registry.track(splitId, InfusedMob.split(List.of()));
+        registry.track(tieredId, InfusedMob.tiered(MobTier.CINDER,
+                List.of(ability("bane", TriggerType.HURT))));
+
+        assertTrue(registry.isSplitCopy(splitId),
+                "split copy must report as split copy for Cinder XP treatment");
+        assertFalse(registry.isSplitCopy(tieredId),
+                "tiered roll must never report as split copy");
+        assertFalse(registry.isSplitCopy(missingId),
+                "untracked mob must never report as split copy");
     }
 }

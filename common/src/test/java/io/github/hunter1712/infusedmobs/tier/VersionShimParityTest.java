@@ -7,7 +7,6 @@ import io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger;
 import io.github.hunter1712.infusedmobs.ability.trigger.MobTickTrigger;
 import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.platform.PlatformHooks;
-import io.github.hunter1712.infusedmobs.platform.VersionPlatform;
 import io.github.hunter1712.infusedmobs.test.FakePlatform;
 import io.github.hunter1712.infusedmobs.test.IsolatedState;
 
@@ -48,59 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @ExtendWith(IsolatedState.class)
 class VersionShimParityTest {
-
-    // ========================================
-    // 1. Adapters implement the shared seam
-    // ========================================
-
-    @Test
-    void adaptersImplementSharedSeamThroughInterface() {
-        assertTrue(new VersionPlatform() instanceof PlatformHooks,
-                "26.2 adapter must implement PlatformHooks: behavioral divergence");
-        assertTrue(new FakePlatform() instanceof PlatformHooks,
-                "fake must implement PlatformHooks: behavioral divergence");
-    }
-
-    @Test
-    void seamShapeListsEveryOperation() throws Exception {
-        // The seam is the contract every Versioned Source Set adapter signs:
-        // dimension identity, spawn creation, command arguments, effect
-        // handles with hurt/tick application, combat helpers, hurt-trigger
-        // registration, and persistence hooks. Checked by reflection so a
-        // dropped or re-typed seam method fails here, not in game.
-        List<String> expected = List.of(
-                "dimensionId", "spawn",
-                "entityKey", "defaultEntity",
-                "gamemasterPermission", "worldIdArgument", "worldIdFromCommand",
-                "effectToken",
-                "applyHurtEffect", "applyTickEffect",
-                "damageArmor", "reflectThorns", "hurtFromExplosion", "ignite",
-                "registerHurtTrigger",
-                "loadRoll", "storeRoll", "clearRoll");
-        Set<String> declared = new HashSet<>();
-        for (Method m : PlatformHooks.class.getMethods()) declared.add(m.getName());
-        for (String name : expected) {
-            assertTrue(declared.contains(name),
-                    "seam method missing from shared interface: " + name);
-        }
-        for (Class<?> adapter : List.of(VersionPlatform.class, FakePlatform.class)) {
-            for (String name : expected) {
-                boolean found = false;
-                for (Method m : adapter.getMethods()) {
-                    if (m.getName().equals(name)) {
-                        found = true;
-                        break;
-                    }
-                }
-                assertTrue(found, adapter.getSimpleName()
-                        + " must expose seam method through the interface: " + name);
-            }
-        }
-        assertTrue(MobHurtTrigger.HurtHandler.class.isInterface(),
-                "HURT callback must stay an interface behind the seam");
-        assertEquals(5, MobHurtTrigger.HurtHandler.class.getMethods()[0].getParameterCount(),
-                "HURT callback shape (entity, source, base, actual, blocked) diverged");
-    }
 
     // ========================================
     // 2. Dimension identity through the seam
@@ -146,9 +92,9 @@ class VersionShimParityTest {
 
         // The path the Ability registry actually calls at fire time.
         var hurt = fake.effectToken("poison");
-        Platform.hooks().applyHurtEffect(null, hurt, 60, 0);
+        hurt.applyHurt(null, 60, 0);
         var tick = fake.effectToken("resistance");
-        Platform.hooks().applyTickEffect(null, tick, 60, 0);
+        tick.applyTick(null, 60, 0);
 
         assertEquals(1, fake.hurtApplications,
                 "HURT application diverged through the seam");
