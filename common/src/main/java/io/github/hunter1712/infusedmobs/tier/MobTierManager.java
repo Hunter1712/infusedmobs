@@ -168,10 +168,20 @@ public final class MobTierManager {
     }
 
     private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tierConfig) {
+        applyHealthBoost(mob, tierConfig.healthMultiplier(), 1.0);
+    }
+
+    /**
+     * Single health-boost routine behind both Tier assignment and split-copy
+     * handling: scales max health by {@code multiplier}, then sets health to
+     * {@code healthFraction} of the boosted max. Tiered mobs pass 1.0 (full
+     * heal); split copies pass 0.6.
+     */
+    private static void applyHealthBoost(Mob mob, double multiplier, double healthFraction) {
         var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
         if (attribute == null) return;
-        attribute.setBaseValue(attribute.getBaseValue() * tierConfig.healthMultiplier());
-        mob.setHealth(mob.getMaxHealth());
+        attribute.setBaseValue(attribute.getBaseValue() * multiplier);
+        mob.setHealth(mob.getMaxHealth() * (float) healthFraction);
     }
 
     // ========================================
@@ -207,12 +217,7 @@ public final class MobTierManager {
 
     /** Applies the Cinder health multiplier and sets the copy to 60% of its boosted max. */
     private static void applyCinderStats(Mob mob) {
-        var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
-        if (attribute != null) {
-            attribute.setBaseValue(attribute.getBaseValue()
-                    * ModConfig.get().forTier(MobTier.CINDER).healthMultiplier());
-            mob.setHealth(mob.getMaxHealth() * SPLIT_HEALTH_FRACTION);
-        }
+        applyHealthBoost(mob, ModConfig.get().forTier(MobTier.CINDER).healthMultiplier(), SPLIT_HEALTH_FRACTION);
     }
 
     // ========================================
