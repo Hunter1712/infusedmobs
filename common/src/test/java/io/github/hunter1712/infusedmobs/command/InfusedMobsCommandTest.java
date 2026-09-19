@@ -42,60 +42,61 @@ class InfusedMobsCommandTest {
     }
 
     // ========================================
-    // parseTier
+    // MobTier.parse (single parse shape for the summon command)
     // ========================================
 
     @Test
     void parseTierIsCaseInsensitive() {
-        assertEquals(MobTier.CINDER, InfusedMobsCommand.parseTier("cinder"));
-        assertEquals(MobTier.SHADE, InfusedMobsCommand.parseTier("SHADE"));
-        assertEquals(MobTier.DOOM, InfusedMobsCommand.parseTier("DoOm"));
+        assertEquals(MobTier.CINDER, MobTier.parse("cinder"));
+        assertEquals(MobTier.SHADE, MobTier.parse("SHADE"));
+        assertEquals(MobTier.DOOM, MobTier.parse("DoOm"));
     }
 
     @Test
     void parseTierReturnsNullForUnknown() {
-        assertNull(InfusedMobsCommand.parseTier("legendary"));
-        assertNull(InfusedMobsCommand.parseTier(""));
+        assertNull(MobTier.parse("legendary"));
+        assertNull(MobTier.parse(""));
+        assertNull(MobTier.parse(null));
     }
 
     // ========================================
-    // findClosest (typo hints)
+    // FuzzyMatcher.closest (typo hints)
     // ========================================
 
     @Test
     void findClosestPrefersPrefixMatch() {
-        assertEquals("bane", InfusedMobsCommand.findClosest("ban", List.of("bane", "ward", "thorns")));
+        assertEquals("bane", FuzzyMatcher.closest("ban", List.of("bane", "ward", "thorns")));
     }
 
     @Test
     void findClosestFindsCloseTypoWithinDistanceTwo() {
-        assertEquals("bane", InfusedMobsCommand.findClosest("bnae", List.of("bane", "ward")));
+        assertEquals("bane", FuzzyMatcher.closest("bnae", List.of("bane", "ward")));
     }
 
     @Test
     void findClosestReturnsNullWhenTooFar() {
-        assertNull(InfusedMobsCommand.findClosest("xyzzy", List.of("bane", "ward")));
+        assertNull(FuzzyMatcher.closest("xyzzy", List.of("bane", "ward")));
     }
 
     @Test
     void findClosestReturnsNullForEmptyCandidates() {
-        assertNull(InfusedMobsCommand.findClosest("bane", List.of()));
+        assertNull(FuzzyMatcher.closest("bane", List.of()));
     }
 
     // ========================================
-    // levenshtein
+    // FuzzyMatcher.distance
     // ========================================
 
     @Test
     void levenshteinBasics() {
-        assertEquals(0, InfusedMobsCommand.levenshtein("same", "same"));
-        assertEquals(3, InfusedMobsCommand.levenshtein("", "abc"));
-        assertEquals(3, InfusedMobsCommand.levenshtein("kitten", "sitting"));
-        assertEquals(2, InfusedMobsCommand.levenshtein("bane", "bnae"));
+        assertEquals(0, FuzzyMatcher.distance("same", "same"));
+        assertEquals(3, FuzzyMatcher.distance("", "abc"));
+        assertEquals(3, FuzzyMatcher.distance("kitten", "sitting"));
+        assertEquals(2, FuzzyMatcher.distance("bane", "bnae"));
     }
 
     @Test
     void levenshteinHandlesDifferentLengths() {
-        assertEquals(2, InfusedMobsCommand.levenshtein("ba", "bane"));
+        assertEquals(2, FuzzyMatcher.distance("ba", "bane"));
     }
 }

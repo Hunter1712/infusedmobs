@@ -2,7 +2,7 @@ package io.github.hunter1712.infusedmobs.mixin;
 
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
-import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
+import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -24,13 +24,13 @@ public class LivingEntityMixin {
     @Inject(method = "getExperienceReward", at = @At("RETURN"), cancellable = true)
     private void onGetExperienceReward(CallbackInfoReturnable<Integer> cir) {
         if ((Object) this instanceof Mob mob) {
-            MobTier tier = InfusedTracker.getTier(mob);
+            MobTier tier = MobTierManager.getTier(mob);
             double multiplier;
             if (tier != null) {
                 // Use the config multiplier (not the enum constant) so pack
                 // makers' tier edits apply to XP too.
                 multiplier = ModConfig.get().forTier(tier).xpMultiplier();
-            } else if (InfusedTracker.isSplitCopy(mob)) {
+            } else if (MobTierManager.isSplitCopy(mob)) {
                 // Split copies have no Tier but carry full Cinder stats.
                 multiplier = ModConfig.get().forTier(MobTier.CINDER).xpMultiplier();
             } else {

@@ -4,8 +4,8 @@ import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.platform.Platform;
+import io.github.hunter1712.infusedmobs.platform.PlatformHooks;
 import io.github.hunter1712.infusedmobs.tier.InfusionGate;
-import io.github.hunter1712.infusedmobs.tier.InfusedTracker;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
@@ -197,7 +197,7 @@ public final class InfusedMobsCommand {
         CommandSourceStack source = ctx.getSource();
         ModConfig.Instance updated = ModConfig.get().withShowNametags(show);
         ModConfig.swapInstance(updated);
-        InfusedTracker.refreshNametags(source.getServer());
+        MobTierManager.refreshNametags(source.getServer());
         source.sendSuccess(() -> Component.literal(
                 "§eNametags turned " + (show ? "§aON" : "§cOFF")), true);
         return 1;
@@ -296,8 +296,8 @@ public final class InfusedMobsCommand {
     /** Reloads config from disk and refreshes nametags. */
     private static int executeReload(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        ModConfig.load();
-        InfusedTracker.refreshNametags(source.getServer());
+        ModConfig.load(AbilityRegistry.getAllAbilityIds().size());
+        MobTierManager.refreshNametags(source.getServer());
         source.sendSuccess(() -> Component.literal("§aConfig reloaded from disk."), true);
         return 1;
     }
@@ -345,7 +345,7 @@ public final class InfusedMobsCommand {
         CommandSourceStack source = ctx.getSource();
 
         // Parse tier
-        MobTier tier = parseTier(tierName);
+        MobTier tier = MobTier.parse(tierName);
         if (tier == null) {
             source.sendFailure(Component.literal(
                     "§cUnknown tier: " + tierName + ". Use: " + tierOptions() + "."));
@@ -383,7 +383,7 @@ public final class InfusedMobsCommand {
             case ACTIVE -> { /* proceed */ }
         }
 
-        Entity raw = Platform.hooks().spawnForCommand(entityType, level);
+        Entity raw = Platform.hooks().spawn(entityType, level, PlatformHooks.SpawnKind.COMMAND);
         if (!(raw instanceof Mob mob)) {
             source.sendFailure(Component.literal(
                     "§c" + entityType.getDescription().getString() + " is not a mob."));
@@ -420,7 +420,7 @@ public final class InfusedMobsCommand {
         StringBuilder msg = new StringBuilder();
         msg.append("§cUnknown ability ID(s): ").append(String.join(", ", unknown)).append("\n");
         for (String bad : unknown) {
-            String closest = findClosest(bad, allIds);
+            String closest = FuzzyMatcher.closest(bad, allIds);
             if (closest != null) {
                 msg.append("§eDid you mean §f").append(closest).append("§e?\n");
             }
@@ -469,33 +469,12 @@ public final class InfusedMobsCommand {
         return type.canSummon() && type.getCategory() == MobCategory.MONSTER;
     }
 
-    /**
-     * Parses a tier name (case-insensitive) into a {@link MobTier}.
-     * Derived from the enum so adding a tier works without touching this.
-     */
-    static MobTier parseTier(String name) {
-        return TierParser.parse(name);
-    }
-
     /** Tier options derived from the enum so the summon error never rots. */
     static String tierOptions() {
         return String.join(", ",
                 Arrays.stream(MobTier.values())
                         .map(t -> t.name().toLowerCase(Locale.ROOT))
                         .toList());
-    }
-
-    /**
-     * Finds the closest-matching string from {@code candidates} using
-     * Levenshtein distance. Returns {@code null} if nothing is close enough.
-     */
-    static String findClosest(String input, List<String> candidates) {
-        return FuzzyMatcher.closest(input, candidates);
-    }
-
-    /** Computes Levenshtein edit distance between two strings. */
-    static int levenshtein(String a, String b) {
-        return FuzzyMatcher.distance(a, b);
     }
 
 }

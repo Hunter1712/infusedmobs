@@ -57,13 +57,8 @@ public final class VersionPlatform implements PlatformHooks {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T spawnEntity(EntityType<T> type, ServerLevel level) {
+    public <T extends Entity> T spawn(EntityType<T> type, ServerLevel level, SpawnKind kind) {
         return (T) type.create(level);
-    }
-
-    @Override
-    public Entity spawnForCommand(EntityType<?> type, ServerLevel level) {
-        return type.create(level);
     }
 
     @Override
@@ -93,28 +88,21 @@ public final class VersionPlatform implements PlatformHooks {
     }
 
     @Override
-    public EffectToken slowness() { return new RawToken(MobEffects.MOVEMENT_SLOWDOWN); }
-
-    @Override
-    public EffectToken resistance() { return new RawToken(MobEffects.DAMAGE_RESISTANCE); }
-
-    @Override
-    public EffectToken strength() { return new RawToken(MobEffects.DAMAGE_BOOST); }
-
-    @Override
-    public EffectToken speed() { return new RawToken(MobEffects.MOVEMENT_SPEED); }
-
-    @Override
-    public EffectToken poison() { return new RawToken(MobEffects.POISON); }
-
-    @Override
-    public EffectToken wither() { return new RawToken(MobEffects.WITHER); }
-
-    @Override
-    public EffectToken weakness() { return new RawToken(MobEffects.WEAKNESS); }
-
-    @Override
-    public EffectToken regeneration() { return new RawToken(MobEffects.REGENERATION); }
+    public EffectToken effectToken(String id) {
+        // Java 17: classic switch, no null case — null falls to the default throw.
+        if (id == null) throw new IllegalArgumentException("Unknown effect id: 'null'");
+        switch (id) {
+            case "slowness": return new RawToken(MobEffects.MOVEMENT_SLOWDOWN);
+            case "resistance": return new RawToken(MobEffects.DAMAGE_RESISTANCE);
+            case "strength": return new RawToken(MobEffects.DAMAGE_BOOST);
+            case "speed": return new RawToken(MobEffects.MOVEMENT_SPEED);
+            case "poison": return new RawToken(MobEffects.POISON);
+            case "wither": return new RawToken(MobEffects.WITHER);
+            case "weakness": return new RawToken(MobEffects.WEAKNESS);
+            case "regeneration": return new RawToken(MobEffects.REGENERATION);
+            default: throw new IllegalArgumentException("Unknown effect id: '" + id + "'");
+        }
+    }
 
     @Override
     public void damageArmor(ServerPlayer player, ServerLevel level, int amount) {

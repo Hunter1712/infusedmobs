@@ -52,13 +52,11 @@ public final class VersionPlatform implements PlatformHooks {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T spawnEntity(EntityType<T> type, ServerLevel level) {
-        return (T) type.create(level, EntitySpawnReason.REINFORCEMENT);
-    }
-
-    @Override
-    public Entity spawnForCommand(EntityType<?> type, ServerLevel level) {
-        return type.create(level, EntitySpawnReason.COMMAND);
+    public <T extends Entity> T spawn(EntityType<T> type, ServerLevel level, SpawnKind kind) {
+        return (T) switch (kind) {
+            case REINFORCEMENT -> type.create(level, EntitySpawnReason.REINFORCEMENT);
+            case COMMAND -> type.create(level, EntitySpawnReason.COMMAND);
+        };
     }
 
     @Override
@@ -89,28 +87,19 @@ public final class VersionPlatform implements PlatformHooks {
     }
 
     @Override
-    public EffectToken slowness() { return new HolderToken(MobEffects.SLOWNESS); }
-
-    @Override
-    public EffectToken resistance() { return new HolderToken(MobEffects.RESISTANCE); }
-
-    @Override
-    public EffectToken strength() { return new HolderToken(MobEffects.STRENGTH); }
-
-    @Override
-    public EffectToken speed() { return new HolderToken(MobEffects.SPEED); }
-
-    @Override
-    public EffectToken poison() { return new HolderToken(MobEffects.POISON); }
-
-    @Override
-    public EffectToken wither() { return new HolderToken(MobEffects.WITHER); }
-
-    @Override
-    public EffectToken weakness() { return new HolderToken(MobEffects.WEAKNESS); }
-
-    @Override
-    public EffectToken regeneration() { return new HolderToken(MobEffects.REGENERATION); }
+    public EffectToken effectToken(String id) {
+        return switch (id) {
+            case "slowness" -> new HolderToken(MobEffects.SLOWNESS);
+            case "resistance" -> new HolderToken(MobEffects.RESISTANCE);
+            case "strength" -> new HolderToken(MobEffects.STRENGTH);
+            case "speed" -> new HolderToken(MobEffects.SPEED);
+            case "poison" -> new HolderToken(MobEffects.POISON);
+            case "wither" -> new HolderToken(MobEffects.WITHER);
+            case "weakness" -> new HolderToken(MobEffects.WEAKNESS);
+            case "regeneration" -> new HolderToken(MobEffects.REGENERATION);
+            case null, default -> throw new IllegalArgumentException("Unknown effect id: '" + id + "'");
+        };
+    }
 
     @Override
     public void damageArmor(ServerPlayer player, ServerLevel level, int amount) {

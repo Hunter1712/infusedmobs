@@ -1,0 +1,3 @@
+# Twin UUID stores stay separate (live InfusedMob vs persisted Rolled)
+
+`InfusedRegistry` (in-memory live Infused Mob state behind `InfusedTracker`, itself the implementation behind the `MobTierManager` Infusion seam) and `TierRollStore` (persisted roll state behind every `TierSavedData` Shim) share a UUID-keyed track/find/untrack/snapshot shape. We keep them separate because their lifetimes differ — live state dies with the mob (death/despawn cleanup), persisted state is per-level save data restored on chunk reload — and today there is exactly one consumer of each, so a unified store would be a hypothetical seam. Revisit when two adapters need the same view.

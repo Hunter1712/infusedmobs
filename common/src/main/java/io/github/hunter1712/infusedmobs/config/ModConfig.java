@@ -1,6 +1,5 @@
 package io.github.hunter1712.infusedmobs.config;
 
-import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 
 import com.google.gson.Gson;
@@ -16,7 +15,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * JSON-driven config loaded from {@code config/infusedmobs.json}.
@@ -45,8 +46,13 @@ public final class ModConfig {
      * Missing fields in an existing config file (e.g. when upgrading from a
      * previous version) are backfilled from {@link Instance#defaults()} so
      * users keep their existing tier settings across upgrades.
+     *
+     * @param abilityPoolSize live Ability pool size, the upper bound for
+     *                        per-Tier ability counts. Passed in by the caller
+     *                        (which owns pool-then-config init order) so this
+     *                        module never pulls the Ability pool itself.
      */
-    public static void load() {
+    public static void load(int abilityPoolSize) {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("infusedmobs.json");
 
         if (Files.exists(configPath)) {
@@ -60,7 +66,7 @@ public final class ModConfig {
                     parsed = null;
                 }
                 if (parsed != null) {
-                    Instance fixed = parsed.clamped(poolSize()).backfillFromDefaults();
+                    Instance fixed = parsed.clamped(abilityPoolSize).backfillFromDefaults();
                     instance = fixed;
                     if (!fixed.equals(parsed)) {
                         save();
@@ -77,12 +83,7 @@ public final class ModConfig {
         writeDefaults(configPath);
     }
 
-    /** Live Ability pool size, the upper bound for per-Tier ability counts. */
-    private static int poolSize() {
-        return AbilityRegistry.getAllAbilityIds().size();
-    }
-
-    /** Returns the current config instance. Never null after {@link #load()}. */
+    /** Returns the current config instance. Never null after {@link #load(int)}. */
     public static Instance get() {
         return instance;
     }
@@ -389,7 +390,7 @@ public final class ModConfig {
         /**
          * Backfills fields missing from an older config file (pre-2.7.0)
          * with their default values, preserving all existing tier/effect
-         * settings. Called on the clamped instance during {@link #load()}.
+         * settings. Called on the clamped instance during {@link ModConfig#load(int)}.
          * <p>
          * Without this, upgrading from 2.6.0 would leave
          * {@code worldBlacklist} null. Older files may also carry a
@@ -421,7 +422,14 @@ public final class ModConfig {
          * duplicates preserving first-seen order. Returns an immutable list.
          */
         private static List<String> normaliseBlacklist(List<String> blacklist) {
-            return BlacklistNormalizer.normalise(blacklist);
+            if (blacklist == null) return List.of();
+            Set<String> seen = new LinkedHashSet<>();
+            for (String entry : blacklist) {
+                if (entry == null) continue;
+                String trimmed = entry.trim();
+                if (!trimmed.isEmpty()) seen.add(trimmed);
+            }
+            return List.copyOf(seen);
         }
     }
 }

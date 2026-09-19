@@ -51,7 +51,7 @@ class EffectTokenTest {
     void fakeTokensApplyWithoutCasting() {
         FakePlatform fake = new FakePlatform();
 
-        EffectToken poison = fake.poison();
+        EffectToken poison = fake.effectToken("poison");
         poison.applyHurt(null, 60, 0);
         poison.applyTick(null, 60, 0);
 

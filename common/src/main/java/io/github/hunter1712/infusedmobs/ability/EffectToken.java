@@ -5,9 +5,9 @@ import net.minecraft.world.entity.LivingEntity;
 /**
  * Typed handle for a version-specific status effect.
  * <p>
- * Each Versioned Source Set returns its own implementation from the existing
- * effect accessors ({@code slowness()}, {@code poison()}, ...); shared code
- * passes tokens through without inspecting version types. Version Shims never
+ * Each Versioned Source Set returns its own implementation from
+ * {@link io.github.hunter1712.infusedmobs.platform.PlatformHooks#effectToken(String)};
+ * shared code passes tokens through without inspecting version types. Version Shims never
  * cast — the implementation captures its correctly typed effect
  * ({@code Holder<MobEffect>} on modern versions, raw {@code MobEffect} on
  * legacy) and applies it directly.

@@ -1,13 +1,12 @@
 package io.github.hunter1712.infusedmobs.ability;
 
+import io.github.hunter1712.infusedmobs.ability.effect.CombustEffect;
 import io.github.hunter1712.infusedmobs.ability.effect.SplitEffect;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.platform.Platform;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -49,10 +48,10 @@ public final class AbilityRegistry {
     public static void registerAll() {
         // ---- HURT abilities (fire when an Infused Mob hits a player — melee or projectile) ----
 
-        registerHurtEffect("bane",     "Bane",     Platform.hooks().poison());
-        registerHurtEffect("chill",    "Chill",    Platform.hooks().slowness());
-        registerHurtEffect("decay",    "Decay",    Platform.hooks().wither());
-        registerHurtEffect("hex",      "Hex",      Platform.hooks().weakness());
+        registerHurtEffect("bane",     "Bane",     Platform.hooks().effectToken("poison"));
+        registerHurtEffect("chill",    "Chill",    Platform.hooks().effectToken("slowness"));
+        registerHurtEffect("decay",    "Decay",    Platform.hooks().effectToken("wither"));
+        registerHurtEffect("hex",      "Hex",      Platform.hooks().effectToken("weakness"));
 
         register("hellfire", "Hellfire", TriggerType.HURT, (mob, target, damage) ->
                 Platform.hooks().ignite(target, ModConfig.get().infernoFireSeconds()));
@@ -67,34 +66,16 @@ public final class AbilityRegistry {
 
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
-        registerTickEffect("ward",    "Ward",    Platform.hooks().resistance());
-        registerTickEffect("frenzy",   "Frenzy",  Platform.hooks().strength());
-        registerTickEffect("wraith",   "Wraith",  Platform.hooks().speed());
-        registerTickEffect("blight",   "Blight",  Platform.hooks().regeneration());
+        registerTickEffect("ward",    "Ward",    Platform.hooks().effectToken("resistance"));
+        registerTickEffect("frenzy",   "Frenzy",  Platform.hooks().effectToken("strength"));
+        registerTickEffect("wraith",   "Wraith",  Platform.hooks().effectToken("speed"));
+        registerTickEffect("blight",   "Blight",  Platform.hooks().effectToken("regeneration"));
 
         // ---- DEATH abilities ----
 
         register("rupture", "Rupture", TriggerType.DEATH, (mob, target, damage) -> SplitEffect.apply(mob));
 
-        register("combust", "Combust", TriggerType.DEATH, (mob, target, damage) -> {
-            if (mob.level() instanceof ServerLevel level) {
-                double radius = ModConfig.get().combustExplosionPower() * 2.0;
-                var entities = level.getEntities(mob, mob.getBoundingBox().inflate(radius));
-                var dmgSource = level.damageSources().explosion(null, null);
-                for (var entity : entities) {
-                    if (entity instanceof LivingEntity living && entity != mob) {
-                        double dist = entity.distanceTo(mob);
-                        if (dist <= radius) {
-                            float inflicted = (float) (4.0 * (1.0 - dist / radius));
-                            Platform.hooks().hurtFromExplosion(living, level, dmgSource, Math.max(inflicted, 1.0f));
-                        }
-                    }
-                }
-                // Explosion sound without particles or block damage
-                level.playSound(null, mob.getX(), mob.getY(), mob.getZ(),
-                        SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0f, 1.0f);
-            }
-        });
+        register("combust", "Combust", TriggerType.DEATH, (mob, target, damage) -> CombustEffect.apply(mob));
     }
 
     /**
