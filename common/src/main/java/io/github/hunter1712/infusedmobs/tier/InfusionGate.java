@@ -35,9 +35,9 @@ public final class InfusionGate {
 
     /** Status of the mod in the given level. */
     public static Status status(ServerLevel level) {
-        if (ModConfig.get().isWorldBlacklisted(Platform.hooks().dimensionId(level))) return Status.WORLD_BLACKLISTED;
-        if (!ModGameRules.isEnabled(level.getServer())) return Status.RULE_DISABLED;
-        return Status.ACTIVE;
+        boolean blacklisted = ModConfig.get().isWorldBlacklisted(Platform.hooks().dimensionId(level));
+        boolean enabled = ModGameRules.isEnabled(level.getServer());
+        return SHARED.decide(blacklisted, enabled, ModGameRules.defaultValue());
     }
 
     /** Pure decision helper — unit-testable without Minecraft bootstrap. */

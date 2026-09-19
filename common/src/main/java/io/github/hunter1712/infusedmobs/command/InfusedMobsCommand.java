@@ -348,7 +348,7 @@ public final class InfusedMobsCommand {
         MobTier tier = parseTier(tierName);
         if (tier == null) {
             source.sendFailure(Component.literal(
-                    "§cUnknown tier: " + tierName + ". Use: cinder, shade, or doom."));
+                    "§cUnknown tier: " + tierName + ". Use: " + tierOptions() + "."));
             return 0;
         }
 
@@ -397,7 +397,10 @@ public final class InfusedMobsCommand {
                 ? abilities
                 : AbilityRegistry.getRandomAbilities(
                         ModConfig.get().forTier(tier).abilityCount());
-        MobTierManager.assignSpecificTier(mob, tier, finalAbilities);
+        if (!MobTierManager.assignSpecificTier(mob, tier, finalAbilities)) {
+            source.sendFailure(Component.literal("§cCannot summon here: the mod is inactive in this dimension."));
+            return 0;
+        }
         if (!level.addFreshEntity(mob)) {
             source.sendFailure(Component.literal("§cFailed to spawn entity."));
             return 0;
@@ -472,6 +475,14 @@ public final class InfusedMobsCommand {
      */
     static MobTier parseTier(String name) {
         return TierParser.parse(name);
+    }
+
+    /** Tier options derived from the enum so the summon error never rots. */
+    static String tierOptions() {
+        return String.join(", ",
+                Arrays.stream(MobTier.values())
+                        .map(t -> t.name().toLowerCase(Locale.ROOT))
+                        .toList());
     }
 
     /**

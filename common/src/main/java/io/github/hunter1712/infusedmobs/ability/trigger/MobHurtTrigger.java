@@ -66,11 +66,10 @@ public final class MobHurtTrigger {
     /** Player hit an Infused Mob — fire its Thorns Ability exactly once if present. */
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
         if (!(source.getEntity() instanceof Player player)) return;
-        for (Ability ability : InfusedTracker.getAbilitiesByTrigger(mob, TriggerType.HURT)) {
-            if (!ability.id().equals(AbilityRegistry.THORNS_ID)) continue;
-            ability.effect().apply(mob, player, damageTaken);
-            break;
-        }
+        if (!InfusedTracker.hasAbility(mob, AbilityRegistry.THORNS_ID)) return;
+        Ability thorns = AbilityRegistry.getById(AbilityRegistry.THORNS_ID);
+        if (thorns == null) return;
+        thorns.effect().apply(mob, player, damageTaken);
     }
 
     /** Player damaged by an Infused Mob (melee or projectile) — fire its offensive HURT Abilities. */

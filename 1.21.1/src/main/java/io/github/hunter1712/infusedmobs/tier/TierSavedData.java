@@ -10,7 +10,6 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -40,10 +39,6 @@ public final class TierSavedData extends SavedData {
     /** Creates an empty store. */
     public TierSavedData() {
         this.store = new TierRollStore();
-    }
-
-    private TierSavedData(Map<UUID, Rolled> rolls) {
-        this.store = new TierRollStore(rolls);
     }
 
     // ========================================
