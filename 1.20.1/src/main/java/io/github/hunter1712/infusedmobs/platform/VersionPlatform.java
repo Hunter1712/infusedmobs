@@ -117,16 +117,6 @@ public final class VersionPlatform implements PlatformHooks {
     public EffectToken regeneration() { return new RawToken(MobEffects.REGENERATION); }
 
     @Override
-    public void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {
-        effect.applyHurt(target, duration, amplifier);
-    }
-
-    @Override
-    public void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier) {
-        effect.applyTick(mob, duration, amplifier);
-    }
-
-    @Override
     public void damageArmor(ServerPlayer player, ServerLevel level, int amount) {
         for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
             player.getItemBySlot(slot).hurtAndBreak(amount, player, item -> {});

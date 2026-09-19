@@ -79,11 +79,15 @@ public interface PlatformHooks {
 
     EffectToken regeneration();
 
-    /** Applies a HURT effect token to the target. */
-    void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier);
+    /** Applies a HURT effect token to the target (pure passthrough — default, no version content). */
+    default void applyHurtEffect(LivingEntity target, EffectToken effect, int duration, int amplifier) {
+        effect.applyHurt(target, duration, amplifier);
+    }
 
-    /** Applies a TICK effect token to the mob itself. */
-    void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier);
+    /** Applies a TICK effect token to the mob itself (pure passthrough — default, no version content). */
+    default void applyTickEffect(LivingEntity mob, EffectToken effect, int duration, int amplifier) {
+        effect.applyTick(mob, duration, amplifier);
+    }
 
     // ---- Combat ----
 
