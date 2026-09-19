@@ -146,9 +146,9 @@ The gamerule is ANDed with the config settings: the mod is active unless the wor
 | `acidArmorDamage` | Durability damage per armor slot from Vitriol |
 | `combustExplosionPower` | Explosion strength (TNT = 4.0) |
 | `worldBlacklist` | Dimension IDs where the mod is disabled (e.g. `"minecraft:overworld"`) — managed in-game via `/infusedmobs world add\|remove\|list` |
-| `mobBlacklist` | Entity type IDs excluded from natural infusion (e.g. `"minecraft:spider"`) — JSON-only, explicit summon bypasses it |
+| `mobBlacklist` | Entity type IDs excluded from natural infusion (e.g. `"minecraft:spider"`) — managed in-game via `/infusedmobs mob add\|remove\|list`; explicit summon bypasses it |
 
-> **Note:** Values are validated on load — e.g. `spawnChance` and `abilityCount` must be greater than 0. An invalid config is replaced with defaults (with a warning in the log), so tier edits are preserved across upgrades but not past validation errors.
+> **Note:** Values are clamped on load — each out-of-range field falls back to its nearest valid value with a warning in the log (e.g. `spawnChance` above 1 clamps to 1.0, malformed blacklist ids are dropped). Missing fields from older configs are backfilled from defaults, so tier edits survive upgrades; only malformed JSON (unparseable) is rewritten with defaults.
 
 ---
 
@@ -173,7 +173,7 @@ One project page covers all supported versions — pick the file matching your g
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) (0.19.3+) for your Minecraft version (1.20.1, 1.21.1 or 26.2)
 2. Install [Fabric API](https://modrinth.com/mod/fabric-api) matching your game version (see table above)
-3. From this single project page, download the file for your game version — e.g. `infusedmobs-2.7.1+1.20.1.jar`, `infusedmobs-2.7.1+1.21.1.jar` or `infusedmobs-2.7.1+26.2.jar` — into your `mods` folder
+3. From this single project page, download the file for your game version — e.g. `infusedmobs-2.8.0+1.20.1.jar`, `infusedmobs-2.8.0+1.21.1.jar` or `infusedmobs-2.8.0+26.2.jar` — into your `mods` folder
 4. Launch — config generates at `config/infusedmobs.json`
 
 ---
@@ -192,7 +192,7 @@ One project page covers all supported versions — pick the file matching your g
 
 - **Split copies** from Rupture have Cinder stats with a grey tag (no Tier by design), and never roll Rupture again (recursion guard)
 - **Nametags** use Minecraft color codes (§a, §e, §c, §7) — visible in vanilla
-- **Old configs** (pre-2.5.0) lack the required `abilityCount` field — they are automatically replaced with defaults on load (tier edits from before 2.5.0 are lost)
+- **Old configs** (missing fields, e.g. pre-2.7.0 files without `worldBlacklist`) are backfilled from defaults on load, preserving tier settings; only unparseable (malformed JSON) files are rewritten with defaults
 
 ---
 
