@@ -9,12 +9,12 @@ Needs: fresh world, cheats on, op level 2. Report failures as: version + steps +
 
 ## Core loop
 
-- [ ] Wild hostile mobs spawn with green (Cinder) / yellow (Shade) / red (Doom) nametags; roughly 40% stay vanilla at defaults (sequential 40%/20%/10% rolls).
+- [ ] Wild hostile mobs spawn with green (Cinder) / yellow (Shade) / red (Doom) nametags; roughly 30% stay vanilla at defaults (single-roll 40%/20%/10% shares).
 - [ ] Bare `/infusedmobs` shows the help text (same as `/infusedmobs help`).
 - [ ] `/infusedmobs summon doom zombie "bane thorns"` spawns a red-tagged zombie at your crosshair (abilities require an entity argument).
 - [ ] Summon with a typo (e.g. "banne") prints an unknown-ID message with a "did you mean" hint and the valid ID list.
-- [ ] Combat: an Infused Mob hitting you fires HURT effects (poison, slowness, fire, weakness — melee or projectile, players only); TICK effects refresh about every second (resistance, strength, speed shimmer, no particles).
-- [ ] Kill a Rupture mob -> splits into 2 grey-tagged copies with Cinder stats (no Tier) that never split again (other abilities on copies OK, including Combust).
+- [ ] Combat: an Infused Mob hitting you fires offensive HURT effects (poison, slowness, fire, weakness — melee or projectile, players only); hitting a Thorns mob reflects 15% back at you (reactive HURT, never passive); TICK effects refresh about every second (resistance, strength, speed shimmer, no particles).
+- [ ] Kill a Rupture mob -> splits into 2 grey-tagged copies with full Cinder health and XP (no Tier) that never split again (other abilities on copies OK, including Combust).
 - [ ] Kill a Combust mob -> nearby damage + explosion sound, NO block damage, NO particles.
 - [ ] Infused kills grant multiplied XP (about 1.5x Cinder / 2x Shade / 4x Doom).
 

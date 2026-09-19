@@ -363,10 +363,11 @@ class VersionShimParityTest {
     private static CompoundTag toNbtEntry(Rolled rolled) {
         CompoundTag entry = new CompoundTag();
         entry.putString("kind", rolled.kind());
-        String tierName = rolled.tierName();
-        if (tierName != null) entry.putString("tier", tierName);
+        if (rolled instanceof Rolled.Tiered tiered) {
+            entry.putString("tier", tiered.tierName());
+        }
         ListTag list = new ListTag();
-        for (String id : rolled.abilityIds()) list.add(StringTag.valueOf(id));
+        for (String abilityId : rolled.abilityIds()) list.add(StringTag.valueOf(abilityId));
         entry.put("abilityIds", list);
         return entry;
     }
@@ -377,7 +378,7 @@ class VersionShimParityTest {
         List<String> abilityIds = List.of();
         if (entry.contains("abilityIds")) {
             abilityIds = entry.getListOrEmpty("abilityIds").stream()
-                    .map(t -> t.asString().orElse("")).toList();
+                    .map(tagEntry -> tagEntry.asString().orElse("")).toList();
         }
         return Rolled.decode(kind, tierName, abilityIds);
     }

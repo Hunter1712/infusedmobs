@@ -35,7 +35,8 @@ public final class TierSavedData extends SavedData {
     record DTO(String kind, MobTier tier, List<String> abilityIds) {
 
         static DTO fromRolled(Rolled rolled) {
-            return new DTO(rolled.kind(), rolled.tier(), rolled.abilityIds());
+            MobTier tier = rolled instanceof Rolled.Tiered tiered ? tiered.tier() : null;
+            return new DTO(rolled.kind(), tier, rolled.abilityIds());
         }
 
         Rolled toRolled() {
@@ -77,7 +78,7 @@ public final class TierSavedData extends SavedData {
                     // return an empty store when the tag is absent, e.g. fresh worlds).
                     Codec.unboundedMap(UUIDUtil.STRING_CODEC, ROLLED_CODEC)
                             .optionalFieldOf("rolls", Map.of())
-                            .forGetter(d -> d.store.snapshot())
+                            .forGetter(savedData -> savedData.store.snapshot())
             ).apply(instance, TierSavedData::new)
     );
 

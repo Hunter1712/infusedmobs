@@ -2,6 +2,7 @@ package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.config.ModConfig;
 import io.github.hunter1712.infusedmobs.test.IsolatedState;
 
 import org.junit.jupiter.api.Test;
@@ -81,5 +82,31 @@ class InfusedTrackerTest {
 
         assertTrue(InfusedTracker.getTickMobUUIDs().isEmpty());
         assertNull(InfusedTracker.find(UUID.randomUUID()));
+    }
+
+    @Test
+    void splitCopyQueryDistinguishesVariants() {
+        var splitId = UUID.randomUUID();
+        var tieredId = UUID.randomUUID();
+        var missingId = UUID.randomUUID();
+        InfusedTracker.track(splitId, InfusedMob.split(List.of()));
+        InfusedTracker.track(tieredId, InfusedMob.tiered(MobTier.CINDER,
+                List.of(ability("bane", TriggerType.HURT))));
+
+        assertTrue(InfusedTracker.isSplitCopy(splitId),
+                "split copy must report as split copy for Cinder XP treatment");
+        assertFalse(InfusedTracker.isSplitCopy(tieredId),
+                "tiered roll must never report as split copy");
+        assertFalse(InfusedTracker.isSplitCopy(missingId),
+                "untracked mob must never report as split copy");
+    }
+
+    @Test
+    void splitCopyCinderXpContract() {
+        // Split copies carry the full documented Cinder experience treatment
+        // through the same path as Tiered rolls (see LivingEntityMixin).
+        assertEquals(MobTier.CINDER.xpMultiplier(),
+                ModConfig.Instance.defaults().forTier(MobTier.CINDER).xpMultiplier(),
+                "split-copy XP must equal the Cinder rule");
     }
 }

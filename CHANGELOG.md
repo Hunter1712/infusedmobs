@@ -27,10 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tier persistence rules live once in `common` (`tier/Rolled.java` decode/encode helpers + `tier/TierRollStore.java` in-memory map) with thin codec/NBT adapters per version; corrupted-save fallback is covered by behaviour tests instead of source-text checks.
 - `MobTierManager` slimmed to roll/restore/health flows: gating decisions moved to `tier/InfusionGate.java` (`status(level)` → ACTIVE/WORLD_BLACKLISTED/RULE_DISABLED) and the in-memory Infused Mob registry + nametag presentation to `tier/InfusedTracker.java`, which triggers and commands query directly.
 - Docs/code vocab audit: `InfusedMob.TieredMob`→`Tiered` and `SplitCopyMob`→`SplitCopy` (CONTEXT.md avoids "Tiered Mob"), `AbilityRegistry.all`→`register`, split-copy grey extracted to `SPLIT_COPY_COLOUR`, entity-type name helper hides the `getType().getDescription()` chain; Javadoc now uses Infused Mob / Tier / Ability / TriggerType / World Blacklist / Gamerule Gate consistently.
-- Docs synced to code: HURT documented as melee-or-projectile against players, Rupture copies documented as Cinder stats with grey tag and no Tier, summon abilities documented as requiring an entity argument, vanilla share corrected to ~40% (sequential rolls).
+- Docs synced to code: HURT documented as offensive melee-or-projectile plus reactive Thorns, Rupture copies documented as full Cinder health and XP with grey tag and no Tier, summon abilities documented as requiring an entity argument, vanilla share corrected to ~30% (single-roll 40%/20%/10%).
 
 ### Fixed
 - Bare `/infusedmobs` now shows help (previously did nothing despite help text advertising `/infusedmobs` — show this help).
+- **Tier-share correctness fix** — rolls are now a single uniform decision (Doom, then Shade, then Cinder intervals), so effective shares equal the documented contract: 40% Cinder / 20% Shade / 10% Doom with 30% vanilla. Previously sequential independent checks gave ~40% / ~12% / ~4.8% with ~43% vanilla — pack balance now matches the docs. No config change needed; custom spawn chances keep working as interval sizes with rarest first.
+- **Thorns honesty fix** — Thorns is now a reactive HURT Ability (fires when the Infused Mob is damaged by a player, reflecting 15% back) instead of a passive TICK no-op with a cross-trigger side-channel. Passive iteration only visits mobs it can actually affect; shield-blocked hits fire nothing; reflection never re-triggers.
+- **Split-copy Cinder parity fix** — Rupture split copies now grant the full documented Cinder experience treatment through the same health/XP path as Tiered rolls (previously Cinder health only, vanilla XP).
 
 ## [2.7.1] - 2026-08-02
 

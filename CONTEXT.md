@@ -15,11 +15,11 @@ A power level — Cinder (40%, 1 ability, 1.5× HP/XP, green), Shade (20%, 2, 2�
 _Avoid_: Level, Rank, Difficulty
 
 **Ability**:
-A named power such as Bane or Thorns that an Infused Mob can use.
+A named power such as Bane or Thorns that an Infused Mob can use. Rupture spawning two Cinder-stat copies is part of the Ability contract.
 _Avoid_: Effect, Skill, Power
 
 **TriggerType**:
-The moment an Ability fires: HURT on melee hit, TICK passively each second, or DEATH on death.
+The moment an Ability fires: HURT on damage involving an Infused Mob and a player (offensive melee plus mob-owned projectiles, or reactive Thorns when the Infused Mob is damaged), TICK passively each second, or DEATH on death.
 _Avoid_: Event Type, Ability Type, Trigger
 
 ### Gating

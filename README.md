@@ -14,13 +14,13 @@ One project page covers all three versions — download `infusedmobs-<mod>+<mc>.
 | **Shade** | 20% | 2 (any type) | 2× | 2× | Yellow |
 | **Doom** | 10% | 3 (any type) | 4× | 4× | Red |
 
-~40% of hostile mobs remain vanilla at defaults — tiers roll as sequential independent checks (Cinder, then Shade, then Doom), so vanilla is `(1-0.4)×(1-0.2)×(1-0.1) ≈ 43%`. Infused mobs are common but effects are weak.
+~30% of hostile mobs remain vanilla at defaults — tiers roll as a single uniform decision (Doom, then Shade, then Cinder intervals), so effective shares equal the configured chances (40% Cinder / 20% Shade / 10% Doom). Infused mobs are common but effects are weak.
 
 ## Abilities
 
-HURT fires when an Infused Mob damages a player (melee or projectile); mob-vs-mob hits never trigger Abilities.
+HURT fires on damage involving an Infused Mob and a player: offensive Abilities fire when the mob damages a player (melee or projectile); Thorns fires reactively when the mob is damaged by a player, reflecting a fraction back. Mob-vs-mob hits never trigger Abilities.
 
-### HURT (fire on melee or projectile hit against a player, blocked by shields on 1.21.1/26.2)
+### HURT (offensive: fire on melee or projectile hit against a player, blocked by shields on 1.21.1/26.2; reactive: Thorns fires when the mob is damaged by a player)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -31,6 +31,7 @@ HURT fires when an Infused Mob damages a player (melee or projectile); mob-vs-mo
 | **Siphon** | Heal 100% of damage dealt | — |
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
+| **Thorns** | Reflect 15% incoming damage back at the attacker | — |
 
 > **Shield blocks negate all HURT abilities on 1.21.1 and 26.2.** On 1.20.1 the legacy damage event reports pre-mitigation amounts with no shield-block flag, so a fully-blocked hit still fires HURT abilities there.
 
@@ -42,13 +43,12 @@ HURT fires when an Infused Mob damages a player (melee or projectile); mob-vs-mo
 | **Frenzy** | Strength I | 3s |
 | **Wraith** | Speed I | 3s |
 | **Blight** | Regeneration I | 3s |
-| **Thorns** | Reflect 15% melee damage | — |
 
 ### DEATH (trigger on death)
 
 | Ability | Effect |
 |---------|--------|
-| **Rupture** | Split into 2 copies with Cinder stats at 60% HP (grey tag, no Tier — each gets 1 random ability, any except Rupture itself, preventing recursion) |
+| **Rupture** | Split into 2 copies with full Cinder health and XP at 60% HP (grey tag, no Tier — each gets 1 random ability, any except Rupture itself, preventing recursion) |
 | **Combust** | Area damage + explosion sound (no particles / block damage, radius configurable) |
 
 ## Commands

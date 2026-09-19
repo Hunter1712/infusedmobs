@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -98,12 +97,12 @@ class RolledTest {
     }
 
     // ========================================
-    // polymorphic accessors — the single shape for kind / tier / abilityIds
+    // polymorphic accessors — honest shape discriminated by kind
     // ========================================
 
     @Test
     void accessorsDescribeTiered() {
-        Rolled tiered = new Rolled.Tiered(MobTier.SHADE, List.of("hex"));
+        Rolled.Tiered tiered = new Rolled.Tiered(MobTier.SHADE, List.of("hex"));
         assertEquals("tiered", tiered.kind());
         assertEquals(MobTier.SHADE, tiered.tier());
         assertEquals("SHADE", tiered.tierName());
@@ -111,20 +110,22 @@ class RolledTest {
     }
 
     @Test
-    void accessorsDescribeSplit() {
+    void splitExposesNoTierAccessor() {
         Rolled split = new Rolled.Split(List.of("ward"));
         assertEquals("split", split.kind());
-        assertNull(split.tier());
-        assertNull(split.tierName());
+        assertTrue(split instanceof Rolled.Split);
+        assertTrue(!(split instanceof Rolled.Tiered),
+                "split copy must never expose a Tier — discriminate by kind");
         assertEquals(List.of("ward"), split.abilityIds());
     }
 
     @Test
-    void accessorsDescribeNothing() {
+    void nothingExposesNoTierAccessor() {
         Rolled nothing = new Rolled.Nothing();
         assertEquals("nothing", nothing.kind());
-        assertNull(nothing.tier());
-        assertNull(nothing.tierName());
+        assertTrue(nothing instanceof Rolled.Nothing);
+        assertTrue(!(nothing instanceof Rolled.Tiered),
+                "empty roll must never expose a Tier — discriminate by kind");
         assertEquals(List.of(), nothing.abilityIds());
     }
 }

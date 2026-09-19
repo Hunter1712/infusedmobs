@@ -82,20 +82,19 @@ public final class TierSavedData extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag) {
         CompoundTag rollsTag = new CompoundTag();
-        for (Map.Entry<UUID, Rolled> e : store.entries()) {
+        for (Map.Entry<UUID, Rolled> storedEntry : store.entries()) {
             CompoundTag entry = new CompoundTag();
-            Rolled r = e.getValue();
-            entry.putString("kind", r.kind());
-            String tierName = r.tierName();
-            if (tierName != null) {
-                entry.putString("tier", tierName);
+            Rolled rolled = storedEntry.getValue();
+            entry.putString("kind", rolled.kind());
+            if (rolled instanceof Rolled.Tiered tiered) {
+                entry.putString("tier", tiered.tierName());
             }
             ListTag list = new ListTag();
-            for (String id : r.abilityIds()) {
-                list.add(StringTag.valueOf(id));
+            for (String abilityId : rolled.abilityIds()) {
+                list.add(StringTag.valueOf(abilityId));
             }
             entry.put("abilityIds", list);
-            rollsTag.put(e.getKey().toString(), entry);
+            rollsTag.put(storedEntry.getKey().toString(), entry);
         }
         tag.put("rolls", rollsTag);
         return tag;
@@ -115,7 +114,7 @@ public final class TierSavedData extends SavedData {
                 List<String> abilityIds = List.of();
                 if (entry.contains("abilityIds", Tag.TAG_LIST)) {
                     ListTag list = entry.getList("abilityIds", Tag.TAG_STRING);
-                    abilityIds = list.stream().map(t -> t.getAsString()).toList();
+                    abilityIds = list.stream().map(tagEntry -> tagEntry.getAsString()).toList();
                 }
                 data.store.put(uuid, Rolled.decode(kind, tierName, abilityIds));
             } catch (IllegalArgumentException ignored) {}

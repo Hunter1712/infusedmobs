@@ -24,13 +24,26 @@ class InfusedMobTest {
     @Test
     void indexGroupsAbilitiesByTrigger() {
         Ability bane = ability("bane", TriggerType.HURT);
-        Ability thorns = ability("thorns", TriggerType.TICK);
+        Ability thorns = ability("thorns", TriggerType.HURT);
+        Ability ward = ability("ward", TriggerType.TICK);
 
-        InfusedMob infused = InfusedMob.tiered(MobTier.SHADE, List.of(bane, thorns));
+        InfusedMob infused = InfusedMob.tiered(MobTier.SHADE, List.of(bane, thorns, ward));
 
-        assertEquals(List.of(bane), infused.forTrigger(TriggerType.HURT));
-        assertEquals(List.of(thorns), infused.forTrigger(TriggerType.TICK));
+        assertEquals(List.of(bane, thorns), infused.forTrigger(TriggerType.HURT));
+        assertEquals(List.of(ward), infused.forTrigger(TriggerType.TICK));
         assertTrue(infused.forTrigger(TriggerType.DEATH).isEmpty());
+    }
+
+    @Test
+    void thornsOnlyMobIsNotTickCapable() {
+        // Thorns is reactive HURT, never passive: a thorns-only mob must not
+        // appear in the tick scan, so passive iteration only visits mobs it
+        // can actually affect.
+        Ability thorns = ability("thorns", TriggerType.HURT);
+        InfusedMob infused = InfusedMob.tiered(MobTier.CINDER, List.of(thorns));
+
+        assertEquals(List.of(thorns), infused.forTrigger(TriggerType.HURT));
+        assertTrue(infused.forTrigger(TriggerType.TICK).isEmpty());
     }
 
     @Test
