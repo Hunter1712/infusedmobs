@@ -22,9 +22,10 @@ import java.util.UUID;
  * (Tier, abilities, or split-copy status) is persisted via
  * {@link TierSavedData} and restored exactly on world/chunk reloads.
  * <p>
- * Rolls are sequential independent checks in {@link MobTier} order
- * (Cinder, then Shade, then Doom), so the vanilla share is
- * {@code (1-0.4)*(1-0.2)*(1-0.1) ≈ 43%} at defaults — not 30%.
+ * Rolls are a single uniform decision in {@link TierRoll} (Doom, then
+ * Shade, then Cinder intervals), so the effective shares equal the
+ * configured spawn chances — 40% Cinder / 20% Shade / 10% Doom with
+ * 30% vanilla at defaults.
  * <p>
  * Gating decisions live in {@link InfusionGate} and in-memory tracking plus
  * nametag presentation in {@link InfusedTracker}; this module coordinates
@@ -71,17 +72,20 @@ public final class MobTierManager {
             return;
         }
 
-        ModConfig.Instance cfg = ModConfig.get();
+        ModConfig.Instance config = ModConfig.get();
 
-        for (MobTier tier : MobTier.values()) {
-            ModConfig.TierConfig tc = cfg.forTier(tier);
-            if (!(mob.getRandom().nextDouble() < tc.spawnChance())) continue;
-
-            List<Ability> abilities = AbilityRegistry.getRandomAbilities(tc.abilityCount());
+        MobTier tier = TierRoll.decide(
+                mob.getRandom().nextDouble(),
+                config.forTier(MobTier.CINDER).spawnChance(),
+                config.forTier(MobTier.SHADE).spawnChance(),
+                config.forTier(MobTier.DOOM).spawnChance());
+        if (tier != null) {
+            ModConfig.TierConfig tierConfig = config.forTier(tier);
+            List<Ability> abilities = AbilityRegistry.getRandomAbilities(tierConfig.abilityCount());
             InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
             Platform.hooks().storeRoll(serverLevel, uuid, new Rolled.Tiered(tier, idsOf(abilities)));
 
-            applyHealthMultiplier(mob, tc);
+            applyHealthMultiplier(mob, tierConfig);
             InfusedTracker.setTierNametag(mob, tier, abilities);
             return;
         }
@@ -107,15 +111,15 @@ public final class MobTierManager {
      * but this guard protects against any future callers.
      */
     public static boolean assignSpecificTier(Mob mob, MobTier tier, List<Ability> abilities) {
-        ServerLevel serverLevel = mob.level() instanceof ServerLevel sl ? sl : null;
+        ServerLevel serverLevel = mob.level() instanceof ServerLevel server ? server : null;
         if (serverLevel != null && InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) {
             return false;
         }
         UUID uuid = mob.getUUID();
         InfusedTracker.track(uuid, InfusedMob.tiered(tier, abilities));
 
-        ModConfig.TierConfig tc = ModConfig.get().forTier(tier);
-        applyHealthMultiplier(mob, tc);
+        ModConfig.TierConfig tierConfig = ModConfig.get().forTier(tier);
+        applyHealthMultiplier(mob, tierConfig);
         InfusedTracker.setTierNametag(mob, tier, abilities);
 
         if (serverLevel != null) {
@@ -126,25 +130,25 @@ public final class MobTierManager {
 
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
     private static void restoreRolled(Mob mob, UUID uuid, Rolled rolled) {
-        if (rolled instanceof Rolled.Tiered t) {
-            restoreTiered(mob, uuid, t);
-        } else if (rolled instanceof Rolled.Split s) {
-            restoreSplit(mob, uuid, s);
+        if (rolled instanceof Rolled.Tiered tieredRoll) {
+            restoreTiered(mob, uuid, tieredRoll);
+        } else if (rolled instanceof Rolled.Split splitRoll) {
+            restoreSplit(mob, uuid, splitRoll);
         } else if (rolled instanceof Rolled.Nothing) {
             // Rolled nothing — leave the mob vanilla.
         }
     }
 
-    private static void restoreTiered(Mob mob, UUID uuid, Rolled.Tiered t) {
-        List<Ability> abilities = resolveAbilities(t.abilityIds());
-        InfusedTracker.track(uuid, InfusedMob.tiered(t.tier(), abilities));
-        ModConfig.TierConfig tc = ModConfig.get().forTier(t.tier());
-        applyHealthMultiplier(mob, tc);
-        InfusedTracker.setTierNametag(mob, t.tier(), abilities);
+    private static void restoreTiered(Mob mob, UUID uuid, Rolled.Tiered tieredRoll) {
+        List<Ability> abilities = resolveAbilities(tieredRoll.abilityIds());
+        InfusedTracker.track(uuid, InfusedMob.tiered(tieredRoll.tier(), abilities));
+        ModConfig.TierConfig tierConfig = ModConfig.get().forTier(tieredRoll.tier());
+        applyHealthMultiplier(mob, tierConfig);
+        InfusedTracker.setTierNametag(mob, tieredRoll.tier(), abilities);
     }
 
-    private static void restoreSplit(Mob mob, UUID uuid, Rolled.Split s) {
-        List<Ability> abilities = resolveAbilities(s.abilityIds());
+    private static void restoreSplit(Mob mob, UUID uuid, Rolled.Split splitRoll) {
+        List<Ability> abilities = resolveAbilities(splitRoll.abilityIds());
         InfusedTracker.track(uuid, InfusedMob.split(abilities));
         // Re-apply the Cinder HP boost — otherwise a chunk reload
         // silently deflates the copy back to vanilla max health.
@@ -152,8 +156,8 @@ public final class MobTierManager {
         InfusedTracker.setSplitCopyNametag(mob, abilities);
     }
 
-    private static List<Ability> resolveAbilities(List<String> ids) {
-        return ids.stream()
+    private static List<Ability> resolveAbilities(List<String> abilityIds) {
+        return abilityIds.stream()
                 .map(AbilityRegistry::getById)
                 .filter(Objects::nonNull)
                 .toList();
@@ -163,10 +167,10 @@ public final class MobTierManager {
         return abilities.stream().map(Ability::id).toList();
     }
 
-    private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tc) {
+    private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tierConfig) {
         var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
         if (attribute == null) return;
-        attribute.setBaseValue(attribute.getBaseValue() * tc.healthMultiplier());
+        attribute.setBaseValue(attribute.getBaseValue() * tierConfig.healthMultiplier());
         mob.setHealth(mob.getMaxHealth());
     }
 

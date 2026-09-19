@@ -14,8 +14,11 @@ import java.util.List;
  *   <li>{@link Nothing} — the mob rolled nothing and must never roll again.</li>
  * </ul>
  * <p>
- * The polymorphic accessors are the single home of the wire rules: every
- * storage adapter (codec on 26.2, NBT on 1.21.1/1.20.1) encodes through them,
+ * The honest shape: callers discriminate by kind ({@code instanceof}
+ * pattern matching). Tier is available only on {@link Tiered} rolls —
+ * split-copy and empty rolls expose no Tier accessor, so no caller can
+ * observe a null Tier. Every storage adapter (codec on 26.2, NBT on
+ * 1.21.1/1.20.1) encodes through {@link #kind} plus the variant payload,
  * and {@link #decode} decodes from the same ({@code kind}, {@code tier},
  * {@code abilityIds}) shape. Decoding is lenient — unknown kinds, unknown or
  * missing tiers and missing ability lists all degrade to {@link Nothing} so a
@@ -26,12 +29,6 @@ public sealed interface Rolled {
     /** Stored discriminator: {@code "tiered"}, {@code "split"} or {@code "nothing"}. */
     String kind();
 
-    /** The Tier of a {@link Tiered} roll, otherwise null (split copies have no Tier). */
-    MobTier tier();
-
-    /** Stored tier name, or null unless {@link Tiered} (split entries persist no tier). */
-    String tierName();
-
     /** Stored ability ids of a {@link Tiered} or {@link Split} roll, else empty. */
     List<String> abilityIds();
 
@@ -41,7 +38,7 @@ public sealed interface Rolled {
             return "tiered";
         }
 
-        @Override
+        /** Stored tier name for persistence. */
         public String tierName() {
             return tier.name();
         }
@@ -52,32 +49,12 @@ public sealed interface Rolled {
         public String kind() {
             return "split";
         }
-
-        @Override
-        public MobTier tier() {
-            return null;
-        }
-
-        @Override
-        public String tierName() {
-            return null;
-        }
     }
 
     record Nothing() implements Rolled {
         @Override
         public String kind() {
             return "nothing";
-        }
-
-        @Override
-        public MobTier tier() {
-            return null;
-        }
-
-        @Override
-        public String tierName() {
-            return null;
         }
 
         @Override
@@ -98,7 +75,7 @@ public sealed interface Rolled {
      * @param abilityIds stored ability ids; null defaults to empty
      */
     static Rolled decode(String kind, String tierName, List<String> abilityIds) {
-        List<String> ids = abilityIds == null ? List.of() : List.copyOf(abilityIds);
+        List<String> copiedAbilityIds = abilityIds == null ? List.of() : List.copyOf(abilityIds);
         if ("tiered".equals(kind)) {
             MobTier tier = null;
             if (tierName != null && !tierName.isEmpty()) {
@@ -108,10 +85,10 @@ public sealed interface Rolled {
                     tier = null;
                 }
             }
-            return tier != null ? new Tiered(tier, ids) : new Nothing();
+            return tier != null ? new Tiered(tier, copiedAbilityIds) : new Nothing();
         }
         if ("split".equals(kind)) {
-            return new Split(ids);
+            return new Split(copiedAbilityIds);
         }
         return new Nothing();
     }

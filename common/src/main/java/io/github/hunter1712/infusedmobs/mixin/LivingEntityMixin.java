@@ -15,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * Mixes into {@link LivingEntity} to multiply XP drops based on the
  * mob's assigned {@link MobTier}.
+ * Rupture split copies have no Tier but carry full Cinder stats, so they
+ * grant the documented Cinder experience treatment through the same path.
  */
 @Mixin(LivingEntity.class)
 public class LivingEntityMixin {
@@ -23,12 +25,18 @@ public class LivingEntityMixin {
     private void onGetExperienceReward(CallbackInfoReturnable<Integer> cir) {
         if ((Object) this instanceof Mob mob) {
             MobTier tier = InfusedTracker.getTier(mob);
+            double multiplier;
             if (tier != null) {
                 // Use the config multiplier (not the enum constant) so pack
                 // makers' tier edits apply to XP too.
-                double multiplier = ModConfig.get().forTier(tier).xpMultiplier();
-                cir.setReturnValue((int) Math.round(cir.getReturnValue() * multiplier));
+                multiplier = ModConfig.get().forTier(tier).xpMultiplier();
+            } else if (InfusedTracker.isSplitCopy(mob)) {
+                // Split copies have no Tier but carry full Cinder stats.
+                multiplier = ModConfig.get().forTier(MobTier.CINDER).xpMultiplier();
+            } else {
+                return;
             }
+            cir.setReturnValue((int) Math.round(cir.getReturnValue() * multiplier));
         }
     }
 }

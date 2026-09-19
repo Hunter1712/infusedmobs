@@ -37,11 +37,11 @@ class EffectTokenTest {
 
         AbilityRegistry.registerAll();
 
-        // 7 HURT + 5 TICK + 2 DEATH, no duplicates, ids stable.
+        // 8 HURT (7 offensive + reactive Thorns) + 4 TICK + 2 DEATH, no duplicates, ids stable.
         assertEquals(14, AbilityRegistry.getAllAbilityIds().size());
-        assertEquals(7, AbilityRegistry.getAbilitiesByIds(AbilityRegistry.getAllAbilityIds()).stream()
+        assertEquals(8, AbilityRegistry.getAbilitiesByIds(AbilityRegistry.getAllAbilityIds()).stream()
                 .filter(a -> a.trigger() == TriggerType.HURT).count());
-        assertEquals(5, AbilityRegistry.getAbilitiesByIds(AbilityRegistry.getAllAbilityIds()).stream()
+        assertEquals(4, AbilityRegistry.getAbilitiesByIds(AbilityRegistry.getAllAbilityIds()).stream()
                 .filter(a -> a.trigger() == TriggerType.TICK).count());
         assertEquals(2, AbilityRegistry.getAbilitiesByIds(AbilityRegistry.getAllAbilityIds()).stream()
                 .filter(a -> a.trigger() == TriggerType.DEATH).count());

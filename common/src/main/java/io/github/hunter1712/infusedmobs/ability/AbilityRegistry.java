@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
 
@@ -28,14 +29,19 @@ public final class AbilityRegistry {
     // Registration
     // ========================================
 
+    /** Fraction of incoming damage reflected by the Thorns Ability. */
+    private static final float THORNS_REFLECT_FRACTION = 0.15f;
+
     /**
      * Populates the global ability pool. Must be called during mod init.
      * All abilities use vanilla effects — no custom status effects needed.
      * <p>
      * Effect lambdas read {@link ModConfig#get()} at fire time, so values
      * changed via {@code /infusedmobs reload} apply without a restart.
-     * HURT Abilities fire when an Infused Mob damages a player (melee or
-     * projectile); TICK refreshes every second; DEATH fires on death.
+     * HURT Abilities fire on damage: offensive HURT Abilities fire when an
+     * Infused Mob damages a player (melee or projectile); Thorns fires
+     * reactively when an Infused Mob is damaged by a player, reflecting a
+     * fraction back. TICK refreshes every second; DEATH fires on death.
      */
     public static void registerAll() {
         // ---- HURT abilities (fire when an Infused Mob hits a player — melee or projectile) ----
@@ -54,15 +60,14 @@ public final class AbilityRegistry {
 
         register("vitriol", "Vitriol", TriggerType.HURT, AbilityRegistry::damageArmor);
 
+        register("thorns", "Thorns", TriggerType.HURT, AbilityRegistry::reflectThorns);
+
         // ---- TICK abilities (passive, refresh every 1 second while alive) ----
 
         registerTickEffect("ward",    "Ward",    Platform.hooks().resistance());
         registerTickEffect("frenzy",   "Frenzy",  Platform.hooks().strength());
         registerTickEffect("wraith",   "Wraith",  Platform.hooks().speed());
         registerTickEffect("blight",   "Blight",  Platform.hooks().regeneration());
-
-        // Thorns: reactive TICK ability — no status effect, reflection handled in MobHurtTrigger
-        register("thorns", "Thorns", TriggerType.TICK, (mob, target, damage) -> {});
 
         // ---- DEATH abilities ----
 
@@ -120,8 +125,23 @@ public final class AbilityRegistry {
     private static void damageArmor(Mob mob, LivingEntity target, float damage) {
         if (!(target instanceof ServerPlayer player)) return;
         ServerLevel level = (ServerLevel) player.level();
-        int dmg = ModConfig.get().acidArmorDamage();
-        Platform.hooks().damageArmor(player, level, dmg);
+        int armorDamage = ModConfig.get().acidArmorDamage();
+        Platform.hooks().damageArmor(player, level, armorDamage);
+    }
+
+    /**
+     * Reflects a fraction of incoming damage back at the attacker.
+     * Fired reactively when an Infused Mob is damaged by a player;
+     * reflection damage uses {@code THORNS} type so it never re-triggers
+     * Abilities. Called through the Ability effect so the TriggerType
+     * listing stays honest — no cross-trigger side-channel.
+     */
+    private static void reflectThorns(Mob mob, LivingEntity target, float damage) {
+        if (!(target instanceof Player player)) return;
+        float reflected = damage * THORNS_REFLECT_FRACTION;
+        if (reflected > 0.0f && mob.level() instanceof ServerLevel level) {
+            Platform.hooks().reflectThorns(player, mob, reflected, level);
+        }
     }
 
     /**

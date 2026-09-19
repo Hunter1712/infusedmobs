@@ -70,8 +70,18 @@ public final class InfusedTracker {
     }
 
     private static MobTier extractTier(InfusedMob infused) {
-        if (infused instanceof InfusedMob.Tiered t) return t.tier();
+        if (infused instanceof InfusedMob.Tiered tiered) return tiered.tier();
         return null; // SplitCopy and future variants have no tier
+    }
+
+    /** Returns true if this UUID is tracked as a Rupture split copy (Cinder stats, no Tier). */
+    public static boolean isSplitCopy(UUID id) {
+        return SHARED.find(id) instanceof InfusedMob.SplitCopy;
+    }
+
+    /** Returns true if this mob is tracked as a Rupture split copy (Cinder stats, no Tier). */
+    public static boolean isSplitCopy(Mob mob) {
+        return isSplitCopy(mob.getUUID());
     }
 
     /** Returns abilities assigned to this mob matching the given trigger type. */
@@ -136,10 +146,10 @@ public final class InfusedTracker {
     }
 
     private static void applyNametagForInfused(Mob mob, InfusedMob infused) {
-        if (infused instanceof InfusedMob.Tiered t) {
-            setTierNametag(mob, t.tier(), t.abilities());
-        } else if (infused instanceof InfusedMob.SplitCopy s) {
-            setSplitCopyNametag(mob, s.abilities());
+        if (infused instanceof InfusedMob.Tiered tiered) {
+            setTierNametag(mob, tiered.tier(), tiered.abilities());
+        } else if (infused instanceof InfusedMob.SplitCopy splitCopy) {
+            setSplitCopyNametag(mob, splitCopy.abilities());
         }
     }
 

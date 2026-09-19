@@ -16,13 +16,13 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **🟡 Shade** | 20% | 2× | 2× | 2 (any type) |
 | **🔴 Doom** | 10% | 4× | 4× | 3 (any type) |
 
-> **~40% of hostile mobs remain vanilla at defaults** — tiers roll as sequential independent checks (Cinder, then Shade, then Doom), so vanilla is `(1-0.4)×(1-0.2)×(1-0.1) ≈ 43%`. Infused mobs are common but effects are weak (configurable).
+> **~30% of hostile mobs remain vanilla at defaults** — tiers roll as a single uniform decision (Doom, then Shade, then Cinder intervals), so effective shares equal the configured chances (40% Cinder / 20% Shade / 10% Doom). Infused mobs are common but effects are weak (configurable).
 
 ---
 
 ## ⚔️ Ability Types
 
-### HURT (fire on melee or projectile hit against a player, blocked by shields on 1.21.1/26.2)
+### HURT (offensive: fire on melee or projectile hit against a player, blocked by shields on 1.21.1/26.2; reactive: Thorns fires when the mob is damaged by a player)
 
 | Ability | Effect | Duration |
 |---------|--------|----------|
@@ -33,6 +33,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **Siphon** | Heal 100% of damage dealt | — |
 | **Vitriol** | 4 durability to all armor | — |
 | **Hex** | Weakness I | 3s |
+| **Thorns** | Reflects 15% incoming damage back at the attacker | — |
 
 > **Shield blocks negate all HURT abilities on 1.21.1 and 26.2.** On 1.20.1 the legacy damage event reports pre-mitigation amounts with no shield-block flag, so a fully-blocked hit still fires HURT abilities there. Projectiles (arrows, fire charges, etc.) fired by infused mobs also trigger their HURT abilities on hit.
 
@@ -46,7 +47,6 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 | **Frenzy** | Strength I | 3s |
 | **Wraith** | Speed I | 3s |
 | **Blight** | Regeneration I | 3s |
-| **Thorns** | Reflects 15% melee damage | — |
 
 ---
 
@@ -54,7 +54,7 @@ Abilities are drawn from a **unified pool** (all trigger types mixed together). 
 
 | Ability | Effect |
 |---------|--------|
-| **Rupture** | Splits into **2 copies with Cinder stats** at 60% health (grey tag, no Tier — each gets 1 random ability, any except Rupture itself, preventing recursion) |
+| **Rupture** | Splits into **2 copies with full Cinder health and XP** at 60% health (grey tag, no Tier — each gets 1 random ability, any except Rupture itself, preventing recursion) |
 | **Combust** | Area damage + explosion sound at death (configurable power, default 4.0 — TNT = 4.0) |
 
 ---
