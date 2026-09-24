@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.8.0] - 2026-09-24
 
 ### Added
+- **Minecraft 1.20.1 and 1.21.1 support** — one repo now ships all three versions (`2.8.0+1.20.1` / `+1.21.1` / `+26.2`) behind per-version shims; gameplay is identical except shield-block negation, which 1.20.1's legacy damage event cannot report (see the shield note under Changed).
 - **Mob Blacklist** — `mobBlacklist` config field (entity type ids, e.g. `minecraft:spider`) excludes types from natural Tier rolls; explicit `/infusedmobs summon` bypasses it as operator intent. Managed at runtime via `/infusedmobs mob add|remove <entity>` and `/infusedmobs mob list` (tab-completes hostile types). Applies on `/infusedmobs reload`, no restart needed.
 
 ### Changed
