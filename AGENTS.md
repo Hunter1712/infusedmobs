@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues (hunter1712/infusedmobs) via `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live as local Markdown files under `issues/`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
