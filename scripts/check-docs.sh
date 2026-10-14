@@ -23,4 +23,36 @@ if ! ls "$ROOT/.github/workflows/"*.yml >/dev/null 2>&1 \
   fail=1
 fi
 
+# 3. Javadoc link drift: every {@link Name} whose target starts with an
+#    uppercase simple name must resolve to a declared repo type, an import
+#    of the linking file, or java.lang — catches seams deleted without
+#    updating doc references (e.g. RollStore, TierRoll). Lowercase targets
+#    are package-qualified externals and {@code #member} refs are skipped.
+linttmp="$(mktemp -d)"
+trap 'rm -rf "$linttmp"' EXIT
+find "$ROOT" -path '*/src/*/java/*' -name '*.java' -print \
+  | grep -v '/build/' > "$linttmp/files"
+grep -rhoE '(class|interface|enum|record) [A-Za-z0-9_]+' \
+  $(cat "$linttmp/files") 2>/dev/null \
+  | sed -E 's/.*(class|interface|enum|record) //' \
+  | sort -u > "$linttmp/declared"
+printf '%s\n' String Object Class Override > "$linttmp/javalang"
+while IFS= read -r javafile; do
+  grep -oE '^import [^;]+;' "$javafile" \
+    | sed -E 's/.*\.//; s/;//' | sort -u > "$linttmp/imports"
+  grep -o '{@link [^}]*}' "$javafile" \
+    | sed -E 's/^\{@link //; s/\}$//' > "$linttmp/links" 2>/dev/null || continue
+  while IFS= read -r target; do
+    case "$target" in \#* | [a-z]*) continue;; esac
+    head="$(printf '%s' "$target" | sed -E 's/[ #(</].*$//; s/\..*$//')"
+    [ -z "$head" ] && continue
+    if ! grep -qx "$head" "$linttmp/declared" \
+      && ! grep -qx "$head" "$linttmp/imports" \
+      && ! grep -qx "$head" "$linttmp/javalang"; then
+      echo "check-docs: $javafile links unresolvable type '$target'" >&2
+      fail=1
+    fi
+  done < "$linttmp/links"
+done < "$linttmp/files"
+
 exit $fail
