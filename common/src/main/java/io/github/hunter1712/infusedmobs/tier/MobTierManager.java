@@ -13,6 +13,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,7 +87,7 @@ public final class MobTierManager {
         MobTier tier = decideTier(mob.getRandom().nextDouble(), config);
         if (tier != null) {
             ModConfig.TierConfig tierConfig = config.forTier(tier);
-            List<Ability> abilities = AbilityRegistry.getRandomAbilities(tierConfig.abilityCount());
+            List<Ability> abilities = drawTierAbilities(tier, tierConfig.abilityCount());
             Platform.hooks().storeRoll(serverLevel, uuid, trackTiered(mob, tier, abilities, config));
             return;
         }
@@ -291,6 +293,89 @@ public final class MobTierManager {
     /** Returns abilities assigned to this mob matching the given trigger type. */
     public static List<Ability> getAbilitiesByTrigger(Mob mob, TriggerType trigger) {
         return AbilityRegistry.forTrigger(liveAbilities(mob.getUUID()), trigger);
+    }
+
+    /**
+     * Draws a Tier's natural-roll abilities through the Ability pool:
+     * Cinder draws with Bequest excluded (a single-Ability support would
+     * fizzle — there is nothing to migrate), Shade and Doom draw the full
+     * pool. Tier knowledge lives on this side of the Ability pool →
+     * Infusion seam, never inside the pool itself.
+     */
+    public static List<Ability> drawTierAbilities(MobTier tier, int count) {
+        return tier == MobTier.CINDER
+                ? AbilityRegistry.getRandomAbilities(count, AbilityRegistry.BEQUEST_ID)
+                : AbilityRegistry.getRandomAbilities(count);
+    }
+
+    /**
+     * Stored ability ids of a Tiered roll, else empty. Split copies and
+     * untracked mobs hold no Tier, so they never source or receive Bequest
+     * migration — the glossary's Infused Mob is Tier plus abilities.
+     */
+    public static List<String> abilityIdsOf(Mob mob) {
+        Rolled rolled = SHARED.get(mob.getUUID());
+        return rolled instanceof Rolled.Tiered tiered ? tiered.abilityIds() : List.of();
+    }
+
+    /** One Bequest inheritance: heir at {@code heirIndex} gains {@code abilityId}. */
+    public record Grant(int heirIndex, String abilityId) {}
+
+    /**
+     * Pure Bequest pairing behind the death effect: source is the dead mob's
+     * own ids in rolled order minus Bequest itself (support is consumed, never
+     * inherited — the Rupture copy-draw exclusion in migration form, so a
+     * sole-Bequest death fizzles). Each transferable id goes to the nearest
+     * heir (distance order is the caller's list order) that lacks it, sits
+     * under {@code poolCap}, and is unused this death; collisions slide to
+     * the next qualifier, and either-side excess fizzles. Plain ids and
+     * index arithmetic so unit tests pin the rule without a mob.
+     */
+    public static List<Grant> planBequest(List<String> deadIds, List<Set<String>> heirIds, int poolCap) {
+        List<Grant> grants = new ArrayList<>();
+        Set<Integer> used = new HashSet<>();
+        for (String id : deadIds) {
+            if (id.equals(AbilityRegistry.BEQUEST_ID)) continue;
+            for (int i = 0; i < heirIds.size(); i++) {
+                if (used.contains(i)) continue;
+                if (!canAccept(heirIds.get(i), id, poolCap)) continue;
+                grants.add(new Grant(i, id));
+                used.add(i);
+                break;
+            }
+        }
+        return grants;
+    }
+
+    /** True when an id set can take one more Ability: no duplicate, under pool cap. */
+    private static boolean canAccept(java.util.Collection<String> ids, String id, int poolCap) {
+        return !ids.contains(id) && ids.size() < poolCap;
+    }
+
+    /**
+     * Grants one migrated Ability to a Tiered heir: appends the id, persists
+     * the overflowed set by UUID, and refreshes the tier-coloured nametag.
+     * Stats are untouched — inheritance adds abilities, never re-multiplies.
+     * Defensive duplicate/cap re-check: the pairing plan already ensures
+     * both, this guards future callers.
+     *
+     * @return true when the heir grew
+     */
+    public static boolean grantAbility(Mob heir, String abilityId, int poolCap) {
+        Rolled current = SHARED.get(heir.getUUID());
+        if (!(current instanceof Rolled.Tiered tiered)) return false;
+        if (!canAccept(tiered.abilityIds(), abilityId, poolCap)) return false;
+        List<String> ids = new ArrayList<>(tiered.abilityIds());
+        ids.add(abilityId);
+        Rolled.Tiered updated = new Rolled.Tiered(tiered.tier(), ids);
+        SHARED.put(heir.getUUID(), updated);
+        ModConfig.Instance config = ModConfig.get();
+        if (heir.level() instanceof ServerLevel serverLevel) {
+            Platform.hooks().storeRoll(serverLevel, heir.getUUID(), updated);
+        }
+        setNametag(heir, nametagText(updated, abilityNames(AbilityRegistry.getAbilitiesByIds(ids)),
+                entityTypeName(heir)), config.showNametags());
+        return true;
     }
 
     /**

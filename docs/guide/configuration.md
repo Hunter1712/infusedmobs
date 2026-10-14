@@ -51,12 +51,12 @@ Each of `cinder`, `shade` and `doom` takes the same four fields.
 | Field | Type | Default (Cinder / Shade / Doom) | Valid range |
 |-------|------|-------------------------------|-------------|
 | `spawnChance` | number | `0.4` / `0.2` / `0.1` | `(0, 1]` |
-| `abilityCount` | integer | `1` / `2` / `3` | `1 … 14` (the pool size) |
+| `abilityCount` | integer | `1` / `2` / `3` | `1 … 15` (the pool size) |
 | `healthMultiplier` | number | `1.5` / `2.0` / `4.0` | `≥ 1.0` |
 | `xpMultiplier` | number | `1.5` / `2.0` / `4.0` | `≥ 1.0` |
 
 - `spawnChance` is the tier's **effective** share of hostile spawns (the roll is a single uniform interval — see [tiers.md](tiers.md#how-the-roll-works)). The three don't have to sum to 1; the remainder rolls vanilla.
-- `abilityCount` is capped at the live ability pool size (14). It controls how many abilities the tier draws; there is no per-tier ability selection.
+- `abilityCount` is capped at the live ability pool size (15). It controls how many abilities the tier draws; there is no per-tier ability selection except Cinder never drawing Bequest.
 - `healthMultiplier` scales the mob's max health; `xpMultiplier` scales its XP reward.
 
 ## Global settings
@@ -126,7 +126,7 @@ On load (at startup and on `/infusedmobs reload`) the config is **repaired rathe
 1. **Malformed JSON** (unparseable) → the file is rewritten with full defaults.
 2. **Valid JSON** → every out-of-range value is **clamped to its nearest bound**, with one warning per fix in the log. For example:
    - `spawnChance` above `1` clamps to `1.0`; zero, negative or `NaN` falls back to that tier's default chance (the open lower bound has no nearest value).
-   - `abilityCount` clamps into `1 … 14`.
+   - `abilityCount` clamps into `1 … 15`.
    - multipliers below `1.0` clamp to `1.0`.
    - `combustExplosionPower` clamps into `0.5 … 10`.
    - malformed blacklist ids are dropped.

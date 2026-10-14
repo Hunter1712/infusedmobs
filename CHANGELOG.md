@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-10-14
+
+### Added
+- **Bequest DEATH ability** — an Infused Mob with Bequest passes its other abilities to nearby living Tiered allies on death (one per heir, nearest first, duplicates slide to the next ally lacking them). Heirs keep their Tier and may overflow its ability count up to the pool cap (15); Rupture split copies neither give nor receive, Cinder never draws Bequest naturally, and `/infusedmobs summon` accepts it for any tier as operator intent.
+
 ## [2.8.0] - 2026-09-24
 
 ### Added

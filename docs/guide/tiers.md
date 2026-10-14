@@ -45,7 +45,7 @@ The Tier is decided when the mob first enters the world, then **persisted by the
 
 - **Health** is set to `base max health × health multiplier`, and the mob is fully healed.
 - **XP** is the mob's normal reward multiplied by the tier's XP multiplier, rounded to the nearest whole point. The multiplier is read from the config, so changing a tier's XP value affects future kills.
-- **Abilities** are drawn at random from the shared pool, with no duplicates within one mob (see [abilities.md](abilities.md)).
+- **Abilities** are drawn at random from the shared pool, with no duplicates within one mob (see [abilities.md](abilities.md)). Cinder never draws Bequest; heirs of a Bequest death may overflow their tier's `abilityCount` up to the pool cap (see [abilities.md](abilities.md#bequest)).
 
 Persistence is stored per world in `data/infusedmobs_tiers.dat`. Corrupted or unknown saved data degrades to "vanilla" rather than failing the world load. Tracking is cleared when the mob dies or despawns.
 

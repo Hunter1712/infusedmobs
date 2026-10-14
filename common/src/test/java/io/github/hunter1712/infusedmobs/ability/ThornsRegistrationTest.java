@@ -41,14 +41,15 @@ class ThornsRegistrationTest {
     }
 
     @Test
-    void poolStillMixesAllTriggersAtFourteen() {
+    void poolStillMixesAllTriggersAtFifteen() {
         Platform.setProvider(new FakePlatform());
         AbilityRegistry.registerAll();
 
-        assertEquals(14, AbilityRegistry.getAllAbilityIds().size(),
+        assertEquals(15, AbilityRegistry.getAllAbilityIds().size(),
                 "ability registration diverged through the seam");
         assertTrue(AbilityRegistry.getById("bane").trigger() == TriggerType.HURT);
         assertTrue(AbilityRegistry.getById("ward").trigger() == TriggerType.TICK);
         assertTrue(AbilityRegistry.getById("rupture").trigger() == TriggerType.DEATH);
+        assertTrue(AbilityRegistry.getById("bequest").trigger() == TriggerType.DEATH);
     }
 }

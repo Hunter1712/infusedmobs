@@ -1,5 +1,6 @@
 package io.github.hunter1712.infusedmobs.ability;
 
+import io.github.hunter1712.infusedmobs.ability.effect.BequestEffect;
 import io.github.hunter1712.infusedmobs.ability.effect.CombustEffect;
 import io.github.hunter1712.infusedmobs.ability.effect.SplitEffect;
 import io.github.hunter1712.infusedmobs.config.ModConfig;
@@ -44,6 +45,9 @@ public final class AbilityRegistry {
 
     /** The Rupture Ability id, excluded from split-copy draws so copies never split further. */
     public static final String RUPTURE_ID = "rupture";
+
+    /** The Bequest Ability id, excluded from Cinder and split-copy draws so support always has threat to migrate. */
+    public static final String BEQUEST_ID = "bequest";
 
     /** Fraction of incoming damage reflected by the Thorns Ability. */
     private static final float THORNS_REFLECT_FRACTION = 0.15f;
@@ -90,6 +94,8 @@ public final class AbilityRegistry {
         register(RUPTURE_ID, "Rupture", TriggerType.DEATH, (mob, target, damage) -> SplitEffect.apply(mob));
 
         register("combust", "Combust", TriggerType.DEATH, (mob, target, damage) -> CombustEffect.apply(mob));
+
+        register(BEQUEST_ID, "Bequest", TriggerType.DEATH, (mob, target, damage) -> BequestEffect.apply(mob));
     }
 
     /**
@@ -169,8 +175,8 @@ public final class AbilityRegistry {
      * ability pool (all trigger types mixed together).
      * <p>
      * IDs in {@code excludedIds} are removed from the pool before drawing —
-     * e.g. Rupture split copies draw with {@link #RUPTURE_ID} excluded so a
-     * copy can never split further; any other ability (including Combust)
+     * e.g. Rupture split copies draw with {@link #RUPTURE_ID} (and
+     * {@link #BEQUEST_ID}) excluded so a copy can never split further; any other ability (including Combust)
      * is still available. There is no retry loop; the draw is filtered at
      * the pool level.
      *
@@ -192,13 +198,15 @@ public final class AbilityRegistry {
 
     /**
      * Draws the single random Ability for a Rupture split copy: one draw
-     * with {@link #RUPTURE_ID} excluded, so a copy can never split further
-     * while every other Ability (including Combust) stays available.
+     * with {@link #RUPTURE_ID} and {@link #BEQUEST_ID} excluded, so a copy
+     * can never split further while every other Ability (including Combust)
+     * stays available. Bequest is excluded because copies can neither give
+     * nor receive migration — drawing it would be dead weight.
      *
      * @return one-element or empty unmodifiable list
      */
     public static List<Ability> getSplitCopyAbilities() {
-        return getRandomAbilities(1, RUPTURE_ID);
+        return getRandomAbilities(1, RUPTURE_ID, BEQUEST_ID);
     }
 
     /**

@@ -110,7 +110,7 @@ class VersionShimParityTest {
                 "effect handles must stay distinct through the seam");
 
         AbilityRegistry.registerAll();
-        assertEquals(14, AbilityRegistry.getAllAbilityIds().size(),
+        assertEquals(15, AbilityRegistry.getAllAbilityIds().size(),
                 "ability registration diverged through the seam");
         assertEquals(1, AbilityRegistry.getAbilitiesByIds(List.of("bane")).size(),
                 "HURT lookup diverged through the seam");

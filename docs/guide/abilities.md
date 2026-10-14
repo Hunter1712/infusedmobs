@@ -2,7 +2,7 @@
 
 An **Ability** is a named power an Infused Mob can use. Every ability lives in one shared pool, and a mob draws its abilities from that pool based only on its Tier's ability count — there are no per-tier restricted lists. A Cinder mob might get a poison hit, a passive speed buff, or a death explosion; a Doom mob draws three from the same pool.
 
-There are **14 abilities** across three **TriggerTypes**:
+There are **15 abilities** across three **TriggerTypes**:
 
 | TriggerType | Fires when… |
 |---------|-------------|
@@ -61,6 +61,7 @@ Duration and amplifier are configurable (`tickEffectDuration`, `tickEffectAmplif
 |----|---------|--------|
 | `rupture` | **Rupture** | Splits into 2 copies on death |
 | `combust` | **Combust** | Explodes on death |
+| `bequest` | **Bequest** | Passes its other abilities to nearby infused allies on death |
 
 ### Rupture
 
@@ -80,14 +81,25 @@ When a mob with Combust dies it detonates around itself:
 - It damages **any nearby living entity** except the dying mob itself — this can include the player who killed it and other mobs.
 - It plays an **explosion sound** but causes **no particles and no block damage**. It is not a real explosion.
 
+### Bequest
+
+When a mob with Bequest dies it passes its **other** abilities to nearby infused allies:
+
+- Source is the dead mob's own set **minus Bequest itself** — support is consumed, never inherited, so a sole-Bequest death fizzles.
+- Recipients are the nearest **living Tiered allies** within **8 blocks**, one Ability each, paired in rolled order; duplicates slide to the next ally lacking them, and either-side excess fizzles.
+- Rupture split copies neither give nor receive (they hold no Tier); Cinder mobs never draw Bequest naturally, though `/infusedmobs summon` allows it as operator intent.
+- Heirs keep their Tier and may overflow its `abilityCount` up to the pool cap; the nametag refreshes and the set persists exactly like a normal roll.
+- Gating is unchanged: blacklisted dimensions and gamerule-off worlds roll nothing to bequeath, and summon refuses there as usual.
+
 ## The ability pool
 
 | | |
 |---|---|
-| Total abilities | 14 (8 HURT, 4 TICK, 2 DEATH) |
+| Total abilities | 15 (8 HURT, 4 TICK, 3 DEATH) |
 | Draw | Random, **no duplicates within a mob**, from the whole pool |
 | Count | Set by the tier's `abilityCount` (1 / 2 / 3 by default) |
-| Cap | The configured count is clamped to the live pool size (14) |
+| Cap | The configured count is clamped to the live pool size (15) |
+| Cinder | Never draws `bequest` (a single-Ability support would have nothing to migrate) |
 
 Because the pool mixes all three trigger types, a mob's abilities can be a mix — for example a Doom mob could have one HURT ability, one TICK buff and Combust. A Rupture copy draws from the same pool but always with `rupture` removed, and its single draw is filtered the same way.
 

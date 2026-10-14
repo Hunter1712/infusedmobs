@@ -480,9 +480,10 @@ public final class InfusedMobsCommand {
         mob.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
 
         // Use specific abilities if provided, otherwise draw random ones per tier config
+        // (Cinder random draws exclude Bequest — explicit ids still allow it as operator intent)
         List<Ability> finalAbilities = (abilities != null && !abilities.isEmpty())
                 ? abilities
-                : AbilityRegistry.getRandomAbilities(
+                : MobTierManager.drawTierAbilities(tier,
                         ModConfig.get().forTier(tier).abilityCount());
         if (!MobTierManager.assignSpecificTier(mob, tier, finalAbilities)) {
             // Single-sourced wording: the second gate reuses the already
