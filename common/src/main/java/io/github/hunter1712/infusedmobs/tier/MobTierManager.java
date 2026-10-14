@@ -166,7 +166,16 @@ public final class MobTierManager {
     /** True when the mob's entity type is on the config Mob Blacklist (unregistered types never match). */
     private static boolean isMobBlacklisted(Mob mob) {
         String key = Platform.hooks().entityKey(mob.getType());
-        return key != null && ModConfig.get().isMobBlacklisted(key);
+        return isMobBlacklisted(key, ModConfig.get());
+    }
+
+    /**
+     * Pure Mob Blacklist decision behind {@link #isMobBlacklisted(Mob)}: the
+     * entity-key lookup and config read stay in the caller, so unit tests pin
+     * the match matrix without Minecraft bootstrap.
+     */
+    static boolean isMobBlacklisted(String entityKey, ModConfig.Instance config) {
+        return entityKey != null && config.isMobBlacklisted(entityKey);
     }
 
     private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tierConfig) {

@@ -370,4 +370,53 @@ class AbilityRegistryTest {
 
         assertEquals(List.of("rupture"), applied);
     }
+
+    // ========================================
+    // fireForTrigger — single dispatch per TriggerType
+    // ========================================
+
+    @Test
+    void fireForTriggerTickAppliesTickOnly() {
+        List<String> applied = new ArrayList<>();
+        Ability ward = counting("ward", TriggerType.TICK, applied);
+        Ability bane = counting("bane", TriggerType.HURT, applied);
+
+        AbilityRegistry.fireForTrigger(List.of(ward, bane), TriggerType.TICK, null, null, 0f);
+
+        assertEquals(List.of("ward"), applied);
+    }
+
+    @Test
+    void fireForTriggerDeathAppliesDeathOnly() {
+        List<String> applied = new ArrayList<>();
+        Ability rupture = counting("rupture", TriggerType.DEATH, applied);
+        Ability bane = counting("bane", TriggerType.HURT, applied);
+
+        AbilityRegistry.fireForTrigger(List.of(rupture, bane), TriggerType.DEATH, null, null, 0f);
+
+        assertEquals(List.of("rupture"), applied);
+    }
+
+    @Test
+    void fireForTriggerHurtPassesThroughWithoutPlayerCheck() {
+        // Player-only gating lives in MobHurtTrigger, not behind this seam:
+        // the dispatch passes target and damage straight through.
+        List<Float> seen = new ArrayList<>();
+        Ability bane = new Ability("bane", "bane", TriggerType.HURT,
+                (mob, target, damage) -> seen.add(damage));
+
+        AbilityRegistry.fireForTrigger(List.of(bane), TriggerType.HURT, null, null, 2.5f);
+
+        assertEquals(List.of(2.5f), seen);
+    }
+
+    @Test
+    void fireForTriggerEmptyStaysEmpty() {
+        assertDoesNotThrow(() ->
+                AbilityRegistry.fireForTrigger(List.of(), TriggerType.TICK, null, null, 0f));
+        assertDoesNotThrow(() ->
+                AbilityRegistry.fireForTrigger(List.of(), TriggerType.DEATH, null, null, 0f));
+        assertDoesNotThrow(() ->
+                AbilityRegistry.fireForTrigger(List.of(), TriggerType.HURT, null, null, 0f));
+    }
 }

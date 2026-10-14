@@ -466,8 +466,11 @@ public final class InfusedMobsCommand {
 
         // Refuse to summon where the mod is inactive — blacklist and
         // gamerule are both authoritative, with a distinct message each.
+        // The status is computed once and reused by the second gate below,
+        // so both branches report the same reason.
+        var gateStatus = InfusionGate.status(level);
         var refusal = InfusionGate.refusalMessage(
-                InfusionGate.status(level), Platform.hooks().dimensionId(level));
+                gateStatus, Platform.hooks().dimensionId(level));
         if (refusal.isPresent()) {
             source.sendFailure(Component.literal(refusal.get()));
             return 0;
@@ -488,7 +491,14 @@ public final class InfusedMobsCommand {
                 : AbilityRegistry.getRandomAbilities(
                         ModConfig.get().forTier(tier).abilityCount());
         if (!MobTierManager.assignSpecificTier(mob, tier, finalAbilities)) {
-            source.sendFailure(Component.literal("§cCannot summon here: the mod is inactive in this dimension."));
+            // Single-sourced wording: the second gate reuses the already
+            // computed status through the Gating seam instead of its own
+            // generic message, so World Blacklist vs Gamerule Gate wording
+            // cannot drift. Generic fallback is defensive only.
+            String gateRefusal = InfusionGate.refusalMessage(
+                    gateStatus, Platform.hooks().dimensionId(level))
+                    .orElse("§cCannot summon here: the mod is inactive in this dimension.");
+            source.sendFailure(Component.literal(gateRefusal));
             return 0;
         }
         if (!level.addFreshEntity(mob)) {

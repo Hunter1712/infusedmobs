@@ -58,13 +58,7 @@ public final class ModConfig {
         if (Files.exists(configPath)) {
             try {
                 String json = Files.readString(configPath);
-                Instance parsed;
-                try {
-                    parsed = GSON.fromJson(json, Instance.class);
-                } catch (JsonSyntaxException malformed) {
-                    LOGGER.warn("Config file {} is malformed JSON — rewriting with defaults.", configPath);
-                    parsed = null;
-                }
+                Instance parsed = parseOrNull(json);
                 if (parsed != null) {
                     Instance fixed = parsed.clamped(abilityPoolSize).backfillFromDefaults();
                     instance = fixed;
@@ -73,7 +67,7 @@ public final class ModConfig {
                     }
                     return;
                 }
-                LOGGER.warn("Config file {} is invalid — rewriting with defaults.", configPath);
+                LOGGER.warn("Config file {} is malformed or invalid — rewriting with defaults.", configPath);
             } catch (IOException e) {
                 LOGGER.warn("Could not read config file {} — rewriting with defaults.", configPath, e);
             }
@@ -81,6 +75,26 @@ public final class ModConfig {
 
         instance = Instance.defaults();
         save();
+    }
+
+    /**
+     * Parses a config JSON document without touching disk: raw Gson parse,
+     * no clamping or backfill. Returns null for null input, malformed JSON,
+     * or a {@code null} literal — the corrupt-file path behind
+     * {@link #load(int)}, exercised without a disk harness.
+     */
+    static Instance parseOrNull(String json) {
+        if (json == null) return null;
+        try {
+            return GSON.fromJson(json, Instance.class);
+        } catch (JsonSyntaxException malformed) {
+            return null;
+        }
+    }
+
+    /** Serialises the given instance for round-trip tests without touching disk. */
+    static String toJson(Instance value) {
+        return GSON.toJson(value);
     }
 
     /** Returns the current config instance. Never null after {@link #load(int)}. */

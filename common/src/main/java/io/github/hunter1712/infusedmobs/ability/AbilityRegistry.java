@@ -246,14 +246,42 @@ public final class AbilityRegistry {
     // ========================================
 
     /**
+     * Fires the abilities in {@code abilities} matching the given trigger.
+     * Single dispatch behind the per-direction fire methods below, so each
+     * TriggerType direction is one fact behind this seam instead of a
+     * query-plus-fire pair recomposed by every trigger. HURT fires the
+     * offensive partition (minus reactive Thorns) against players only;
+     * TICK fires on the mob itself; DEATH passes the killer (or null)
+     * through. Firing on an empty match is a no-op.
+     */
+    public static void fireForTrigger(List<Ability> abilities, TriggerType trigger,
+                                      Mob mob, LivingEntity target, float damage) {
+        switch (trigger) {
+            case HURT -> {
+                for (Ability ability : offensiveHurtAbilities(abilities)) {
+                    ability.effect().apply(mob, target, damage);
+                }
+            }
+            case TICK -> {
+                for (Ability ability : forTrigger(abilities, TriggerType.TICK)) {
+                    ability.effect().apply(mob, null, 0f);
+                }
+            }
+            case DEATH -> {
+                for (Ability ability : forTrigger(abilities, TriggerType.DEATH)) {
+                    ability.effect().apply(mob, target, 0f);
+                }
+            }
+        }
+    }
+
+    /**
      * Fires the offensive HURT abilities in {@code abilities} (HURT minus
      * reactive Thorns) at the target, passing the damage amount through.
      * Firing on an empty list is a no-op, so callers never branch on it.
      */
     public static void fireOffensiveHurt(List<Ability> abilities, Mob mob, Player target, float damage) {
-        for (Ability ability : offensiveHurtAbilities(abilities)) {
-            ability.effect().apply(mob, target, damage);
-        }
+        fireForTrigger(abilities, TriggerType.HURT, mob, target, damage);
     }
 
     /**
@@ -273,9 +301,7 @@ public final class AbilityRegistry {
      * Firing on an empty list is a no-op, so callers never branch on it.
      */
     public static void fireTick(List<Ability> abilities, Mob mob) {
-        for (Ability ability : forTrigger(abilities, TriggerType.TICK)) {
-            ability.effect().apply(mob, null, 0f);
-        }
+        fireForTrigger(abilities, TriggerType.TICK, mob, null, 0f);
     }
 
     /**
@@ -283,9 +309,7 @@ public final class AbilityRegistry {
      * (or null) through. Firing on an empty list is a no-op.
      */
     public static void fireDeath(List<Ability> abilities, Mob mob, LivingEntity killer) {
-        for (Ability ability : forTrigger(abilities, TriggerType.DEATH)) {
-            ability.effect().apply(mob, killer, 0f);
-        }
+        fireForTrigger(abilities, TriggerType.DEATH, mob, killer, 0f);
     }
 
     /**
