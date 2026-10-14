@@ -231,6 +231,15 @@ public final class AbilityRegistry {
     }
 
     /**
+     * Returns true when the given Ability ids include at least one TICK
+     * Ability. Behind the Ability seam so the live-roll scan never filters
+     * triggers itself — unknown ids resolve to nothing.
+     */
+    public static boolean hasTickAbilities(List<String> ids) {
+        return !forTrigger(getAbilitiesByIds(ids), TriggerType.TICK).isEmpty();
+    }
+
+    /**
      * Returns all registered ability IDs (e.g., "bane", "thorns", "rupture").
      * Useful for command tab-completions.
      */

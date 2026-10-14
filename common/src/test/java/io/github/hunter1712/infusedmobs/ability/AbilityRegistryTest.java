@@ -269,4 +269,26 @@ class AbilityRegistryTest {
     void offensiveHurtEmptyStaysEmpty() {
         assertTrue(AbilityRegistry.offensiveHurtAbilities(List.of()).isEmpty());
     }
+
+    // ========================================
+    // Tick-capability probe (live-roll scan seam)
+    // ========================================
+
+    @Test
+    void hasTickAbilitiesTrueOnlyWhenTickPresent() {
+        register("bane", TriggerType.HURT);
+        register("wraith", TriggerType.TICK);
+
+        assertTrue(AbilityRegistry.hasTickAbilities(List.of("bane", "wraith")));
+        assertFalse(AbilityRegistry.hasTickAbilities(List.of("bane")));
+        assertFalse(AbilityRegistry.hasTickAbilities(List.of()));
+        assertFalse(AbilityRegistry.hasTickAbilities(List.of("nope")));
+    }
+
+    @Test
+    void thornsAloneIsNeverTickCapable() {
+        register("thorns", TriggerType.HURT);
+
+        assertFalse(AbilityRegistry.hasTickAbilities(List.of("thorns")));
+    }
 }

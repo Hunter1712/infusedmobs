@@ -1,7 +1,6 @@
 package io.github.hunter1712.infusedmobs.tier;
 
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
-import io.github.hunter1712.infusedmobs.ability.TriggerType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
  * persistence can never disagree. Tests instantiate a fresh registry per
  * case with no manual reset.
  */
-public final class InfusedRegistry {
+final class InfusedRegistry {
 
     private final Map<UUID, Rolled> tracked = new HashMap<>();
 
@@ -58,12 +57,11 @@ public final class InfusedRegistry {
      * <p>
      * Returns a snapshot so concurrent removal during iteration (mob death
      * mid-scan) cannot throw a {@code ConcurrentModificationException}.
+     * Tick knowledge lives behind the Ability seam — this module only asks.
      */
     public Set<UUID> tickMobUUIDs() {
         return tracked.entrySet().stream()
-                .filter(e -> !AbilityRegistry.forTrigger(
-                        AbilityRegistry.getAbilitiesByIds(e.getValue().abilityIds()),
-                        TriggerType.TICK).isEmpty())
+                .filter(e -> AbilityRegistry.hasTickAbilities(e.getValue().abilityIds()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
