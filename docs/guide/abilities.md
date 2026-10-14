@@ -101,6 +101,6 @@ When a mob with Bequest dies it passes its **other** abilities to nearby infused
 | Cap | The configured count is clamped to the live pool size (15) |
 | Cinder | Never draws `bequest` (a single-Ability support would have nothing to migrate) |
 
-Because the pool mixes all three trigger types, a mob's abilities can be a mix — for example a Doom mob could have one HURT ability, one TICK buff and Combust. A Rupture copy draws from the same pool but always with `rupture` removed, and its single draw is filtered the same way.
+Because the pool mixes all three trigger types, a mob's abilities can be a mix — for example a Doom mob could have one HURT ability, one TICK buff and Combust. A Rupture copy draws from the same pool but always with `rupture` and `bequest` removed, and its single draw is filtered the same way.
 
 The ability **IDs** above are what you type for `/infusedmobs summon`. See [commands.md](commands.md#infusedmobs-summon) for syntax and tab-completion.
