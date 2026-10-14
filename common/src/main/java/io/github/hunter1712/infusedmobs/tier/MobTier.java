@@ -1,7 +1,5 @@
 package io.github.hunter1712.infusedmobs.tier;
 
-import io.github.hunter1712.infusedmobs.config.ModConfig;
-
 import java.util.Locale;
 
 /**
@@ -10,7 +8,7 @@ import java.util.Locale;
  * and health/XP multipliers. Abilities are drawn from the unified pool.
  * <p>
  * These values are the single source of truth — config defaults are
- * derived from them via {@link #defaultConfig()}.
+ * derived from these getters via {@code ModConfig.Instance.defaults()}.
  */
 public enum MobTier {
 
@@ -35,15 +33,6 @@ public enum MobTier {
     public int abilityCount() { return abilityCount; }
     public double healthMultiplier() { return healthMultiplier; }
     public double xpMultiplier() { return xpMultiplier; }
-
-    /**
-     * Returns the config defaults for this tier.
-     * {@link ModConfig.Instance#defaults()} derives its per-tier values
-     * from here, keeping the two in sync.
-     */
-    public ModConfig.TierConfig defaultConfig() {
-        return new ModConfig.TierConfig(spawnChance, abilityCount, healthMultiplier, xpMultiplier);
-    }
 
     /** Returns the Minecraft colour code used for this tier's nametag and UI. */
     public String colourCode() {

@@ -232,4 +232,41 @@ class AbilityRegistryTest {
         assertTrue(AbilityRegistry.forTrigger(List.of(), TriggerType.TICK).isEmpty());
         assertTrue(AbilityRegistry.forTrigger(List.of(), TriggerType.DEATH).isEmpty());
     }
+
+    // ========================================
+    // Split-copy draw + offensive partition (deepening)
+    // ========================================
+
+    @Test
+    void ruptureIdIsStable() {
+        assertEquals("rupture", AbilityRegistry.RUPTURE_ID);
+    }
+
+    @Test
+    void splitCopyDrawNeverContainsRupture() {
+        register("bane", TriggerType.HURT);
+        register("combust", TriggerType.DEATH);
+        register("rupture", TriggerType.DEATH);
+
+        for (int i = 0; i < 20; i++) {
+            List<Ability> result = AbilityRegistry.getSplitCopyAbilities();
+            assertTrue(result.size() <= 1);
+            assertTrue(result.stream().noneMatch(a -> a.id().equals(AbilityRegistry.RUPTURE_ID)));
+        }
+    }
+
+    @Test
+    void offensiveHurtExcludesThornsButKeepsOtherHurt() {
+        Ability bane = ability("bane", TriggerType.HURT);
+        Ability thorns = ability("thorns", TriggerType.HURT);
+        Ability ward = ability("ward", TriggerType.TICK);
+
+        assertEquals(List.of(bane),
+                AbilityRegistry.offensiveHurtAbilities(List.of(bane, thorns, ward)));
+    }
+
+    @Test
+    void offensiveHurtEmptyStaysEmpty() {
+        assertTrue(AbilityRegistry.offensiveHurtAbilities(List.of()).isEmpty());
+    }
 }

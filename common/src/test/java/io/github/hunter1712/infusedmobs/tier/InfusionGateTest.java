@@ -98,8 +98,7 @@ class InfusionGateTest {
     }
 
     @Test
-    void gameruleGateOffDisablesAllNonBlacklistedDimensions() {
-        // Gamerule Gate is per-world (not per-dimension); when off, any non-blacklisted dimension is RULE_DISABLED (spec story 11: !blacklisted && gamerule)
+    void gameruleGateOffDisablesAllNonBlacklistedDimensions() {        // Gamerule Gate is per-world (not per-dimension); when off, any non-blacklisted dimension is RULE_DISABLED (spec story 11: !blacklisted && gamerule)
         var cfg = ModConfig.Instance.defaults()
                 .withWorldBlacklist(List.of("minecraft:overworld", "minecraft:the_end"));
         assertEquals(InfusionGate.Status.RULE_DISABLED,
@@ -110,5 +109,32 @@ class InfusionGateTest {
                 InfusionGate.status(moddedCfg.isWorldBlacklisted("twilightforest:twilight_forest"), Boolean.FALSE));
         assertEquals(InfusionGate.Status.RULE_DISABLED,
                 InfusionGate.status(moddedCfg.isWorldBlacklisted("aether:the_aether"), Boolean.FALSE));
+    }
+
+    // ========================================
+    // summon refusal messages — one seam for the command
+    // ========================================
+
+    @Test
+    void activeStatusHasNoRefusalMessage() {
+        assertEquals(null, InfusionGate.refusalMessage(
+                InfusionGate.Status.ACTIVE, "minecraft:overworld"));
+    }
+
+    @Test
+    void blacklistedMessageNamesWorldAndFix() {
+        String message = InfusionGate.refusalMessage(
+                InfusionGate.Status.WORLD_BLACKLISTED, "minecraft:overworld");
+        assertEquals("§cThis world is on the infused-mobs blacklist. "
+                + "Remove it with §f/infusedmobs world remove minecraft:overworld§c to summon here.",
+                message);
+    }
+
+    @Test
+    void ruleDisabledMessageNamesGameruleFix() {
+        assertEquals("§cInfused mobs are disabled in this world. "
+                + "Enable them with §f/gamerule infusedmobs:enabled true§c.",
+                InfusionGate.refusalMessage(
+                        InfusionGate.Status.RULE_DISABLED, "minecraft:the_nether"));
     }
 }

@@ -41,6 +41,9 @@ public final class AbilityRegistry {
     /** The Thorns Ability id, shared by registration and both HURT trigger branches. */
     public static final String THORNS_ID = "thorns";
 
+    /** The Rupture Ability id, excluded from split-copy draws so copies never split further. */
+    public static final String RUPTURE_ID = "rupture";
+
     /** Fraction of incoming damage reflected by the Thorns Ability. */
     private static final float THORNS_REFLECT_FRACTION = 0.15f;
 
@@ -83,7 +86,7 @@ public final class AbilityRegistry {
 
         // ---- DEATH abilities ----
 
-        register("rupture", "Rupture", TriggerType.DEATH, (mob, target, damage) -> SplitEffect.apply(mob));
+        register(RUPTURE_ID, "Rupture", TriggerType.DEATH, (mob, target, damage) -> SplitEffect.apply(mob));
 
         register("combust", "Combust", TriggerType.DEATH, (mob, target, damage) -> CombustEffect.apply(mob));
     }
@@ -165,7 +168,7 @@ public final class AbilityRegistry {
      * ability pool (all trigger types mixed together).
      * <p>
      * IDs in {@code excludedIds} are removed from the pool before drawing —
-     * e.g. Rupture split copies draw with {@code "rupture"} excluded so a
+     * e.g. Rupture split copies draw with {@link #RUPTURE_ID} excluded so a
      * copy can never split further; any other ability (including Combust)
      * is still available. There is no retry loop; the draw is filtered at
      * the pool level.
@@ -174,6 +177,17 @@ public final class AbilityRegistry {
      */
     public static List<Ability> getRandomAbilities(int count, String... excludedIds) {
         return SHARED.random(count, excludedIds);
+    }
+
+    /**
+     * Draws the single random Ability for a Rupture split copy: one draw
+     * with {@link #RUPTURE_ID} excluded, so a copy can never split further
+     * while every other Ability (including Combust) stays available.
+     *
+     * @return one-element or empty unmodifiable list
+     */
+    public static List<Ability> getSplitCopyAbilities() {
+        return getRandomAbilities(1, RUPTURE_ID);
     }
 
     /**
@@ -199,6 +213,19 @@ public final class AbilityRegistry {
         List<Ability> result = new ArrayList<>(abilities.size());
         for (Ability ability : abilities) {
             if (ability.trigger() == trigger) result.add(ability);
+        }
+        return result;
+    }
+
+    /**
+     * Returns the offensive HURT abilities in {@code abilities}: HURT trigger
+     * minus reactive Thorns. Behind the Ability seam so HURT triggers never
+     * branch on the Thorns id themselves.
+     */
+    public static List<Ability> offensiveHurtAbilities(List<Ability> abilities) {
+        List<Ability> result = new ArrayList<>(abilities.size());
+        for (Ability ability : forTrigger(abilities, TriggerType.HURT)) {
+            if (!ability.id().equals(THORNS_ID)) result.add(ability);
         }
         return result;
     }

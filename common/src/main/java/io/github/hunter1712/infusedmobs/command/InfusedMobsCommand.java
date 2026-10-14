@@ -466,21 +466,11 @@ public final class InfusedMobsCommand {
 
         // Refuse to summon where the mod is inactive — blacklist and
         // gamerule are both authoritative, with a distinct message each.
-        switch (InfusionGate.status(level)) {
-            case WORLD_BLACKLISTED -> {
-                source.sendFailure(Component.literal(
-                        "§cThis world is on the infused-mobs blacklist. "
-                                + "Remove it with §f/infusedmobs world remove "
-                                + Platform.hooks().dimensionId(level) + "§c to summon here."));
-                return 0;
-            }
-            case RULE_DISABLED -> {
-                source.sendFailure(Component.literal(
-                        "§cInfused mobs are disabled in this world. "
-                                + "Enable them with §f/gamerule infusedmobs:enabled true§c."));
-                return 0;
-            }
-            case ACTIVE -> { /* proceed */ }
+        String refusal = InfusionGate.refusalMessage(
+                InfusionGate.status(level), Platform.hooks().dimensionId(level));
+        if (refusal != null) {
+            source.sendFailure(Component.literal(refusal));
+            return 0;
         }
 
         Entity raw = Platform.hooks().spawn(entityType, level, PlatformHooks.SpawnKind.COMMAND);
@@ -516,17 +506,8 @@ public final class InfusedMobsCommand {
     /**
      * Reports unknown ability IDs with closest-match hints. */
     private static void sendUnknownAbilities(CommandContext<CommandSourceStack> ctx, List<String> unknown) {
-        List<String> allIds = AbilityRegistry.getAllAbilityIds();
-        StringBuilder msg = new StringBuilder();
-        msg.append("§cUnknown ability ID(s): ").append(String.join(", ", unknown)).append("\n");
-        for (String bad : unknown) {
-            String closest = FuzzyMatcher.closest(bad, allIds);
-            if (closest != null) {
-                msg.append("§eDid you mean §f").append(closest).append("§e?\n");
-            }
-        }
-        msg.append("§7Valid IDs: §f").append(String.join("§7, §f", allIds));
-        ctx.getSource().sendFailure(Component.literal(msg.toString()));
+        ctx.getSource().sendFailure(Component.literal(
+                AbilitySuggestions.formatUnknown(unknown, AbilityRegistry.getAllAbilityIds())));
     }
 
     /** Formats a Vec3 as a concise coordinate string. */

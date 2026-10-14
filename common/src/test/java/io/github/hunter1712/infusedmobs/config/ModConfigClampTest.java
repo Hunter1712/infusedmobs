@@ -93,7 +93,10 @@ class ModConfigClampTest {
     void missingTierRestoresDefaults() {
         var instance = InstanceBuilder.valid().cinder(null).build();
 
-        assertEquals(MobTier.CINDER.defaultConfig(), clamped(instance).cinder());
+        var expected = new ModConfig.TierConfig(
+                MobTier.CINDER.spawnChance(), MobTier.CINDER.abilityCount(),
+                MobTier.CINDER.healthMultiplier(), MobTier.CINDER.xpMultiplier());
+        assertEquals(expected, clamped(instance).cinder());
         assertEquals(1, clampWarnings(instance).size());
     }
 

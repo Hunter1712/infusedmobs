@@ -79,4 +79,34 @@ class AbilitySuggestionsTest {
         // "bane" picked; typing "b" must not offer "bane" again.
         assertTrue(AbilitySuggestions.nextWords("bane b", false, IDS).isEmpty());
     }
+
+    // ========================================
+    // Unknown-id message — one seam for the command
+    // ========================================
+
+    @Test
+    void unknownMessageListsIdsAndValidIds() {
+        String message = AbilitySuggestions.formatUnknown(List.of("ban"), IDS);
+
+        assertTrue(message.startsWith("§cUnknown ability ID(s): ban\n"));
+        assertTrue(message.contains("§7Valid IDs: §f"));
+        for (String id : IDS) {
+            assertTrue(message.contains(id));
+        }
+    }
+
+    @Test
+    void unknownMessageHintsClosestMatch() {
+        String message = AbilitySuggestions.formatUnknown(List.of("ban"), IDS);
+
+        assertTrue(message.contains("§eDid you mean §fbane§e?"));
+    }
+
+    @Test
+    void unknownMessageWithoutCloseMatchHasNoHint() {
+        String message = AbilitySuggestions.formatUnknown(List.of("zzz"), IDS);
+
+        assertTrue(message.startsWith("§cUnknown ability ID(s): zzz\n"));
+        assertTrue(!message.contains("Did you mean"));
+    }
 }

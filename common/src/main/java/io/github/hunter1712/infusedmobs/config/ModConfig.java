@@ -117,7 +117,7 @@ public final class ModConfig {
 
     /**
      * Per-tier tunables. Defaults derive from the matching {@link MobTier}
-     * enum member — the enum is the single source of truth for the numbers.
+     * enum getters — the enum owns the numbers, this module owns clamping.
      */
     public record TierConfig(
             double spawnChance,
@@ -219,8 +219,8 @@ public final class ModConfig {
         private static TierConfig clampedTier(String name, TierConfig tier, MobTier fallback,
                                               int upperCount, List<String> warnings) {
             if (tier == null) {
-                warnings.add("Config field '" + name + "' is missing — using defaults " + fallback.defaultConfig() + ".");
-                return fallback.defaultConfig();
+                warnings.add("Config field '" + name + "' is missing — using defaults " + tierDefaults(fallback) + ".");
+                return tierDefaults(fallback);
             }
             double chance = tier.spawnChance();
             if (Double.isNaN(chance) || chance <= 0) {
@@ -351,12 +351,18 @@ public final class ModConfig {
             };
         }
 
-        /** Sensible default values — per-tier numbers come from {@link MobTier}. */
+        /** Per-tier defaults built from the enum's numbers — one direction only, no cycle. */
+        private static TierConfig tierDefaults(MobTier tier) {
+            return new TierConfig(tier.spawnChance(), tier.abilityCount(),
+                    tier.healthMultiplier(), tier.xpMultiplier());
+        }
+
+        /** Sensible default values — per-tier numbers come from {@link MobTier} getters. */
         public static Instance defaults() {
             return new Instance(
-                    MobTier.CINDER.defaultConfig(),
-                    MobTier.SHADE.defaultConfig(),
-                    MobTier.DOOM.defaultConfig(),
+                    tierDefaults(MobTier.CINDER),
+                    tierDefaults(MobTier.SHADE),
+                    tierDefaults(MobTier.DOOM),
                     60, 0,   // hurt: 3s, level I
                     60, 0,   // tick: 3s, level I
                     5,       // infernoFireSeconds

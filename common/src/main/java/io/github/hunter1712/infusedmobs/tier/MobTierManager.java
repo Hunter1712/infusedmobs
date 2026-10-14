@@ -42,9 +42,6 @@ public final class MobTierManager {
 
     private static final InfusedRegistry SHARED = new InfusedRegistry();
 
-    /** Greyscale colour code for Rupture split-copy nametags (no Tier). */
-    private static final String SPLIT_COPY_COLOUR = "§7";
-
     private MobTierManager() {}
 
     // ========================================
@@ -209,7 +206,7 @@ public final class MobTierManager {
      * Infused Mob.
      */
     public static void applyCinderTierToSplitCopy(Mob copy) {
-        List<Ability> abilities = AbilityRegistry.getRandomAbilities(1, "rupture");
+        List<Ability> abilities = AbilityRegistry.getSplitCopyAbilities();
 
         Rolled.Split rolled = trackSplit(copy, abilities);
         if (copy.level() instanceof ServerLevel serverLevel) {
@@ -302,19 +299,21 @@ public final class MobTierManager {
 
     /** Shows the Tier nametag for a freshly assigned or restored mob. */
     private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
-        setNametag(mob, tier.colourCode(), abilities);
+        setNametag(mob, NametagFormatter.formatTier(tier, abilityNames(abilities), entityTypeName(mob)));
     }
 
     /** Shows the greyscale nametag for a Rupture split copy (Cinder stats, no Tier). */
     private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
-        setNametag(mob, SPLIT_COPY_COLOUR, abilities);
+        setNametag(mob, NametagFormatter.formatSplit(abilityNames(abilities), entityTypeName(mob)));
     }
 
-    private static void setNametag(Mob mob, String colour, List<Ability> abilities) {
+    private static List<String> abilityNames(List<Ability> abilities) {
+        return abilities.stream().map(Ability::name).toList();
+    }
+
+    private static void setNametag(Mob mob, String text) {
         if (!ModConfig.get().showNametags()) return;
-        List<String> names = abilities.stream().map(Ability::name).toList();
-        String entityName = entityTypeName(mob);
-        mob.setCustomName(Component.literal(NametagFormatter.format(colour, names, entityName)));
+        mob.setCustomName(Component.literal(text));
         mob.setCustomNameVisible(true);
     }
 

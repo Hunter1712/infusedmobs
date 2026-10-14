@@ -34,4 +34,20 @@ class NametagFormatterTest {
         assertEquals("§7Bane §fZombie",
                 NametagFormatter.format("§7", List.of("Bane"), "Zombie"));
     }
+
+    @Test
+    void formatTierUsesTierColour() {
+        assertEquals("§cBane §fZombie",
+                NametagFormatter.formatTier(MobTier.DOOM, List.of("Bane"), "Zombie"));
+        assertEquals("§aZombie",
+                NametagFormatter.formatTier(MobTier.CINDER, List.of(), "Zombie"));
+    }
+
+    @Test
+    void formatSplitUsesGreyscale() {
+        assertEquals("§7Bane §fZombie",
+                NametagFormatter.formatSplit(List.of("Bane"), "Zombie"));
+        assertEquals("§7Zombie",
+                NametagFormatter.formatSplit(List.of(), "Zombie"));
+    }
 }

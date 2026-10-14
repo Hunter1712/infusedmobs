@@ -17,7 +17,7 @@ package io.github.hunter1712.infusedmobs.tier;
  * truncate the common Tier first, never the rare one. Pure and
  * Minecraft-free for seeded-distribution tests.
  */
-public final class TierRoll {
+final class TierRoll {
 
     private TierRoll() {}
 
@@ -30,7 +30,7 @@ public final class TierRoll {
      * @param doomChance configured Doom spawn chance
      * @return the rolled Tier, or null for nothing
      */
-    public static MobTier decide(double roll, double cinderChance, double shadeChance, double doomChance) {
+    static MobTier decide(double roll, double cinderChance, double shadeChance, double doomChance) {
         if (roll < doomChance) return MobTier.DOOM;
         if (roll < doomChance + shadeChance) return MobTier.SHADE;
         if (roll < doomChance + shadeChance + cinderChance) return MobTier.CINDER;

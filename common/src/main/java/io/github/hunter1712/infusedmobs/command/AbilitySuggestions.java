@@ -102,4 +102,26 @@ public final class AbilitySuggestions {
         }
         return result;
     }
+
+    /**
+     * Unknown-id message for summon: lists the bad ids, adds a closest-match
+     * hint per id when within two edits, then lists every valid id. Behind
+     * the suggestion seam so the command never loops over the matcher itself.
+     *
+     * @param unknown bad ids in input order
+     * @param allIds every valid Ability id
+     * @return message text, without trailing newline
+     */
+    public static String formatUnknown(List<String> unknown, List<String> allIds) {
+        StringBuilder msg = new StringBuilder();
+        msg.append("§cUnknown ability ID(s): ").append(String.join(", ", unknown)).append("\n");
+        for (String bad : unknown) {
+            String closest = FuzzyMatcher.closest(bad, allIds);
+            if (closest != null) {
+                msg.append("§eDid you mean §f").append(closest).append("§e?\n");
+            }
+        }
+        msg.append("§7Valid IDs: §f").append(String.join("§7, §f", allIds));
+        return msg.toString();
+    }
 }

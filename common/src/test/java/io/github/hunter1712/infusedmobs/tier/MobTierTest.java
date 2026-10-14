@@ -77,15 +77,16 @@ class MobTierTest {
     @Test
     void defaultConfigMatchesEnumValues() {
         // Guards the single-source-of-truth contract between MobTier and ModConfig.
+        ModConfig.Instance defaults = ModConfig.Instance.defaults();
         for (MobTier tier : MobTier.values()) {
-            ModConfig.TierConfig defaults = tier.defaultConfig();
-            assertEquals(tier.spawnChance(), defaults.spawnChance(),
+            ModConfig.TierConfig config = defaults.forTier(tier);
+            assertEquals(tier.spawnChance(), config.spawnChance(),
                     () -> tier + " spawnChance drift");
-            assertEquals(tier.abilityCount(), defaults.abilityCount(),
+            assertEquals(tier.abilityCount(), config.abilityCount(),
                     () -> tier + " abilityCount drift");
-            assertEquals(tier.healthMultiplier(), defaults.healthMultiplier(),
+            assertEquals(tier.healthMultiplier(), config.healthMultiplier(),
                     () -> tier + " healthMultiplier drift");
-            assertEquals(tier.xpMultiplier(), defaults.xpMultiplier(),
+            assertEquals(tier.xpMultiplier(), config.xpMultiplier(),
                     () -> tier + " xpMultiplier drift");
         }
     }
@@ -94,7 +95,10 @@ class MobTierTest {
     void configDefaultsAreDerivedFromEnum() {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
         for (MobTier tier : MobTier.values()) {
-            assertEquals(tier.defaultConfig(), defaults.forTier(tier),
+            ModConfig.TierConfig expected = new ModConfig.TierConfig(
+                    tier.spawnChance(), tier.abilityCount(),
+                    tier.healthMultiplier(), tier.xpMultiplier());
+            assertEquals(expected, defaults.forTier(tier),
                     () -> "defaults().forTier(" + tier + ") should equal the enum defaults");
         }
     }

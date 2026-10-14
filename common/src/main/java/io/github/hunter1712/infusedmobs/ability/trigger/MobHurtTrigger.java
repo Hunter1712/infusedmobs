@@ -78,9 +78,8 @@ public final class MobHurtTrigger {
         if (mob == null) return;
         // Gate on abilities rather than tier so Rupture split copies
         // (which have no tier) still fire their HURT abilities.
-        List<Ability> hurtAbilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT).stream()
-                .filter(ability -> !ability.id().equals(AbilityRegistry.THORNS_ID))
-                .toList();
+        List<Ability> hurtAbilities = AbilityRegistry.offensiveHurtAbilities(
+                MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT));
         if (hurtAbilities.isEmpty()) return;
 
         fireHurtAbilities(mob, player, damageTaken, hurtAbilities);
