@@ -72,24 +72,20 @@ public final class MobTierManager {
 
         UUID uuid = mob.getUUID();
 
+        ModConfig.Instance config = ModConfig.get();
+
         // If this UUID already rolled in a previous session, restore that result exactly
         Rolled rolled = Platform.hooks().loadRoll(serverLevel, uuid);
         if (rolled != null) {
-            restoreRolled(mob, rolled);
+            restoreRolled(mob, rolled, config);
             return;
         }
 
-        ModConfig.Instance config = ModConfig.get();
-
-        MobTier tier = TierRoll.decide(
-                mob.getRandom().nextDouble(),
-                config.forTier(MobTier.CINDER).spawnChance(),
-                config.forTier(MobTier.SHADE).spawnChance(),
-                config.forTier(MobTier.DOOM).spawnChance());
+        MobTier tier = decideTier(mob.getRandom().nextDouble(), config);
         if (tier != null) {
             ModConfig.TierConfig tierConfig = config.forTier(tier);
             List<Ability> abilities = AbilityRegistry.getRandomAbilities(tierConfig.abilityCount());
-            Platform.hooks().storeRoll(serverLevel, uuid, trackTiered(mob, tier, abilities));
+            Platform.hooks().storeRoll(serverLevel, uuid, trackTiered(mob, tier, abilities, config));
             return;
         }
 
@@ -118,7 +114,7 @@ public final class MobTierManager {
         if (serverLevel != null && InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) {
             return false;
         }
-        Rolled.Tiered rolled = trackTiered(mob, tier, abilities);
+        Rolled.Tiered rolled = trackTiered(mob, tier, abilities, ModConfig.get());
 
         if (serverLevel != null) {
             Platform.hooks().storeRoll(serverLevel, mob.getUUID(), rolled);
@@ -126,30 +122,49 @@ public final class MobTierManager {
         return true;
     }
 
+    /**
+     * Pure Tier-roll decision behind {@link #assignTier}: reads the three
+     * spawn chances out of the given config and delegates to the single
+     * uniform decision in {@link TierRoll}, so unit tests pin the
+     * roll-to-Tier mapping without a mob or random source.
+     *
+     * @return the rolled Tier, or null for nothing
+     */
+    static MobTier decideTier(double roll, ModConfig.Instance config) {
+        return TierRoll.decide(
+                roll,
+                config.forTier(MobTier.CINDER).spawnChance(),
+                config.forTier(MobTier.SHADE).spawnChance(),
+                config.forTier(MobTier.DOOM).spawnChance());
+    }
+
     /** Tracks a tiered roll: registry entry, health multiplier, tier nametag. Returns the persisted roll. */
-    private static Rolled.Tiered trackTiered(Mob mob, MobTier tier, List<Ability> abilities) {
+    private static Rolled.Tiered trackTiered(Mob mob, MobTier tier, List<Ability> abilities,
+                                            ModConfig.Instance config) {
         Rolled.Tiered rolled = new Rolled.Tiered(tier, idsOf(abilities));
         SHARED.track(mob.getUUID(), rolled);
-        applyHealthMultiplier(mob, ModConfig.get().forTier(tier));
-        setTierNametag(mob, tier, abilities);
+        applyHealthMultiplier(mob, config.forTier(tier));
+        setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)),
+                config.showNametags());
         return rolled;
     }
 
     /** Tracks a split copy: registry entry, Cinder stats, greyscale nametag. Returns the persisted roll. */
-    private static Rolled.Split trackSplit(Mob mob, List<Ability> abilities) {
+    private static Rolled.Split trackSplit(Mob mob, List<Ability> abilities, ModConfig.Instance config) {
         Rolled.Split rolled = new Rolled.Split(idsOf(abilities));
         SHARED.track(mob.getUUID(), rolled);
-        applyCinderStats(mob);
-        setSplitCopyNametag(mob, abilities);
+        applyCinderStats(mob, config.forTier(MobTier.CINDER));
+        setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)),
+                config.showNametags());
         return rolled;
     }
 
     /** Restores the persisted roll exactly — tier, abilities, or split-copy status. */
-    private static void restoreRolled(Mob mob, Rolled rolled) {
+    private static void restoreRolled(Mob mob, Rolled rolled, ModConfig.Instance config) {
         if (rolled instanceof Rolled.Tiered tieredRoll) {
-            trackTiered(mob, tieredRoll.tier(), resolveAbilities(tieredRoll.abilityIds()));
+            trackTiered(mob, tieredRoll.tier(), resolveAbilities(tieredRoll.abilityIds()), config);
         } else if (rolled instanceof Rolled.Split splitRoll) {
-            trackSplit(mob, resolveAbilities(splitRoll.abilityIds()));
+            trackSplit(mob, resolveAbilities(splitRoll.abilityIds()), config);
         } else if (rolled instanceof Rolled.Nothing) {
             // Rolled nothing — leave the mob vanilla.
         }
@@ -217,15 +232,15 @@ public final class MobTierManager {
     public static void applyCinderTierToSplitCopy(Mob copy) {
         List<Ability> abilities = AbilityRegistry.getSplitCopyAbilities();
 
-        Rolled.Split rolled = trackSplit(copy, abilities);
+        Rolled.Split rolled = trackSplit(copy, abilities, ModConfig.get());
         if (copy.level() instanceof ServerLevel serverLevel) {
             Platform.hooks().storeRoll(serverLevel, copy.getUUID(), rolled);
         }
     }
 
     /** Applies the Cinder health multiplier and sets the copy to 60% of its boosted max. */
-    private static void applyCinderStats(Mob mob) {
-        applyHealthBoost(mob, ModConfig.get().forTier(MobTier.CINDER).healthMultiplier(), SPLIT_HEALTH_FRACTION);
+    private static void applyCinderStats(Mob mob, ModConfig.TierConfig cinderConfig) {
+        applyHealthBoost(mob, cinderConfig.healthMultiplier(), SPLIT_HEALTH_FRACTION);
     }
 
     // ========================================
@@ -306,22 +321,51 @@ public final class MobTierManager {
     // Nametag presentation
     // ========================================
 
-    /** Shows the Tier nametag for a freshly assigned or restored mob. */
-    private static void setTierNametag(Mob mob, MobTier tier, List<Ability> abilities) {
-        setNametag(mob, NametagFormatter.formatTier(tier, abilityNames(abilities), entityTypeName(mob)));
+    /**
+     * Nametag text for a tracked roll: Tier colours for a Tiered roll,
+     * greyscale for a Rupture split copy. Single text decision behind every
+     * nametag write, so unit tests pin the roll-to-text mapping without a mob.
+     * <p>
+     * Call only for Tiered/Split rolls — {@link #refreshAction} routes
+     * Nothing to NONE first, so a nothing-roll never reaches this formatting.
+     */
+    static String nametagText(Rolled rolled, List<String> abilityNames, String entityName) {
+        if (rolled instanceof Rolled.Tiered tiered) {
+            return NametagFormatter.formatTier(tiered.tier(), abilityNames, entityName);
+        }
+        return NametagFormatter.formatSplit(abilityNames, entityName);
     }
 
-    /** Shows the greyscale nametag for a Rupture split copy (Cinder stats, no Tier). */
-    private static void setSplitCopyNametag(Mob mob, List<Ability> abilities) {
-        setNametag(mob, NametagFormatter.formatSplit(abilityNames(abilities), entityTypeName(mob)));
+    /** What a nametag refresh does for one tracked roll. */
+    enum NametagAction {
+        /** Rewrite the Tier nametag. */
+        TIER,
+        /** Rewrite the greyscale split-copy nametag. */
+        SPLIT,
+        /** Clear the nametag (visibility off). */
+        HIDE,
+        /** Leave the mob alone (rolled nothing). */
+        NONE
+    }
+
+    /**
+     * Pure per-roll refresh decision behind {@link #refreshNametags}: the
+     * visibility toggle dominates, then the roll variant decides. Unit tests
+     * pin the matrix without a server.
+     */
+    static NametagAction refreshAction(boolean show, Rolled rolled) {
+        if (!show) return NametagAction.HIDE;
+        if (rolled instanceof Rolled.Tiered) return NametagAction.TIER;
+        if (rolled instanceof Rolled.Split) return NametagAction.SPLIT;
+        return NametagAction.NONE;
     }
 
     private static List<String> abilityNames(List<Ability> abilities) {
         return abilities.stream().map(Ability::name).toList();
     }
 
-    private static void setNametag(Mob mob, String text) {
-        if (!ModConfig.get().showNametags()) return;
+    private static void setNametag(Mob mob, String text, boolean show) {
+        if (!show) return;
         mob.setCustomName(Component.literal(text));
         mob.setCustomNameVisible(true);
     }
@@ -346,16 +390,18 @@ public final class MobTierManager {
             if (mob == null) continue;
             Rolled rolled = entry.getValue();
 
-            if (show) {
-                List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
-                if (rolled instanceof Rolled.Tiered tiered) {
-                    setTierNametag(mob, tiered.tier(), abilities);
-                } else if (rolled instanceof Rolled.Split) {
-                    setSplitCopyNametag(mob, abilities);
+            switch (refreshAction(show, rolled)) {
+                case TIER, SPLIT -> {
+                    List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
+                    setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)), show);
                 }
-            } else {
-                mob.setCustomName(null);
-                mob.setCustomNameVisible(false);
+                case HIDE -> {
+                    mob.setCustomName(null);
+                    mob.setCustomNameVisible(false);
+                }
+                case NONE -> {
+                    // Rolled nothing — leave the mob vanilla.
+                }
             }
         }
     }
