@@ -2,7 +2,7 @@
 
 > **Hostile mobs spawn with occult-infused tiers and randomized abilities — fully configurable via JSON.**
 
-**Infused Mobs** makes every hostile encounter a gamble. Vanilla monsters spawn with one of three occult tiers and draw powers from a shared pool of 15 abilities — a poison hit here, a speed buff there, a death explosion when you least want one. Infused mobs are common, but their individual effects are kept deliberately weak, and everything is tunable.
+**Infused Mobs** makes every hostile encounter a gamble. Vanilla monsters spawn with one of three occult tiers and draw from a shared pool of 15 abilities — a poison hit here, a speed buff there, a death explosion when you least want one. Infused mobs are common, but their individual effects are kept deliberately weak, and everything is tunable.
 
 ## Tiers
 
