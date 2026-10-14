@@ -28,10 +28,9 @@ import java.util.UUID;
  * (Tier, abilities, or split-copy status) is persisted via
  * {@link TierSavedData} and restored exactly on world/chunk reloads.
  * <p>
- * Rolls are a single uniform decision in {@link TierRoll} (Doom, then
- * Shade, then Cinder intervals), so the effective shares equal the
- * configured spawn chances — 40% Cinder / 20% Shade / 10% Doom with
- * 30% vanilla at defaults.
+ * Rolls are a single uniform decision (Doom, then Shade, then Cinder
+ * intervals), so the effective shares equal the configured spawn chances —
+ * 40% Cinder / 20% Shade / 10% Doom with 30% vanilla at defaults.
  * <p>
  * Gating decisions live in {@link InfusionGate}; this module is the single
  * Infusion interface callers cross (rolls, persistence, health, queries,
@@ -39,9 +38,6 @@ import java.util.UUID;
  * is cleaned up when the mob dies or despawns.
  */
 public final class MobTierManager {
-
-    /** Fraction of boosted max health a split copy spawns with — owned by {@link InfusionStats}. */
-    private static final float SPLIT_HEALTH_FRACTION = (float) InfusionStats.SPLIT_HEALTH_FRACTION;
 
     private static final InfusedRegistry SHARED = new InfusedRegistry();
 
@@ -126,19 +122,23 @@ public final class MobTierManager {
     }
 
     /**
-     * Pure Tier-roll decision behind {@link #assignTier}: reads the three
-     * spawn chances out of the given config and delegates to the single
-     * uniform decision in {@link TierRoll}, so unit tests pin the
-     * roll-to-Tier mapping without a mob or random source.
+     * Pure Tier-roll decision behind {@link #assignTier}: one uniform roll in
+     * {@code [0,1)} is compared against disjoint intervals sized by each
+     * Tier's configured spawn chance, so the effective share of each Tier
+     * equals its configured chance and the remainder rolls nothing.
+     * Rarest first (Doom, then Shade, then Cinder) so over-budget configs
+     * truncate the common Tier first, never the rare one.
      *
      * @return the rolled Tier, or null for nothing
      */
     static MobTier decideTier(double roll, ModConfig.Instance config) {
-        return TierRoll.decide(
-                roll,
-                config.forTier(MobTier.CINDER).spawnChance(),
-                config.forTier(MobTier.SHADE).spawnChance(),
-                config.forTier(MobTier.DOOM).spawnChance());
+        double doom = config.forTier(MobTier.DOOM).spawnChance();
+        double shade = config.forTier(MobTier.SHADE).spawnChance();
+        double cinder = config.forTier(MobTier.CINDER).spawnChance();
+        if (roll < doom) return MobTier.DOOM;
+        if (roll < doom + shade) return MobTier.SHADE;
+        if (roll < doom + shade + cinder) return MobTier.CINDER;
+        return null;
     }
 
     /** Tracks a tiered roll: registry entry, health multiplier, tier nametag. Returns the persisted roll. */
@@ -146,7 +146,7 @@ public final class MobTierManager {
                                             ModConfig.Instance config) {
         Rolled.Tiered rolled = new Rolled.Tiered(tier, idsOf(abilities));
         SHARED.put(mob.getUUID(), rolled);
-        applyHealthMultiplier(mob, config.forTier(tier));
+        applyHealthBoost(mob, config.forTier(tier).healthMultiplier(), 1.0);
         setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)),
                 config.showNametags());
         return rolled;
@@ -156,7 +156,8 @@ public final class MobTierManager {
     private static Rolled.Split trackSplit(Mob mob, List<Ability> abilities, ModConfig.Instance config) {
         Rolled.Split rolled = new Rolled.Split(idsOf(abilities));
         SHARED.put(mob.getUUID(), rolled);
-        applyCinderStats(mob, config.forTier(MobTier.CINDER));
+        applyHealthBoost(mob, config.forTier(MobTier.CINDER).healthMultiplier(),
+                InfusionStats.SPLIT_HEALTH_FRACTION);
         setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)),
                 config.showNametags());
         return rolled;
@@ -196,22 +197,17 @@ public final class MobTierManager {
         return entityKey != null && config.isMobBlacklisted(entityKey);
     }
 
-    private static void applyHealthMultiplier(Mob mob, ModConfig.TierConfig tierConfig) {
-        applyHealthBoost(mob, tierConfig.healthMultiplier(), 1.0);
-    }
-
     /**
      * Single health-boost routine behind both Tier assignment and split-copy
      * handling: scales max health by {@code multiplier}, then sets health to
      * {@code healthFraction} of the boosted max. Tiered mobs pass 1.0 (full
      * heal); split copies pass the {@link InfusionStats} split fraction.
-     * Arithmetic lives in {@link InfusionStats} so tests pin it mob-free.
      */
     private static void applyHealthBoost(Mob mob, double multiplier, double healthFraction) {
         var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
         if (attribute == null) return;
-        attribute.setBaseValue(InfusionStats.boostedMax(attribute.getBaseValue(), multiplier));
-        mob.setHealth((float) InfusionStats.spawnHealth(mob.getMaxHealth(), healthFraction));
+        attribute.setBaseValue(attribute.getBaseValue() * multiplier);
+        mob.setHealth((float) (mob.getMaxHealth() * healthFraction));
     }
 
     // ========================================
@@ -240,11 +236,6 @@ public final class MobTierManager {
         if (copy.level() instanceof ServerLevel serverLevel) {
             Platform.hooks().storeRoll(serverLevel, copy.getUUID(), rolled);
         }
-    }
-
-    /** Applies the Cinder health multiplier and sets the copy to 60% of its boosted max. */
-    private static void applyCinderStats(Mob mob, ModConfig.TierConfig cinderConfig) {
-        applyHealthBoost(mob, cinderConfig.healthMultiplier(), SPLIT_HEALTH_FRACTION);
     }
 
     // ========================================
@@ -412,39 +403,13 @@ public final class MobTierManager {
      * Nametag text for a tracked roll: Tier colours for a Tiered roll,
      * greyscale for a Rupture split copy. Single text decision behind every
      * nametag write, so unit tests pin the roll-to-text mapping without a mob.
-     * <p>
-     * Call only for Tiered/Split rolls — {@link #refreshAction} routes
-     * Nothing to NONE first, so a nothing-roll never reaches this formatting.
      */
     static String nametagText(Rolled rolled, List<String> abilityNames, String entityName) {
-        if (rolled instanceof Rolled.Tiered tiered) {
-            return NametagFormatter.formatTier(tiered.tier(), abilityNames, entityName);
-        }
-        return NametagFormatter.formatSplit(abilityNames, entityName);
-    }
-
-    /** What a nametag refresh does for one tracked roll. */
-    enum NametagAction {
-        /** Rewrite the Tier nametag. */
-        TIER,
-        /** Rewrite the greyscale split-copy nametag. */
-        SPLIT,
-        /** Clear the nametag (visibility off). */
-        HIDE,
-        /** Leave the mob alone (rolled nothing). */
-        NONE
-    }
-
-    /**
-     * Pure per-roll refresh decision behind {@link #refreshNametags}: the
-     * visibility toggle dominates, then the roll variant decides. Unit tests
-     * pin the matrix without a server.
-     */
-    static NametagAction refreshAction(boolean show, Rolled rolled) {
-        if (!show) return NametagAction.HIDE;
-        if (rolled instanceof Rolled.Tiered) return NametagAction.TIER;
-        if (rolled instanceof Rolled.Split) return NametagAction.SPLIT;
-        return NametagAction.NONE;
+        String colour = rolled instanceof Rolled.Tiered tiered
+                ? tiered.tier().colourCode()
+                : "§7";
+        if (abilityNames.isEmpty()) return colour + entityName;
+        return colour + String.join("§7, ", abilityNames) + " §f" + entityName;
     }
 
     private static List<String> abilityNames(List<Ability> abilities) {
@@ -477,19 +442,14 @@ public final class MobTierManager {
             if (mob == null) continue;
             Rolled rolled = entry.getValue();
 
-            switch (refreshAction(show, rolled)) {
-                case TIER, SPLIT -> {
-                    List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
-                    setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)), show);
-                }
-                case HIDE -> {
-                    mob.setCustomName(null);
-                    mob.setCustomNameVisible(false);
-                }
-                case NONE -> {
-                    // Rolled nothing — leave the mob vanilla.
-                }
+            if (!show) {
+                mob.setCustomName(null);
+                mob.setCustomNameVisible(false);
+            } else if (rolled instanceof Rolled.Tiered || rolled instanceof Rolled.Split) {
+                List<Ability> abilities = AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
+                setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)), true);
             }
+            // Rolled nothing — leave the mob vanilla.
         }
     }
 }

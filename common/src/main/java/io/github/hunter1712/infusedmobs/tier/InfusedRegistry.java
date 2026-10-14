@@ -16,13 +16,8 @@ import java.util.stream.Collectors;
  * abilities resolve to live objects at query time — so tracking and
  * persistence can never disagree. Tests instantiate a fresh registry per
  * case with no manual reset.
- * <p>
- * Implements the shared {@link RollStore} seam, so live CRUD travels the
- * same {@code put} / {@code get} / {@code remove} shape as the persisted
- * adapter; only live-only queries ({@code isSplitCopy},
- * {@code tickMobUUIDs}) keep their own names.
  */
-final class InfusedRegistry implements RollStore {
+final class InfusedRegistry {
 
     private final Map<UUID, Rolled> tracked = new HashMap<>();
 
@@ -31,19 +26,19 @@ final class InfusedRegistry implements RollStore {
         tracked.clear();
     }
 
-    @Override
+    /** Stored roll for this UUID, or null if never rolled. */
     public Rolled get(UUID uuid) {
         return tracked.get(uuid);
     }
 
-    @Override
+    /** Records the roll result for this UUID. */
     public void put(UUID uuid, Rolled rolled) {
         Objects.requireNonNull(uuid, "uuid");
         Objects.requireNonNull(rolled, "rolled");
         tracked.put(uuid, rolled);
     }
 
-    @Override
+    /** Removes tracking for this UUID. Returns true if anything was stored. */
     public boolean remove(UUID uuid) {
         return tracked.remove(uuid) != null;
     }
@@ -68,7 +63,6 @@ final class InfusedRegistry implements RollStore {
     }
 
     /** Defensive copy of every tracked roll, for iteration. */
-    @Override
     public Map<UUID, Rolled> snapshot() {
         return new HashMap<>(tracked);
     }

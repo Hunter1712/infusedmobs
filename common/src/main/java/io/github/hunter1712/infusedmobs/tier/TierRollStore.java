@@ -10,11 +10,8 @@ import java.util.UUID;
  * {@code TierSavedData} Shim. Storage adapters (codec vs NBT) only add
  * persistence and dirty-marking around this map, so roll tracking behaves
  * identically on every Versioned Source Set.
- * <p>
- * Implements the shared {@link RollStore} seam with the live
- * {@code InfusedRegistry} adapter; lifetimes stay separate per ADR-0003.
  */
-public final class TierRollStore implements RollStore {
+public final class TierRollStore {
 
     private final Map<UUID, Rolled> rolls;
 
@@ -29,13 +26,11 @@ public final class TierRollStore implements RollStore {
     }
 
     /** Returns the stored roll for this UUID, or null if never rolled. */
-    @Override
     public Rolled get(UUID uuid) {
         return rolls.get(uuid);
     }
 
     /** Records the roll result for this UUID. */
-    @Override
     public void put(UUID uuid, Rolled rolled) {
         rolls.put(Objects.requireNonNull(uuid), Objects.requireNonNull(rolled));
     }
@@ -45,13 +40,11 @@ public final class TierRollStore implements RollStore {
      *
      * @return true if anything was tracked
      */
-    @Override
     public boolean remove(UUID uuid) {
         return rolls.remove(uuid) != null;
     }
 
     /** Defensive copy of every tracked roll, for serialization. */
-    @Override
     public Map<UUID, Rolled> snapshot() {
         return new HashMap<>(rolls);
     }

@@ -33,7 +33,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -126,14 +128,15 @@ public final class InfusedMobsCommand {
                                 })
                                 .executes(ctx -> summon(ctx,
                                         StringArgumentType.getString(ctx, "tier"),
-                                        null)) // default zombie
+                                        null, null)) // default zombie
                                 .then(Commands.argument("entity",
                                                 ResourceArgument.resource(buildContext, Registries.ENTITY_TYPE))
                                         .suggests(InfusedMobsCommand::suggestHostileEntities)
                                         .executes(ctx -> summon(ctx,
                                                 StringArgumentType.getString(ctx, "tier"),
                                                 ResourceArgument.getSummonableEntityType(ctx, "entity")
-                                                        .value()))
+                                                        .value(),
+                                                null))
                                         .then(Commands.argument("abilities",
                                                          StringArgumentType.greedyString())
                                                  .suggests(AbilitySuggestions::suggest)
@@ -183,7 +186,7 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs summon <tier> [entity] [abilities] §7— spawn an Infused Mob at crosshair (abilities require an entity)"));
         source.sendSystemMessage(Component.literal(
-                "§8Tiers: " + SummonPlan.tierOptions() + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
+                "§8Tiers: " + tierOptions() + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
         return 1;
     }
 
@@ -275,21 +278,9 @@ public final class InfusedMobsCommand {
 
     /** Lists all worlds currently on the blacklist. */
     private static int worldList(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack source = ctx.getSource();
-        List<String> blacklist = ModConfig.get().worldBlacklist();
-
-        if (blacklist.isEmpty()) {
-            source.sendSuccess(() -> Component.literal(
-                    "§eThe world blacklist is empty — the mod is active in all worlds."), false);
-            return 1;
-        }
-
-        source.sendSuccess(() -> Component.literal(
-                "§eWorld blacklist (" + blacklist.size() + "):"), false);
-        for (String world : blacklist) {
-            source.sendSystemMessage(Component.literal("§f - " + world));
-        }
-        return 1;
+        return listBlacklist(ctx.getSource(), ModConfig.get().worldBlacklist(), "world",
+                "The world blacklist is empty — the mod is active in all worlds.",
+                "World blacklist");
     }
 
     // ========================================
@@ -334,19 +325,21 @@ public final class InfusedMobsCommand {
 
     /** Lists all mob types currently on the blacklist. */
     private static int mobList(CommandContext<CommandSourceStack> ctx) {
-        CommandSourceStack source = ctx.getSource();
-        List<String> blacklist = ModConfig.get().mobBlacklist();
+        return listBlacklist(ctx.getSource(), ModConfig.get().mobBlacklist(), "mob",
+                "The mob blacklist is empty — every hostile mob can infuse.",
+                "Mob blacklist");
+    }
 
+    private static int listBlacklist(CommandSourceStack source, List<String> blacklist,
+                                     String kind, String emptyMessage, String title) {
         if (blacklist.isEmpty()) {
-            source.sendSuccess(() -> Component.literal(
-                    "§eThe mob blacklist is empty — every hostile mob can infuse."), false);
+            source.sendSuccess(() -> Component.literal("§e" + emptyMessage), false);
             return 1;
         }
-
         source.sendSuccess(() -> Component.literal(
-                "§eMob blacklist (" + blacklist.size() + "):"), false);
-        for (String entity : blacklist) {
-            source.sendSystemMessage(Component.literal("§f - " + entity));
+                "§e" + title + " (" + blacklist.size() + "):"), false);
+        for (String entry : blacklist) {
+            source.sendSystemMessage(Component.literal("§f - " + entry));
         }
         return 1;
     }
@@ -354,13 +347,8 @@ public final class InfusedMobsCommand {
     /** Tab-completion provider suggesting hostile (infusable) entity ids. */
     private static CompletableFuture<Suggestions> suggestHostileEntities(
             CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (isInfusable(type)) {
-                String key = Platform.hooks().entityKey(type);
-                if (key != null) {
-                    builder.suggest(key);
-                }
-            }
+        for (String key : infusableKeys()) {
+            builder.suggest(key);
         }
         return builder.buildFuture();
     }
@@ -398,34 +386,8 @@ public final class InfusedMobsCommand {
     }
 
     // ========================================
-    // Spawn position helpers
-    // ========================================
-
-    /** Maximum raycast distance for determining spawn position. */
-    private static final double RAYCAST_DISTANCE = 10.0;
-
-    /**
-     * Returns the block position the player is looking at (on the block face),
-     * or the command source's position for non-player callers (console).
-     */
-    private static Vec3 resolveSpawnPosition(CommandSourceStack source) {
-        if (source.getEntity() instanceof ServerPlayer player) {
-            HitResult hit = player.pick(RAYCAST_DISTANCE, 1.0F, false);
-            if (hit instanceof BlockHitResult blockHit) {
-                return blockHit.getLocation();
-            }
-        }
-        return source.getPosition();
-    }
-
-    // ========================================
     // /infusedmobs summon <tier> [entity] [abilities]
     // ========================================
-
-    /** Convenience overload: no specific abilities (draws random ones per tier config). */
-    private static int summon(CommandContext<CommandSourceStack> ctx, String tierName, EntityType<?> entityType) {
-        return summon(ctx, tierName, entityType, null);
-    }
 
     /**
      * Spawns an Infused Mob at the command source's crosshair/position,
@@ -439,11 +401,11 @@ public final class InfusedMobsCommand {
                               EntityType<?> entityType, List<Ability> abilities) {
         CommandSourceStack source = ctx.getSource();
 
-        // Parse tier — pure decision behind the summon seam.
-        MobTier tier = SummonPlan.parseTier(tierName).orElse(null);
+        // Parse tier case-insensitively; null means unknown.
+        MobTier tier = MobTier.parse(tierName);
         if (tier == null) {
             source.sendFailure(Component.literal(
-                    "§cUnknown tier: " + tierName + ". Use: " + SummonPlan.tierOptions() + "."));
+                    "§cUnknown tier: " + tierName + ". Use: " + tierOptions() + "."));
             return 0;
         }
 
@@ -456,7 +418,13 @@ public final class InfusedMobsCommand {
             }
         }
 
-        Vec3 spawnPos = resolveSpawnPosition(source);
+        Vec3 spawnPos;
+        if (source.getEntity() instanceof ServerPlayer player) {
+            HitResult hit = player.pick(10.0, 1.0F, false);
+            spawnPos = hit instanceof BlockHitResult blockHit ? blockHit.getLocation() : source.getPosition();
+        } else {
+            spawnPos = source.getPosition();
+        }
         ServerLevel level = source.getLevel();
 
         // Refuse to summon where the mod is inactive — blacklist and
@@ -464,7 +432,7 @@ public final class InfusedMobsCommand {
         // The status is computed once and reused by the second gate below,
         // so both branches report the same reason.
         var gateStatus = InfusionGate.status(level);
-        var refusal = SummonPlan.refusalFor(gateStatus, Platform.hooks().dimensionId(level));
+        var refusal = InfusionGate.refusalMessage(gateStatus, Platform.hooks().dimensionId(level));
         if (refusal.isPresent()) {
             source.sendFailure(Component.literal(refusal.get()));
             return 0;
@@ -490,7 +458,7 @@ public final class InfusedMobsCommand {
             // computed status through the summon seam instead of its own
             // generic message, so World Blacklist vs Gamerule Gate wording
             // cannot drift. Generic fallback is defensive only.
-            String gateRefusal = SummonPlan.refusalFor(gateStatus, Platform.hooks().dimensionId(level))
+            String gateRefusal = InfusionGate.refusalMessage(gateStatus, Platform.hooks().dimensionId(level))
                     .orElse("§cCannot summon here: the mod is inactive in this dimension.");
             source.sendFailure(Component.literal(gateRefusal));
             return 0;
@@ -501,9 +469,10 @@ public final class InfusedMobsCommand {
         }
 
         String entityName = entityType.getDescription().getString();
+        String pos = String.format("§7[%.1f, %.1f, %.1f]§r", spawnPos.x, spawnPos.y, spawnPos.z);
         source.sendSuccess(() -> Component.literal(
                 "§aSpawned §f" + tier.colourCode() + tier.name()
-                        + " §f" + entityName + " §aat " + formatPos(spawnPos) + "."), true);
+                        + " §f" + entityName + " §aat " + pos + "."), true);
         return 1;
     }
 
@@ -514,11 +483,6 @@ public final class InfusedMobsCommand {
                 AbilitySuggestions.formatUnknown(unknown, AbilityRegistry.getAllAbilityIds())));
     }
 
-    /** Formats a Vec3 as a concise coordinate string. */
-    private static String formatPos(Vec3 pos) {
-        return String.format("§7[%.1f, %.1f, %.1f]§r", pos.x, pos.y, pos.z);
-    }
-
     // ========================================
     // /infusedmobs list
     // ========================================
@@ -526,21 +490,12 @@ public final class InfusedMobsCommand {
     /** Lists all hostile mob types that can be infused with tiers. */
     private static int executeList(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
+        List<String> keys = infusableKeys();
         StringBuilder sb = new StringBuilder("§e--- Hostile Mobs ---\n§7");
-        int count = 0;
-        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
-            if (isInfusable(type)) {
-                String key = Platform.hooks().entityKey(type);
-                if (key != null) {
-                    if (count > 0) sb.append("§7, ");
-                    sb.append(key);
-                    count++;
-                }
-            }
-        }
+        sb.append(String.join("§7, ", keys));
         source.sendSystemMessage(Component.literal(sb.toString()));
         source.sendSystemMessage(Component.literal(
-                "§8" + count + " hostile mob type(s) — "
+                "§8" + keys.size() + " hostile mob type(s) — "
                         + "use with §f/infusedmobs summon <tier> <entity>§8"));
         return 1;
     }
@@ -552,6 +507,25 @@ public final class InfusedMobsCommand {
     /** True if the entity type is a summonable MONSTER — shared by summon suggestions and {@code list}. */
     private static boolean isInfusable(EntityType<?> type) {
         return type.canSummon() && type.getCategory() == MobCategory.MONSTER;
+    }
+
+    /** Tier options derived from the enum so summon errors and help text never rot when a Tier is added. */
+    private static String tierOptions() {
+        return String.join(", ",
+                Arrays.stream(MobTier.values())
+                        .map(t -> t.name().toLowerCase(Locale.ROOT))
+                        .toList());
+    }
+
+    private static List<String> infusableKeys() {
+        List<String> keys = new java.util.ArrayList<>();
+        for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
+            if (isInfusable(type)) {
+                String key = Platform.hooks().entityKey(type);
+                if (key != null) keys.add(key);
+            }
+        }
+        return keys;
     }
 
 }

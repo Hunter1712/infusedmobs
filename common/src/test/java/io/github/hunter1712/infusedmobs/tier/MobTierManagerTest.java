@@ -70,8 +70,6 @@ class MobTierManagerTest {
         ModConfig.Instance config = ModConfig.Instance.defaults();
 
         // Doom [0,0.1), Shade [0.1,0.3), Cinder [0.3,0.7), nothing [0.7,1).
-        // Interior values avoid double-addition boundary brittleness
-        // (TierRollTest owns the exact arithmetic).
         assertEquals(MobTier.SHADE, MobTierManager.decideTier(0.15, config));
         assertEquals(MobTier.CINDER, MobTierManager.decideTier(0.35, config));
         assertNull(MobTierManager.decideTier(0.75, config));
@@ -119,29 +117,25 @@ class MobTierManagerTest {
                         new Rolled.Split(List.of()), List.of(), "Zombie"));
     }
 
-    // ========================================
-    // refreshAction — per-roll refresh matrix
-    // ========================================
-
     @Test
-    void refreshActionShowsPerVariantWhenVisible() {
-        assertEquals(MobTierManager.NametagAction.TIER,
-                MobTierManager.refreshAction(true,
-                        new Rolled.Tiered(MobTier.SHADE, List.of("bane"))));
-        assertEquals(MobTierManager.NametagAction.SPLIT,
-                MobTierManager.refreshAction(true, new Rolled.Split(List.of("ward"))));
-        assertEquals(MobTierManager.NametagAction.NONE,
-                MobTierManager.refreshAction(true, new Rolled.Nothing()));
-    }
-
-    @Test
-    void refreshActionHidesEveryVariantWhenToggledOff() {
-        assertEquals(MobTierManager.NametagAction.HIDE,
-                MobTierManager.refreshAction(false,
-                        new Rolled.Tiered(MobTier.DOOM, List.of("bane"))));
-        assertEquals(MobTierManager.NametagAction.HIDE,
-                MobTierManager.refreshAction(false, new Rolled.Split(List.of("ward"))));
-        assertEquals(MobTierManager.NametagAction.HIDE,
-                MobTierManager.refreshAction(false, new Rolled.Nothing()));
+    void decideTierEffectiveSharesMatchContractByEnumeration() {
+        ModConfig.Instance config = ModConfig.Instance.defaults();
+        int doom = 0;
+        int shade = 0;
+        int cinder = 0;
+        int nothing = 0;
+        int buckets = 1000;
+        for (int i = 0; i < buckets; i++) {
+            double roll = (i + 0.5) / buckets;
+            MobTier tier = MobTierManager.decideTier(roll, config);
+            if (tier == MobTier.DOOM) doom++;
+            else if (tier == MobTier.SHADE) shade++;
+            else if (tier == MobTier.CINDER) cinder++;
+            else nothing++;
+        }
+        assertEquals(100, doom, "Doom effective share drifted from 10%");
+        assertEquals(200, shade, "Shade effective share drifted from 20%");
+        assertEquals(400, cinder, "Cinder effective share drifted from 40%");
+        assertEquals(300, nothing, "Nothing share drifted from 30%");
     }
 }

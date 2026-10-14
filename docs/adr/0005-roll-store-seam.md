@@ -1,5 +1,10 @@
 # Shared roll-store seam, separate lifetimes
 
+> SUPERSEDED: the `RollStore` interface and its conformance test were removed —
+> no caller ever used the seam as a type (shims hold `TierRollStore`, the
+> manager holds `InfusedRegistry`), and per-class tests pin each adapter's
+> CRUD directly. The lifetimes below stay separate per ADR-0003.
+
 `InfusedRegistry` (live Infused Mob state) and `TierRollStore` (persisted
 roll state behind every `TierSavedData` Shim) implement one `RollStore`
 seam (`get` / `put` / `remove` / `snapshot`). Lifetimes stay separate per
