@@ -51,6 +51,12 @@ public final class FakePlatform implements PlatformHooks {
     /** Captured HURT handler for blocked-behaviour conformance. */
     public MobHurtTrigger.HurtHandler hurtHandler;
 
+    /** Captured TICK handler for schedule conformance. */
+    public PlatformHooks.TickHandler tickHandler;
+
+    /** Captured DEATH handler for ordering conformance. */
+    public PlatformHooks.DeathHandler deathHandler;
+
     private final TierRollStore rolls = new TierRollStore();
 
     /** Records token applications without touching Minecraft state. */
@@ -140,6 +146,16 @@ public final class FakePlatform implements PlatformHooks {
     @Override
     public void registerHurtTrigger(MobHurtTrigger.HurtHandler handler) {
         hurtHandler = handler;
+    }
+
+    @Override
+    public void registerTickTrigger(PlatformHooks.TickHandler handler) {
+        tickHandler = handler;
+    }
+
+    @Override
+    public void registerDeathTrigger(PlatformHooks.DeathHandler handler) {
+        deathHandler = handler;
     }
 
     @Override

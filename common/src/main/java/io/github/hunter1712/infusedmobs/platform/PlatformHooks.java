@@ -8,6 +8,7 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -94,6 +95,28 @@ public interface PlatformHooks {
 
     /** Registers the HURT trigger against the version's damage event. */
     void registerHurtTrigger(MobHurtTrigger.HurtHandler handler);
+
+    /**
+     * Version-neutral TICK callback. Mirrors the per-second pass shape so
+     * every adapter can forward its own server-tick event to it.
+     */
+    interface TickHandler {
+        void onTick(MinecraftServer server);
+    }
+
+    /** Registers the TICK trigger against the version's server-tick event. */
+    void registerTickTrigger(TickHandler handler);
+
+    /**
+     * Version-neutral DEATH callback. Mirrors the post-death shape so
+     * every adapter can forward its own death event to it.
+     */
+    interface DeathHandler {
+        void onDeath(LivingEntity entity, DamageSource source);
+    }
+
+    /** Registers the DEATH trigger against the version's death event. */
+    void registerDeathTrigger(DeathHandler handler);
 
     // ---- Persisted rolls ----
 

@@ -3,9 +3,9 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Mob;
 
@@ -33,12 +33,25 @@ public final class MobTickTrigger {
     private MobTickTrigger() {}
 
     public static void register() {
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            tickCounter = (tickCounter + 1) % TICK_INTERVAL;
-            if (tickCounter != 0) return;
+        Platform.hooks().registerTickTrigger(server -> {
+            tickCounter = advance(tickCounter);
+            if (!shouldFire(tickCounter)) return;
 
             tickServer(server);
         });
+    }
+
+    /**
+     * Pure counter step behind {@link #register}: advances the per-second
+     * schedule without touching the event bus, so tests pin the cadence.
+     */
+    static int advance(int counter) {
+        return (counter + 1) % TICK_INTERVAL;
+    }
+
+    /** Pure fire decision: the pass runs when the counter wraps to zero. */
+    static boolean shouldFire(int counter) {
+        return counter == 0;
     }
 
     /**

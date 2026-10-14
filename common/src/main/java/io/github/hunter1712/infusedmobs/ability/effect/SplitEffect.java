@@ -10,6 +10,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
+import java.util.function.Consumer;
+
 /**
  * Spawns 2 copies of the dying mob's entity type at 60% max health.
  * Each copy receives Cinder-tier stats and 1 random ability — Rupture
@@ -25,10 +27,15 @@ public final class SplitEffect {
     /**
      * Spawns 2 split copies of the given mob at offset positions.
      * Does nothing if called on the client side.
+     * <p>
+     * The Infusion assignment runs through the given assigner so the
+     * effect stays one-way injectable in tests; live code passes the
+     * Infusion seam ({@code MobTierManager::applyCinderTierToSplitCopy}).
      *
      * @param mob the dying mob
+     * @param assigner registers each copy before it enters the world
      */
-    public static void apply(LivingEntity mob) {
+    public static void apply(LivingEntity mob, Consumer<Mob> assigner) {
         if (!(mob.level() instanceof ServerLevel level)) return;
 
         EntityType<?> type = mob.getType();
@@ -38,10 +45,19 @@ public final class SplitEffect {
                 placeCopy(copy, mob, i);
                 // Registers the copy (split-copy entry) BEFORE it enters the
                 // world, so the spawn handler won't roll a tier for it.
-                MobTierManager.applyCinderTierToSplitCopy(copy);
+                assigner.accept(copy);
                 level.addFreshEntity(copy);
             }
         }
+    }
+
+    /**
+     * Spawns 2 split copies with live Infusion assignment.
+     *
+     * @param mob the dying mob
+     */
+    public static void apply(LivingEntity mob) {
+        apply(mob, MobTierManager::applyCinderTierToSplitCopy);
     }
 
     /** Positions the copy at a diagonal offset from the original mob. */

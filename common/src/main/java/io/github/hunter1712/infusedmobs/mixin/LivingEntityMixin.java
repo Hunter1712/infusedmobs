@@ -1,6 +1,7 @@
 package io.github.hunter1712.infusedmobs.mixin;
 
 import io.github.hunter1712.infusedmobs.config.ModConfig;
+import io.github.hunter1712.infusedmobs.tier.InfusionStats;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
@@ -25,17 +26,11 @@ public class LivingEntityMixin {
     private void onGetExperienceReward(CallbackInfoReturnable<Integer> cir) {
         if ((Object) this instanceof Mob mob) {
             MobTier tier = MobTierManager.getTier(mob);
-            double multiplier;
-            if (tier != null) {
-                // Use the config multiplier (not the enum constant) so pack
-                // makers' tier edits apply to XP too.
-                multiplier = ModConfig.get().forTier(tier).xpMultiplier();
-            } else if (MobTierManager.isSplitCopy(mob)) {
-                // Split copies have no Tier but carry full Cinder stats.
-                multiplier = ModConfig.get().forTier(MobTier.CINDER).xpMultiplier();
-            } else {
-                return;
-            }
+            boolean splitCopy = tier == null && MobTierManager.isSplitCopy(mob);
+            if (tier == null && !splitCopy) return;
+            // Split-copy Cinder treatment lives in InfusionStats with the
+            // assignment path, so pack-maker tier edits apply to XP too.
+            double multiplier = InfusionStats.xpMultiplier(tier, splitCopy, ModConfig.get());
             cir.setReturnValue((int) Math.round(cir.getReturnValue() * multiplier));
         }
     }

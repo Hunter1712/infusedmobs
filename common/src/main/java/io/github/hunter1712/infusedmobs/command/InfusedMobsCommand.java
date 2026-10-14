@@ -33,7 +33,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -233,24 +232,21 @@ public final class InfusedMobsCommand {
         String worldId = Platform.hooks().worldIdFromCommand(ctx, "world");
 
         ModConfig.Instance current = ModConfig.get();
-        if (current.isWorldBlacklisted(worldId) == add) {
-            if (add) {
+        BlacklistEdit.Result edited = BlacklistEdit.edit(current.worldBlacklist(), worldId, add);
+        switch (edited.outcome()) {
+            case ALREADY_PRESENT -> {
                 source.sendSuccess(() -> Component.literal(
                         "§eWorld §f" + worldId + " §eis already on the blacklist."), false);
                 return 1;
             }
-            source.sendFailure(Component.literal(
-                    "§cWorld §f" + worldId + " §cis not on the blacklist."));
-            return 0;
+            case NOT_PRESENT -> {
+                source.sendFailure(Component.literal(
+                        "§cWorld §f" + worldId + " §cis not on the blacklist."));
+                return 0;
+            }
+            case ADDED, REMOVED -> { /* fall through to persist below */ }
         }
-
-        List<String> updated = new ArrayList<>(current.worldBlacklist());
-        if (add) {
-            updated.add(worldId);
-        } else {
-            updated.removeIf(worldId::equals);
-        }
-        ModConfig.swapInstance(current.withWorldBlacklist(updated));
+        ModConfig.swapInstance(current.withWorldBlacklist(edited.updated()));
 
         if (add) {
             source.sendSuccess(() -> Component.literal(
@@ -306,24 +302,21 @@ public final class InfusedMobsCommand {
         }
 
         ModConfig.Instance current = ModConfig.get();
-        if (current.isMobBlacklisted(entityId) == add) {
-            if (add) {
+        BlacklistEdit.Result edited = BlacklistEdit.edit(current.mobBlacklist(), entityId, add);
+        switch (edited.outcome()) {
+            case ALREADY_PRESENT -> {
                 source.sendSuccess(() -> Component.literal(
                         "§eMob §f" + entityId + " §eis already on the blacklist."), false);
                 return 1;
             }
-            source.sendFailure(Component.literal(
-                    "§cMob §f" + entityId + " §cis not on the blacklist."));
-            return 0;
+            case NOT_PRESENT -> {
+                source.sendFailure(Component.literal(
+                        "§cMob §f" + entityId + " §cis not on the blacklist."));
+                return 0;
+            }
+            case ADDED, REMOVED -> { /* fall through to persist below */ }
         }
-
-        List<String> updated = new ArrayList<>(current.mobBlacklist());
-        if (add) {
-            updated.add(entityId);
-        } else {
-            updated.removeIf(entityId::equals);
-        }
-        ModConfig.swapInstance(current.withMobBlacklist(updated));
+        ModConfig.swapInstance(current.withMobBlacklist(edited.updated()));
 
         if (add) {
             source.sendSuccess(() -> Component.literal(
@@ -444,8 +437,8 @@ public final class InfusedMobsCommand {
                               EntityType<?> entityType, List<Ability> abilities) {
         CommandSourceStack source = ctx.getSource();
 
-        // Parse tier
-        MobTier tier = MobTier.parse(tierName);
+        // Parse tier — pure decision behind the summon seam.
+        MobTier tier = SummonPlan.parseTier(tierName).orElse(null);
         if (tier == null) {
             source.sendFailure(Component.literal(
                     "§cUnknown tier: " + tierName + ". Use: " + tierOptions() + "."));
@@ -469,8 +462,7 @@ public final class InfusedMobsCommand {
         // The status is computed once and reused by the second gate below,
         // so both branches report the same reason.
         var gateStatus = InfusionGate.status(level);
-        var refusal = InfusionGate.refusalMessage(
-                gateStatus, Platform.hooks().dimensionId(level));
+        var refusal = SummonPlan.refusalFor(gateStatus, Platform.hooks().dimensionId(level));
         if (refusal.isPresent()) {
             source.sendFailure(Component.literal(refusal.get()));
             return 0;
@@ -492,11 +484,10 @@ public final class InfusedMobsCommand {
                         ModConfig.get().forTier(tier).abilityCount());
         if (!MobTierManager.assignSpecificTier(mob, tier, finalAbilities)) {
             // Single-sourced wording: the second gate reuses the already
-            // computed status through the Gating seam instead of its own
+            // computed status through the summon seam instead of its own
             // generic message, so World Blacklist vs Gamerule Gate wording
             // cannot drift. Generic fallback is defensive only.
-            String gateRefusal = InfusionGate.refusalMessage(
-                    gateStatus, Platform.hooks().dimensionId(level))
+            String gateRefusal = SummonPlan.refusalFor(gateStatus, Platform.hooks().dimensionId(level))
                     .orElse("§cCannot summon here: the mod is inactive in this dimension.");
             source.sendFailure(Component.literal(gateRefusal));
             return 0;

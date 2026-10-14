@@ -16,21 +16,24 @@ import java.util.stream.Collectors;
  * abilities resolve to live objects at query time — so tracking and
  * persistence can never disagree. Tests instantiate a fresh registry per
  * case with no manual reset.
+ * <p>
+ * Implements the shared {@link RollStore} seam ({@code track} →
+ * {@code put}, {@code find} → {@code get}, {@code untrack} →
+ * {@code remove}) so the live and persisted adapters stay
+ * interchangeable; the historic names remain as delegates.
  */
-final class InfusedRegistry {
+final class InfusedRegistry implements RollStore {
 
     private final Map<UUID, Rolled> tracked = new HashMap<>();
 
     /** Starts tracking this UUID as the given roll. */
     public void track(UUID id, Rolled rolled) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(rolled, "rolled");
-        tracked.put(id, rolled);
+        put(id, rolled);
     }
 
     /** Returns the tracked roll for this UUID, or null if untracked. */
     public Rolled find(UUID id) {
-        return tracked.get(id);
+        return get(id);
     }
 
     /**
@@ -39,12 +42,29 @@ final class InfusedRegistry {
      * @return true if anything was tracked
      */
     public boolean untrack(UUID id) {
-        return tracked.remove(id) != null;
+        return remove(id);
     }
 
     /** Clears all tracking. */
     public void clear() {
         tracked.clear();
+    }
+
+    @Override
+    public Rolled get(UUID uuid) {
+        return tracked.get(uuid);
+    }
+
+    @Override
+    public void put(UUID uuid, Rolled rolled) {
+        Objects.requireNonNull(uuid, "uuid");
+        Objects.requireNonNull(rolled, "rolled");
+        tracked.put(uuid, rolled);
+    }
+
+    @Override
+    public boolean remove(UUID uuid) {
+        return tracked.remove(uuid) != null;
     }
 
     /** Returns true if this UUID is tracked as a Rupture split copy (Cinder stats, no Tier). */
@@ -67,6 +87,7 @@ final class InfusedRegistry {
     }
 
     /** Defensive copy of every tracked roll, for iteration. */
+    @Override
     public Map<UUID, Rolled> snapshot() {
         return new HashMap<>(tracked);
     }

@@ -38,7 +38,8 @@ import java.util.UUID;
  */
 public final class MobTierManager {
 
-    private static final float SPLIT_HEALTH_FRACTION = 0.6f;
+    /** Fraction of boosted max health a split copy spawns with — owned by {@link InfusionStats}. */
+    private static final float SPLIT_HEALTH_FRACTION = (float) InfusionStats.SPLIT_HEALTH_FRACTION;
 
     private static final InfusedRegistry SHARED = new InfusedRegistry();
 
@@ -201,13 +202,14 @@ public final class MobTierManager {
      * Single health-boost routine behind both Tier assignment and split-copy
      * handling: scales max health by {@code multiplier}, then sets health to
      * {@code healthFraction} of the boosted max. Tiered mobs pass 1.0 (full
-     * heal); split copies pass 0.6.
+     * heal); split copies pass the {@link InfusionStats} split fraction.
+     * Arithmetic lives in {@link InfusionStats} so tests pin it mob-free.
      */
     private static void applyHealthBoost(Mob mob, double multiplier, double healthFraction) {
         var attribute = mob.getAttribute(Attributes.MAX_HEALTH);
         if (attribute == null) return;
-        attribute.setBaseValue(attribute.getBaseValue() * multiplier);
-        mob.setHealth(mob.getMaxHealth() * (float) healthFraction);
+        attribute.setBaseValue(InfusionStats.boostedMax(attribute.getBaseValue(), multiplier));
+        mob.setHealth((float) InfusionStats.spawnHealth(mob.getMaxHealth(), healthFraction));
     }
 
     // ========================================

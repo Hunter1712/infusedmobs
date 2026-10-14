@@ -9,6 +9,7 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -132,6 +133,16 @@ public final class VersionPlatform implements PlatformHooks {
             handler.onHurt(entity, source, amount, amount, false);
             return true;
         });
+    }
+
+    @Override
+    public void registerTickTrigger(TickHandler handler) {
+        ServerTickEvents.END_SERVER_TICK.register(handler::onTick);
+    }
+
+    @Override
+    public void registerDeathTrigger(DeathHandler handler) {
+        ServerLivingEntityEvents.AFTER_DEATH.register(handler::onDeath);
     }
 
     @Override

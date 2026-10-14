@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -176,7 +177,17 @@ public final class AbilityRegistry {
      * @return a shuffled, unmodifiable list (may be shorter than {@code count})
      */
     public static List<Ability> getRandomAbilities(int count, String... excludedIds) {
-        return SHARED.random(count, excludedIds);
+        return SHARED.random(count, ThreadLocalRandom.current(), excludedIds);
+    }
+
+    /**
+     * Seeded draw behind {@link #getRandomAbilities(int, String...)}: the
+     * same seed draws the same set, so distribution tests pin the
+     * exclusion rule without flakiness. Live code uses the unseeded
+     * overload.
+     */
+    public static List<Ability> getRandomAbilities(int count, Random random, String... excludedIds) {
+        return SHARED.random(count, random, excludedIds);
     }
 
     /**
@@ -339,6 +350,15 @@ public final class AbilityRegistry {
     }
 
     public List<Ability> random(int count, String... excludedIds) {
+        return random(count, ThreadLocalRandom.current(), excludedIds);
+    }
+
+    /**
+     * Draw core: filters exclusions at the pool level, shuffles with the
+     * given source, returns an unmodifiable prefix. Seeded sources make
+     * the draw deterministic for tests.
+     */
+    public List<Ability> random(int count, Random random, String... excludedIds) {
         if (count <= 0 || all.isEmpty()) return List.of();
         List<Ability> pool = new ArrayList<>(all);
         if (excludedIds.length > 0) {
@@ -346,7 +366,7 @@ public final class AbilityRegistry {
             pool.removeIf(a -> excluded.contains(a.id()));
         }
         if (pool.isEmpty()) return List.of();
-        Collections.shuffle(pool, ThreadLocalRandom.current());
+        Collections.shuffle(pool, random);
         return Collections.unmodifiableList(pool.subList(0, Math.min(count, pool.size())));
     }
 

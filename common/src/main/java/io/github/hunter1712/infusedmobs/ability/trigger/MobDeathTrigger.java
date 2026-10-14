@@ -2,10 +2,11 @@ package io.github.hunter1712.infusedmobs.ability.trigger;
 
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
+import io.github.hunter1712.infusedmobs.platform.Platform;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
@@ -20,13 +21,13 @@ public final class MobDeathTrigger {
     private MobDeathTrigger() {}
 
     public static void register() {
-        ServerLivingEntityEvents.AFTER_DEATH.register(MobDeathTrigger::onDeath);
+        Platform.hooks().registerDeathTrigger(MobDeathTrigger::onDeath);
     }
 
-    private static void onDeath(LivingEntity entity, DamageSource source) {
+    static void onDeath(LivingEntity entity, DamageSource source) {
         if (!(entity instanceof Mob mob)) return;
 
-        LivingEntity killer = source.getEntity() instanceof LivingEntity living ? living : null;
+        LivingEntity killer = resolveKiller(source.getEntity());
 
         // Fire ALL DEATH abilities
         AbilityRegistry.fireDeath(
@@ -34,5 +35,14 @@ public final class MobDeathTrigger {
 
         // Clean up tracking
         MobTierManager.removeMob(mob);
+    }
+
+    /**
+     * Pure killer resolution behind {@link #onDeath}: the damage-source
+     * owner passes through only when living, else null. Plain reference
+     * logic so tests pin the mapping without a damage source.
+     */
+    static LivingEntity resolveKiller(Entity attacker) {
+        return attacker instanceof LivingEntity living ? living : null;
     }
 }
