@@ -24,7 +24,7 @@ Because 1.20.x reports **pre-mitigation** damage, the amount passed to **Siphon*
 
 ## Same everywhere
 
-- Tier chances, multipliers, ability effects, durations, Rupture splitting, Combust falloff, nametags, commands and the gamerule.
+- Tier chances, multipliers, ability effects, durations, Rupture splitting, Combust falloff, Bequest migration, nametags, commands and the gamerule.
 - Single-roll spawn logic and full UUID persistence (mobs keep their roll across reloads).
 - Config file name, fields, defaults, clamping and backfill.
 - `infusedmobs:enabled` gamerule: default `true`, category Mobs, per-world save.

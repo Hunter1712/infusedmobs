@@ -26,7 +26,7 @@ Only **hostile (`MONSTER` category)** mobs roll naturally. Animals, villagers an
 On **1.20.x** shields don't negate HURT abilities due to a platform limitation. On 1.21.x/26.x a shield block does negate them. See [version-differences.md](version-differences.md#shield-blocks-the-one-to-know).
 
 **Why did the Rupture copy have a grey nametag and not split again?**
-By design. Split copies carry Cinder stats but no Tier; their single ability is drawn with `rupture` excluded so they can never split infinitely. See [abilities.md](abilities.md#rupture).
+By design. Split copies carry Cinder stats but no Tier; their single ability is drawn with `rupture` and `bequest` excluded so they can never split infinitely. See [abilities.md](abilities.md#rupture).
 
 **Combust didn't break any blocks.**
 Correct. Combust is a damage-and-sound effect only — no block damage and no particles. Raise `combustExplosionPower` for a bigger radius, not for terrain damage.

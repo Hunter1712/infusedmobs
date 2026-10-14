@@ -68,7 +68,7 @@ Duration and amplifier are configurable (`tickEffectDuration`, `tickEffectAmplif
 When a mob with Rupture dies it spawns **2 copies of itself**:
 
 - Each copy has **Cinder stats** (1.5× base health) but starts at **60% of that boosted max health**.
-- Each copy gets **1 random ability**, drawn with `rupture` excluded — so a copy can never split again. Any other ability, including **Combust**, is possible.
+- Each copy gets **1 random ability**, drawn with `rupture` and `bequest` excluded — so a copy can never split again and never draws dead-weight support. Any other ability, including **Combust**, is possible.
 - Copies show a **grey nametag** with no Tier colour, and grant the **Cinder XP multiplier**.
 - Their split-copy status is persisted **before** they enter the world, so chunk reloads and restarts keep them as copies — they can never be re-rolled into a normal Infused Mob.
 

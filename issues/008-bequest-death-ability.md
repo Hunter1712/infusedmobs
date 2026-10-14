@@ -1,10 +1,10 @@
 ---
 number: 8
 title: "Bequest DEATH Ability — ally migration for Infused Mobs"
-state: open
+state: closed
 labels: [ready-for-agent]
 created: "2026-10-14T00:00:00Z"
-updated: "2026-10-14T00:00:00Z"
+updated: "2026-10-14T12:00:00Z"
 assignee: ""
 ---
 
@@ -68,3 +68,9 @@ A new DEATH TriggerType Ability, Bequest, that migrates threat on death: when an
 
 - Seam proposal (single seam, no new ones): exercise Bequest entirely through the existing Infusion seam — live query plus persisted roll snapshot driven by DEATH fire — with draw exclusion via the existing excluded-ids draw parameter. This matches maintainer expectations from the roll-store seam ADR and keeps the change to one test surface.
 - Guide updates ride with the change: ability pool total, Bequest section (migrate-one-nearest-infused-alive, duplicate slide, pool cap, copy exclusion, gating exception), and Tier overflow plus Cinder-exclusion notes.
+
+## Comments
+
+### 2026-10-14T12:00:00Z - agent
+
+Closed for v2.9.0 release. Shipped in `a6913c6` (plus `a87c0af` copy-draw doc fix): `BequestEffect` behind the Infusion seam via `planBequest`/`grantAbility`, Cinder + split-copy draw exclusions, summon accepts Bequest as operator intent, overflow allowed to pool cap per ADR-0006, guides updated (pool 15, Bequest section, overflow + Cinder notes). Pinned by `BequestDrawTest` + `BequestPlanTest`; `gradle :common:test` green (254 tests).

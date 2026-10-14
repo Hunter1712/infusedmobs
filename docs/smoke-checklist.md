@@ -1,6 +1,6 @@
 # Infused Mobs — In-Game Smoke Checklist (1.21.x)
 
-Manual checklist, nice-to-have rather than a gate. Jar: `infusedmobs-2.8.0+1.21.x.jar` (from `1.21.x/build/libs/`).
+Manual checklist, nice-to-have rather than a gate. Jar: `infusedmobs-2.9.0+1.21.x.jar` (from `1.21.x/build/libs/`).
 Needs: fresh world, cheats on, op level 2. Report failures as: version + steps + what happened vs expected.
 
 ## Setup
@@ -16,6 +16,7 @@ Needs: fresh world, cheats on, op level 2. Report failures as: version + steps +
 - [ ] Combat: an Infused Mob hitting you fires offensive HURT effects (poison, slowness, fire, weakness — melee or projectile, players only); hitting a Thorns mob reflects 15% back at you (reactive HURT, never passive); TICK effects refresh about every second (resistance, strength, speed shimmer, no particles).
 - [ ] Kill a Rupture mob -> splits into 2 grey-tagged copies with full Cinder health and XP (no Tier) that never split again (other abilities on copies OK, including Combust).
 - [ ] Kill a Combust mob -> nearby damage + explosion sound, NO block damage, NO particles.
+- [ ] Kill a Bequest mob with living infused allies nearby -> each nearest ally gains one of the dead mob's other abilities (duplicates slide, copies excluded, nametag refreshes); sole-Bequest death fizzles.
 - [ ] Infused kills grant multiplied XP (about 1.5x Cinder / 2x Shade / 4x Doom).
 
 ## Config + gating
