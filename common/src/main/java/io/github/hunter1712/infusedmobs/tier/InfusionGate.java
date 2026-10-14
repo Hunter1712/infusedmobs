@@ -6,6 +6,8 @@ import io.github.hunter1712.infusedmobs.platform.Platform;
 
 import net.minecraft.server.level.ServerLevel;
 
+import java.util.Optional;
+
 /**
  * Decides whether infusion is active in a level.
  * <p>
@@ -46,23 +48,23 @@ public final class InfusionGate {
     }
 
     /**
-     * Summon refusal text for the given status, or null when active.
+     * Summon refusal text for the given status, or empty when active.
      * Behind the Gating seam so the summon command never branches on
      * statuses itself — one place owns both the decision and its wording.
      *
      * @param status the gate decision for the target level
      * @param dimensionId string form of the target dimension, named in the
      *                    blacklist fix hint
-     * @return refusal text, or null when {@code status} is active
+     * @return refusal text, or empty when {@code status} is active
      */
-    public static String refusalMessage(Status status, String dimensionId) {
+    public static Optional<String> refusalMessage(Status status, String dimensionId) {
         return switch (status) {
-            case ACTIVE -> null;
-            case WORLD_BLACKLISTED -> "§cThis world is on the infused-mobs blacklist. "
+            case ACTIVE -> Optional.empty();
+            case WORLD_BLACKLISTED -> Optional.of("§cThis world is on the infused-mobs blacklist. "
                     + "Remove it with §f/infusedmobs world remove "
-                    + dimensionId + "§c to summon here.";
-            case RULE_DISABLED -> "§cInfused mobs are disabled in this world. "
-                    + "Enable them with §f/gamerule infusedmobs:enabled true§c.";
+                    + dimensionId + "§c to summon here.");
+            case RULE_DISABLED -> Optional.of("§cInfused mobs are disabled in this world. "
+                    + "Enable them with §f/gamerule infusedmobs:enabled true§c.");
         };
     }
 }

@@ -1,6 +1,5 @@
 package io.github.hunter1712.infusedmobs.ability.trigger;
 
-import io.github.hunter1712.infusedmobs.ability.Ability;
 import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.platform.Platform;
@@ -13,8 +12,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
-
-import java.util.List;
 
 /**
  * Handles the {@link TriggerType#HURT} trigger for both melee and projectile
@@ -67,9 +64,7 @@ public final class MobHurtTrigger {
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
         if (!(source.getEntity() instanceof Player player)) return;
         if (!MobTierManager.hasAbility(mob, AbilityRegistry.THORNS_ID)) return;
-        Ability thorns = AbilityRegistry.getById(AbilityRegistry.THORNS_ID);
-        if (thorns == null) return;
-        thorns.effect().apply(mob, player, damageTaken);
+        AbilityRegistry.fireThorns(mob, player, damageTaken);
     }
 
     /** Player damaged by an Infused Mob (melee or projectile) — fire its offensive HURT Abilities. */
@@ -78,11 +73,8 @@ public final class MobHurtTrigger {
         if (mob == null) return;
         // Gate on abilities rather than tier so Rupture split copies
         // (which have no tier) still fire their HURT abilities.
-        List<Ability> hurtAbilities = AbilityRegistry.offensiveHurtAbilities(
-                MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT));
-        if (hurtAbilities.isEmpty()) return;
-
-        fireHurtAbilities(mob, player, damageTaken, hurtAbilities);
+        AbilityRegistry.fireOffensiveHurt(
+                MobTierManager.getAbilitiesByTrigger(mob, TriggerType.HURT), mob, player, damageTaken);
     }
 
     /**
@@ -107,12 +99,5 @@ public final class MobHurtTrigger {
      */
     static boolean isMobAttack(boolean attackerIsMob, boolean attackerIsProjectile, boolean ownerIsMob) {
         return attackerIsMob || (attackerIsProjectile && ownerIsMob);
-    }
-
-    /** Fires the given HURT abilities for the mob, passing the damage amount through. */
-    private static void fireHurtAbilities(Mob mob, Player player, float damageTaken, List<Ability> hurtAbilities) {
-        for (Ability ability : hurtAbilities) {
-            ability.effect().apply(mob, player, damageTaken);
-        }
     }
 }

@@ -117,17 +117,16 @@ class InfusionGateTest {
 
     @Test
     void activeStatusHasNoRefusalMessage() {
-        assertEquals(null, InfusionGate.refusalMessage(
-                InfusionGate.Status.ACTIVE, "minecraft:overworld"));
+        assertTrue(InfusionGate.refusalMessage(
+                InfusionGate.Status.ACTIVE, "minecraft:overworld").isEmpty());
     }
 
     @Test
     void blacklistedMessageNamesWorldAndFix() {
-        String message = InfusionGate.refusalMessage(
-                InfusionGate.Status.WORLD_BLACKLISTED, "minecraft:overworld");
         assertEquals("§cThis world is on the infused-mobs blacklist. "
                 + "Remove it with §f/infusedmobs world remove minecraft:overworld§c to summon here.",
-                message);
+                InfusionGate.refusalMessage(
+                        InfusionGate.Status.WORLD_BLACKLISTED, "minecraft:overworld").orElseThrow());
     }
 
     @Test
@@ -135,6 +134,6 @@ class InfusionGateTest {
         assertEquals("§cInfused mobs are disabled in this world. "
                 + "Enable them with §f/gamerule infusedmobs:enabled true§c.",
                 InfusionGate.refusalMessage(
-                        InfusionGate.Status.RULE_DISABLED, "minecraft:the_nether"));
+                        InfusionGate.Status.RULE_DISABLED, "minecraft:the_nether").orElseThrow());
     }
 }

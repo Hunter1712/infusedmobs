@@ -5,6 +5,7 @@ import io.github.hunter1712.infusedmobs.test.IsolatedState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -270,6 +271,15 @@ class AbilityRegistryTest {
         assertTrue(AbilityRegistry.offensiveHurtAbilities(List.of()).isEmpty());
     }
 
+    @Test
+    void offensiveHurtReturnsUnmodifiableList() {
+        Ability bane = ability("bane", TriggerType.HURT);
+
+        List<Ability> result = AbilityRegistry.offensiveHurtAbilities(List.of(bane));
+
+        assertThrows(UnsupportedOperationException.class, () -> result.add(bane));
+    }
+
     // ========================================
     // Tick-capability probe (live-roll scan seam)
     // ========================================
@@ -290,5 +300,74 @@ class AbilityRegistryTest {
         register("thorns", TriggerType.HURT);
 
         assertFalse(AbilityRegistry.hasTickAbilities(List.of("thorns")));
+    }
+
+    // ========================================
+    // Firing — triggers cross one seam
+    // ========================================
+
+    private static Ability counting(String id, TriggerType trigger, List<String> applied) {
+        return new Ability(id, id, trigger, (mob, target, damage) -> applied.add(id));
+    }
+
+    @Test
+    void fireOffensiveHurtAppliesNonThornsHurtOnly() {
+        List<String> applied = new ArrayList<>();
+        Ability bane = counting("bane", TriggerType.HURT, applied);
+        Ability thorns = counting("thorns", TriggerType.HURT, applied);
+        Ability ward = counting("ward", TriggerType.TICK, applied);
+
+        AbilityRegistry.fireOffensiveHurt(List.of(bane, thorns, ward), null, null, 1.0f);
+
+        assertEquals(List.of("bane"), applied);
+    }
+
+    @Test
+    void fireOffensiveHurtPassesDamageThrough() {
+        List<Float> seen = new ArrayList<>();
+        Ability bane = new Ability("bane", "bane", TriggerType.HURT,
+                (mob, target, damage) -> seen.add(damage));
+
+        AbilityRegistry.fireOffensiveHurt(List.of(bane), null, null, 2.5f);
+
+        assertEquals(List.of(2.5f), seen);
+    }
+
+    @Test
+    void fireThornsAppliesRegisteredThorns() {
+        List<Float> seen = new ArrayList<>();
+        AbilityRegistry.register("thorns", "Thorns", TriggerType.HURT,
+                (mob, target, damage) -> seen.add(damage));
+
+        AbilityRegistry.fireThorns(null, null, 3.0f);
+
+        assertEquals(List.of(3.0f), seen);
+    }
+
+    @Test
+    void fireThornsNoopWhenUnregistered() {
+        assertDoesNotThrow(() -> AbilityRegistry.fireThorns(null, null, 1.0f));
+    }
+
+    @Test
+    void fireTickAppliesTickOnly() {
+        List<String> applied = new ArrayList<>();
+        Ability ward = counting("ward", TriggerType.TICK, applied);
+        Ability bane = counting("bane", TriggerType.HURT, applied);
+
+        AbilityRegistry.fireTick(List.of(ward, bane), null);
+
+        assertEquals(List.of("ward"), applied);
+    }
+
+    @Test
+    void fireDeathAppliesDeathOnly() {
+        List<String> applied = new ArrayList<>();
+        Ability rupture = counting("rupture", TriggerType.DEATH, applied);
+        Ability bane = counting("bane", TriggerType.HURT, applied);
+
+        AbilityRegistry.fireDeath(List.of(rupture, bane), null, null);
+
+        assertEquals(List.of("rupture"), applied);
     }
 }

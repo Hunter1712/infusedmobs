@@ -466,10 +466,10 @@ public final class InfusedMobsCommand {
 
         // Refuse to summon where the mod is inactive — blacklist and
         // gamerule are both authoritative, with a distinct message each.
-        String refusal = InfusionGate.refusalMessage(
+        var refusal = InfusionGate.refusalMessage(
                 InfusionGate.status(level), Platform.hooks().dimensionId(level));
-        if (refusal != null) {
-            source.sendFailure(Component.literal(refusal));
+        if (refusal.isPresent()) {
+            source.sendFailure(Component.literal(refusal.get()));
             return 0;
         }
 

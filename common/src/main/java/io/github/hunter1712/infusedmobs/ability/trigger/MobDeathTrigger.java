@@ -1,6 +1,6 @@
 package io.github.hunter1712.infusedmobs.ability.trigger;
 
-import io.github.hunter1712.infusedmobs.ability.Ability;
+import io.github.hunter1712.infusedmobs.ability.AbilityRegistry;
 import io.github.hunter1712.infusedmobs.ability.TriggerType;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
 
@@ -8,8 +8,6 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-
-import java.util.List;
 
 /**
  * Handles the {@link TriggerType#DEATH} trigger.
@@ -31,10 +29,8 @@ public final class MobDeathTrigger {
         LivingEntity killer = source.getEntity() instanceof LivingEntity living ? living : null;
 
         // Fire ALL DEATH abilities
-        List<Ability> abilities = MobTierManager.getAbilitiesByTrigger(mob, TriggerType.DEATH);
-        for (Ability ability : abilities) {
-            ability.effect().apply(mob, killer, 0f);
-        }
+        AbilityRegistry.fireDeath(
+                MobTierManager.getAbilitiesByTrigger(mob, TriggerType.DEATH), mob, killer);
 
         // Clean up tracking
         MobTierManager.removeMob(mob);

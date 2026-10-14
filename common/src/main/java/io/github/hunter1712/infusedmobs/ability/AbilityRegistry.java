@@ -221,13 +221,15 @@ public final class AbilityRegistry {
      * Returns the offensive HURT abilities in {@code abilities}: HURT trigger
      * minus reactive Thorns. Behind the Ability seam so HURT triggers never
      * branch on the Thorns id themselves.
+     *
+     * @return an unmodifiable list, like {@link #getRandomAbilities}
      */
     public static List<Ability> offensiveHurtAbilities(List<Ability> abilities) {
         List<Ability> result = new ArrayList<>(abilities.size());
         for (Ability ability : forTrigger(abilities, TriggerType.HURT)) {
             if (!ability.id().equals(THORNS_ID)) result.add(ability);
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     /**
@@ -237,6 +239,53 @@ public final class AbilityRegistry {
      */
     public static boolean hasTickAbilities(List<String> ids) {
         return !forTrigger(getAbilitiesByIds(ids), TriggerType.TICK).isEmpty();
+    }
+
+    // ========================================
+    // Firing — one seam per trigger direction
+    // ========================================
+
+    /**
+     * Fires the offensive HURT abilities in {@code abilities} (HURT minus
+     * reactive Thorns) at the target, passing the damage amount through.
+     * Firing on an empty list is a no-op, so callers never branch on it.
+     */
+    public static void fireOffensiveHurt(List<Ability> abilities, Mob mob, Player target, float damage) {
+        for (Ability ability : offensiveHurtAbilities(abilities)) {
+            ability.effect().apply(mob, target, damage);
+        }
+    }
+
+    /**
+     * Fires the registered Thorns Ability once, reflecting a fraction back
+     * at the attacker. No-op when Thorns is unregistered — callers gate on
+     * possession via the Infusion seam, never on registration here.
+     */
+    public static void fireThorns(Mob mob, Player target, float damage) {
+        Ability thorns = getById(THORNS_ID);
+        if (thorns != null) {
+            thorns.effect().apply(mob, target, damage);
+        }
+    }
+
+    /**
+     * Fires the TICK abilities in {@code abilities} on the mob itself.
+     * Firing on an empty list is a no-op, so callers never branch on it.
+     */
+    public static void fireTick(List<Ability> abilities, Mob mob) {
+        for (Ability ability : forTrigger(abilities, TriggerType.TICK)) {
+            ability.effect().apply(mob, null, 0f);
+        }
+    }
+
+    /**
+     * Fires the DEATH abilities in {@code abilities}, passing the killer
+     * (or null) through. Firing on an empty list is a no-op.
+     */
+    public static void fireDeath(List<Ability> abilities, Mob mob, LivingEntity killer) {
+        for (Ability ability : forTrigger(abilities, TriggerType.DEATH)) {
+            ability.effect().apply(mob, killer, 0f);
+        }
     }
 
     /**
