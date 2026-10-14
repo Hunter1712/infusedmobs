@@ -28,12 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Executed platform conformance gate: shared code exercised through the
- * shared platform interface with an injected fake, plus the real 26.2 Shim
+ * shared platform interface with an injected fake, plus the real 26.x Shim
  * and real NBT types where the suite stays hermetic.
  * <p>
  * No source-text reads — failures report behavioral divergence, not file
  * text. Each Versioned Source Set adapter implements this same interface:
- * the real 26.2 adapter is exercised directly here, the 1.21.1 and 1.20.1
+ * the real 26.x adapter is exercised directly here, the 1.21.x and 1.20.x
  * adapters are held to the same contract by the hurt-reporting doubles and
  * the shared lenient decode pinned in RolledTest, and all three compile against their own
  * game APIs in CI (holder versus raw effects, identifier versus resource

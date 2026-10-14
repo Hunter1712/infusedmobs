@@ -6,12 +6,12 @@
 |-------------|---------|
 | **Fabric Loader** | 0.19.3 or newer |
 | **Fabric API** | Any build matching your Minecraft version |
-| **Java** | 17+ on 1.20.1 · 21+ on 1.21.1 · 25+ on 26.2 |
+| **Java** | 17+ on 1.20.x · 21+ on 1.21.x · 25+ on 26.x |
 | **Side** | Install on **both client and server** |
 
 You must install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) first. Infused Mobs has no other dependencies and adds no custom blocks, items, effects or world generation.
 
-> The mod builds against Fabric API `0.92.0+1.20.1`, `0.116.6+1.21.1` and `0.155.2+26.2`, but declares `fabric-api: "*"` — any Fabric API build for your game version works, and you do **not** need to match those exact numbers.
+> The mod builds against Fabric API `0.92.0+1.20.1`, `0.116.6+1.21.1` and `0.162.0+26.3`, but declares `fabric-api: "*"` — any Fabric API build for your game version works, and you do **not** need to match those exact numbers.
 
 ## Steps
 
@@ -21,11 +21,11 @@ You must install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](htt
 
    | Minecraft | Download |
    |-----------|----------|
-   | 1.20.1 | `infusedmobs-2.8.0+1.20.1.jar` |
-   | 1.21.1 | `infusedmobs-2.8.0+1.21.1.jar` |
-   | 26.2 | `infusedmobs-2.8.0+26.2.jar` |
+   | 1.20.1–1.20.6 | `infusedmobs-2.8.0+1.20.x.jar` |
+   | 1.21.1–1.21.11 | `infusedmobs-2.8.0+1.21.x.jar` |
+   | 26.1–26.3+ | `infusedmobs-2.8.0+26.x.jar` |
 
-   Downloading the wrong version's jar is the most common install mistake — the `+<mc>` suffix must match your game version exactly.
+   One jar per generation covers its whole range — on Modrinth tick every game version in the range. Downloading the wrong generation's jar (1.20 vs 1.21 vs 26.x) is the most common install mistake.
 
 4. **Drop the jar into your `mods/` folder.**
    - Singleplayer: `.minecraft/mods/`

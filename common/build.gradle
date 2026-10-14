@@ -28,8 +28,8 @@ dependencies {
 sourceSets {
     main {
         java {
-            // Shim files live in version modules — pull the 26.2 versions for common compilation so tests can run
-            srcDir "${rootProject.projectDir}/26.2/src/main/java"
+            // Shim files live in version modules — pull the 26.x versions for common compilation so tests can run
+            srcDir "${rootProject.projectDir}/26.x/src/main/java"
         }
         resources {
             srcDir "src/main/resources"

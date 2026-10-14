@@ -4,7 +4,7 @@ An **Ability** is a named power an Infused Mob can use. Every ability lives in o
 
 There are **14 abilities** across three **TriggerTypes**:
 
-| Trigger | Fires when… |
+| TriggerType | Fires when… |
 |---------|-------------|
 | **HURT** | damage is exchanged between an Infused Mob and a player |
 | **TICK** | passively, every second, while the mob is alive |
@@ -20,11 +20,11 @@ HURT covers two directions in one event:
 Rules that apply to all HURT abilities:
 
 - **Players only.** Mob-vs-mob hits never trigger abilities.
-- **A shield block negates every HURT ability** on 1.21.1 and 26.2. On 1.20.1 the legacy damage event doesn't report shield blocks, so a fully-blocked hit still fires them — see [version-differences.md](version-differences.md).
+- **A shield block negates every HURT ability** on 1.21.x and 26.x. On 1.20.x the legacy damage event doesn't report shield blocks, so a fully-blocked hit still fires them — see [version-differences.md](version-differences.md).
 - **Thorns reflection never re-triggers abilities** — the reflected damage uses a distinct damage type, so two Thorns mobs can't ping-pong forever.
 - Effect-based abilities use the configured HURT duration and amplifier (see [configuration.md](configuration.md)).
 
-| ID | Ability | Effect |
+| ID | Ability | Outcome |
 |----|---------|--------|
 | `bane` | **Bane** | Poison I for the configured HURT duration (3s default) |
 | `chill` | **Chill** | Slowness I for the configured HURT duration |
@@ -46,7 +46,7 @@ Notes:
 
 TICK abilities apply a **buff to the mob itself**, refreshing every second. They have no particles, so you'll only notice them in the mob's behaviour.
 
-| ID | Ability | Effect |
+| ID | Ability | Outcome |
 |----|---------|--------|
 | `ward` | **Ward** | Resistance I |
 | `frenzy` | **Frenzy** | Strength I |
@@ -57,7 +57,7 @@ Duration and amplifier are configurable (`tickEffectDuration`, `tickEffectAmplif
 
 ## DEATH
 
-| ID | Ability | Effect |
+| ID | Ability | Outcome |
 |----|---------|--------|
 | `rupture` | **Rupture** | Splits into 2 copies on death |
 | `combust` | **Combust** | Explodes on death |

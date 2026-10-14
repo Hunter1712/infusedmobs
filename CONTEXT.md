@@ -39,7 +39,7 @@ _Avoid_: Enabled Flag, Global Toggle
 ### Versioning
 
 **Versioned Source Set**:
-A per-Minecraft-version Gradle subproject (`1.20.1`, `1.21.1`, `26.2`) plus `common` that holds shared code; each version compiles `common/src/main/java` plus its own shims and `fabric.mod.json`.
+A per-Minecraft-generation Gradle subproject (`1.20.x`, `1.21.x`, `26.x`) plus `common` that holds shared code; each version compiles `common/src/main/java` plus its own shims and `fabric.mod.json`. Each subproject compiles against one baseline game version (`1.20.1`, `1.21.1`, `26.3`) but its jar loads on the whole generation via its `minecraft` predicate.
 _Avoid_: Version overlay, Chiseled source set
 
 **Shim**:
@@ -47,5 +47,5 @@ A small file duplicated per version where Mojang/Fabric APIs diverge (e.g. `game
 _Avoid_: Version-specific file, Compat layer
 
 **Artifact Suffix**:
-The `+mc` qualifier appended to `mod_version` for published jars (`2.8.0+1.20.1`, `2.8.0+1.21.1`, `2.8.0+26.2`) so Modrinth channels stay distinct.
+The `+mc` qualifier appended to `mod_version` for published jars (`2.8.0+1.20.x`, `2.8.0+1.21.x`, `2.8.0+26.x`) so Modrinth channels stay distinct. The qualifier is the generation name (the Gradle project name), not the compile-baseline game version.
 _Avoid_: Version suffix, Build suffix

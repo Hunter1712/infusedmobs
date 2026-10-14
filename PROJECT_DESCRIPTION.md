@@ -15,7 +15,7 @@ Tiers roll as a single uniform decision, so at default settings about **30% of h
 ## Requirements
 
 - **Fabric Loader 0.19.3+** and **Fabric API**
-- Minecraft **1.20.1** (Java 17+), **1.21.1** (Java 21+) or **26.2** (Java 25+) — download the jar whose `+mc` suffix matches your game (e.g. `infusedmobs-2.8.0+1.21.1.jar`)
+- Minecraft **1.20.x** (Java 17+), **1.21.x** (Java 21+) or **26.x 26.1–26.3+** (Java 25+) — download the jar for your generation (e.g. `infusedmobs-2.8.0+1.21.x.jar`, `infusedmobs-2.8.0+26.x.jar` for any 26.1–26.3+ game)
 - Install on both client and server
 
 ## Installation

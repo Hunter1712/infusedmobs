@@ -18,8 +18,8 @@ import java.util.Objects;
  * The honest shape: callers discriminate by kind ({@code instanceof}
  * pattern matching). Tier is available only on {@link Tiered} rolls —
  * split-copy and empty rolls expose no Tier accessor, so no caller can
- * observe a null Tier. Every storage adapter (codec on 26.2, NBT on
- * 1.21.1/1.20.1) encodes through {@link #kind} plus the variant payload,
+ * observe a null Tier. Every storage adapter (codec on 26.x, NBT on
+ * 1.21.x/1.20.x) encodes through {@link #kind} plus the variant payload,
  * and {@link #decode} decodes from the same ({@code kind}, {@code tier},
  * {@code abilityIds}) shape. Decoding is lenient — unknown kinds, unknown or
  * missing tiers and missing ability lists all degrade to {@link Nothing} so a
