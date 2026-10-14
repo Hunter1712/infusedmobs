@@ -53,6 +53,13 @@ public final class SplitEffect {
 
     /**
      * Spawns 2 split copies with live Infusion assignment.
+     * <p>
+     * This default wires the Infusion seam directly; it is the live
+     * adapter, not a layer to mock — tests use
+     * {@link #apply(LivingEntity, Consumer)} with a recording assigner.
+     * Rupture registration stays in the Ability pool (with the other 13
+     * abilities, locked by registration tests), so this return edge is the
+     * documented direction: Ability pool → Infusion seam, never the reverse.
      *
      * @param mob the dying mob
      */

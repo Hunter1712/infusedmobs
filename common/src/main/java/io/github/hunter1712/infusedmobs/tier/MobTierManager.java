@@ -69,7 +69,7 @@ public final class MobTierManager {
         if (mob.getType().getCategory() != MobCategory.MONSTER) return;
         if (isMobBlacklisted(mob)) return;  // Config Mob Blacklist — these types never infuse
         if (InfusionGate.status(serverLevel) != InfusionGate.Status.ACTIVE) return;
-        if (SHARED.find(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
+        if (SHARED.get(mob.getUUID()) != null) return;  // Already assigned — prevents stacking
 
         UUID uuid = mob.getUUID();
 
@@ -143,7 +143,7 @@ public final class MobTierManager {
     private static Rolled.Tiered trackTiered(Mob mob, MobTier tier, List<Ability> abilities,
                                             ModConfig.Instance config) {
         Rolled.Tiered rolled = new Rolled.Tiered(tier, idsOf(abilities));
-        SHARED.track(mob.getUUID(), rolled);
+        SHARED.put(mob.getUUID(), rolled);
         applyHealthMultiplier(mob, config.forTier(tier));
         setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)),
                 config.showNametags());
@@ -153,7 +153,7 @@ public final class MobTierManager {
     /** Tracks a split copy: registry entry, Cinder stats, greyscale nametag. Returns the persisted roll. */
     private static Rolled.Split trackSplit(Mob mob, List<Ability> abilities, ModConfig.Instance config) {
         Rolled.Split rolled = new Rolled.Split(idsOf(abilities));
-        SHARED.track(mob.getUUID(), rolled);
+        SHARED.put(mob.getUUID(), rolled);
         applyCinderStats(mob, config.forTier(MobTier.CINDER));
         setNametag(mob, nametagText(rolled, abilityNames(abilities), entityTypeName(mob)),
                 config.showNametags());
@@ -252,7 +252,7 @@ public final class MobTierManager {
     /** Removes all tracking for this mob (called on death or despawn). */
     public static void removeMob(Mob mob) {
         UUID uuid = mob.getUUID();
-        SHARED.untrack(uuid);
+        SHARED.remove(uuid);
 
         // Clean up persistent state so it doesn't grow unboundedly
         if (mob.level() instanceof ServerLevel serverLevel) {
@@ -266,7 +266,7 @@ public final class MobTierManager {
 
     /** Returns the tier assigned to this mob, or null (split copy / untracked). */
     public static MobTier getTier(Mob mob) {
-        return SHARED.find(mob.getUUID()) instanceof Rolled.Tiered tiered ? tiered.tier() : null;
+        return SHARED.get(mob.getUUID()) instanceof Rolled.Tiered tiered ? tiered.tier() : null;
     }
 
     /** Returns true if this mob is tracked as a Rupture split copy (Cinder stats, no Tier). */
@@ -284,7 +284,7 @@ public final class MobTierManager {
 
     /** Resolves the tracked roll's ability ids to live objects (empty when untracked). */
     private static List<Ability> liveAbilities(UUID uuid) {
-        Rolled rolled = SHARED.find(uuid);
+        Rolled rolled = SHARED.get(uuid);
         return rolled == null ? List.of() : AbilityRegistry.getAbilitiesByIds(rolled.abilityIds());
     }
 

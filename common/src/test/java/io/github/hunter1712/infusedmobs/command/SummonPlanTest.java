@@ -31,4 +31,12 @@ class SummonPlanTest {
         assertTrue(SummonPlan.refusalFor(
                 InfusionGate.Status.WORLD_BLACKLISTED, "minecraft:overworld").isPresent());
     }
+
+    @Test
+    void tierOptionsListsEveryTier() {
+        String options = SummonPlan.tierOptions();
+        for (MobTier tier : MobTier.values()) {
+            assertTrue(options.contains(tier.name().toLowerCase(java.util.Locale.ROOT)));
+        }
+    }
 }

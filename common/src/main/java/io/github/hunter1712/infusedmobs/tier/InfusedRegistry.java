@@ -17,33 +17,14 @@ import java.util.stream.Collectors;
  * persistence can never disagree. Tests instantiate a fresh registry per
  * case with no manual reset.
  * <p>
- * Implements the shared {@link RollStore} seam ({@code track} →
- * {@code put}, {@code find} → {@code get}, {@code untrack} →
- * {@code remove}) so the live and persisted adapters stay
- * interchangeable; the historic names remain as delegates.
+ * Implements the shared {@link RollStore} seam, so live CRUD travels the
+ * same {@code put} / {@code get} / {@code remove} shape as the persisted
+ * adapter; only live-only queries ({@code isSplitCopy},
+ * {@code tickMobUUIDs}) keep their own names.
  */
 final class InfusedRegistry implements RollStore {
 
     private final Map<UUID, Rolled> tracked = new HashMap<>();
-
-    /** Starts tracking this UUID as the given roll. */
-    public void track(UUID id, Rolled rolled) {
-        put(id, rolled);
-    }
-
-    /** Returns the tracked roll for this UUID, or null if untracked. */
-    public Rolled find(UUID id) {
-        return get(id);
-    }
-
-    /**
-     * Stops tracking this UUID.
-     *
-     * @return true if anything was tracked
-     */
-    public boolean untrack(UUID id) {
-        return remove(id);
-    }
 
     /** Clears all tracking. */
     public void clear() {
@@ -69,7 +50,7 @@ final class InfusedRegistry implements RollStore {
 
     /** Returns true if this UUID is tracked as a Rupture split copy (Cinder stats, no Tier). */
     public boolean isSplitCopy(UUID id) {
-        return find(id) instanceof Rolled.Split;
+        return get(id) instanceof Rolled.Split;
     }
 
     /**

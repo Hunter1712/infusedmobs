@@ -354,7 +354,7 @@ class VersionShimParityTest {
         TestAbilities.register("wraith", TriggerType.TICK);
         var registry = new InfusedRegistry();
         var tickId = UUID.randomUUID();
-        registry.track(tickId, new Rolled.Tiered(MobTier.SHADE, List.of("wraith")));
+        registry.put(tickId, new Rolled.Tiered(MobTier.SHADE, List.of("wraith")));
 
         assertEquals(java.util.Set.of(tickId), registry.tickMobUUIDs(),
                 "TICK scan diverged through the seam");

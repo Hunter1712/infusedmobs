@@ -33,9 +33,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -184,7 +183,7 @@ public final class InfusedMobsCommand {
         source.sendSystemMessage(Component.literal(
                 "§f/infusedmobs summon <tier> [entity] [abilities] §7— spawn an Infused Mob at crosshair (abilities require an entity)"));
         source.sendSystemMessage(Component.literal(
-                "§8Tiers: " + tierOptions() + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
+                "§8Tiers: " + SummonPlan.tierOptions() + " §8| Abilities: space-separated IDs (e.g., bane thorns)"));
         return 1;
     }
 
@@ -233,19 +232,8 @@ public final class InfusedMobsCommand {
 
         ModConfig.Instance current = ModConfig.get();
         BlacklistEdit.Result edited = BlacklistEdit.edit(current.worldBlacklist(), worldId, add);
-        switch (edited.outcome()) {
-            case ALREADY_PRESENT -> {
-                source.sendSuccess(() -> Component.literal(
-                        "§eWorld §f" + worldId + " §eis already on the blacklist."), false);
-                return 1;
-            }
-            case NOT_PRESENT -> {
-                source.sendFailure(Component.literal(
-                        "§cWorld §f" + worldId + " §cis not on the blacklist."));
-                return 0;
-            }
-            case ADDED, REMOVED -> { /* fall through to persist below */ }
-        }
+        var terminal = reportBlacklistNoChange(source, "World", worldId, edited.outcome());
+        if (terminal.isPresent()) return terminal.get();
         ModConfig.swapInstance(current.withWorldBlacklist(edited.updated()));
 
         if (add) {
@@ -258,6 +246,31 @@ public final class InfusedMobsCommand {
                             + "The mod is now active there."), true);
         }
         return 1;
+    }
+
+    /**
+     * Reports an idempotent blacklist outcome shared by the World Blacklist
+     * and Mob Blacklist subcommands: already-present and not-present end
+     * here, added/removed proceed to persist.
+     *
+     * @return the terminal command result, or empty when the caller must
+     *         persist the edit and confirm it
+     */
+    private static Optional<Integer> reportBlacklistNoChange(
+            CommandSourceStack source, String label, String id, BlacklistEdit.Outcome outcome) {
+        return switch (outcome) {
+            case ALREADY_PRESENT -> {
+                source.sendSuccess(() -> Component.literal(
+                        "§e" + label + " §f" + id + " §eis already on the blacklist."), false);
+                yield Optional.of(1);
+            }
+            case NOT_PRESENT -> {
+                source.sendFailure(Component.literal(
+                        "§c" + label + " §f" + id + " §cis not on the blacklist."));
+                yield Optional.of(0);
+            }
+            case ADDED, REMOVED -> Optional.empty();
+        };
     }
 
     /** Lists all worlds currently on the blacklist. */
@@ -303,19 +316,8 @@ public final class InfusedMobsCommand {
 
         ModConfig.Instance current = ModConfig.get();
         BlacklistEdit.Result edited = BlacklistEdit.edit(current.mobBlacklist(), entityId, add);
-        switch (edited.outcome()) {
-            case ALREADY_PRESENT -> {
-                source.sendSuccess(() -> Component.literal(
-                        "§eMob §f" + entityId + " §eis already on the blacklist."), false);
-                return 1;
-            }
-            case NOT_PRESENT -> {
-                source.sendFailure(Component.literal(
-                        "§cMob §f" + entityId + " §cis not on the blacklist."));
-                return 0;
-            }
-            case ADDED, REMOVED -> { /* fall through to persist below */ }
-        }
+        var terminal = reportBlacklistNoChange(source, "Mob", entityId, edited.outcome());
+        if (terminal.isPresent()) return terminal.get();
         ModConfig.swapInstance(current.withMobBlacklist(edited.updated()));
 
         if (add) {
@@ -441,7 +443,7 @@ public final class InfusedMobsCommand {
         MobTier tier = SummonPlan.parseTier(tierName).orElse(null);
         if (tier == null) {
             source.sendFailure(Component.literal(
-                    "§cUnknown tier: " + tierName + ". Use: " + tierOptions() + "."));
+                    "§cUnknown tier: " + tierName + ". Use: " + SummonPlan.tierOptions() + "."));
             return 0;
         }
 
@@ -549,14 +551,6 @@ public final class InfusedMobsCommand {
     /** True if the entity type is a summonable MONSTER — shared by summon suggestions and {@code list}. */
     private static boolean isInfusable(EntityType<?> type) {
         return type.canSummon() && type.getCategory() == MobCategory.MONSTER;
-    }
-
-    /** Tier options derived from the enum so the summon error never rots. */
-    static String tierOptions() {
-        return String.join(", ",
-                Arrays.stream(MobTier.values())
-                        .map(t -> t.name().toLowerCase(Locale.ROOT))
-                        .toList());
     }
 
 }

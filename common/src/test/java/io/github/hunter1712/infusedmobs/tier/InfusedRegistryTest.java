@@ -28,43 +28,43 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InfusedRegistryTest {
 
     @Test
-    void trackAndFindRoundTrip() {
+    void putAndGetRoundTrip() {
         var registry = new InfusedRegistry();
         var id = UUID.randomUUID();
         var rolled = new Rolled.Tiered(MobTier.DOOM, List.of("bane", "rupture"));
 
-        registry.track(id, rolled);
+        registry.put(id, rolled);
 
-        assertEquals(rolled, registry.find(id));
+        assertEquals(rolled, registry.get(id));
     }
 
     @Test
-    void findMissingReturnsNull() {
-        assertNull(new InfusedRegistry().find(UUID.randomUUID()));
+    void getMissingReturnsNull() {
+        assertNull(new InfusedRegistry().get(UUID.randomUUID()));
     }
 
     @Test
-    void trackRejectsNulls() {
+    void putRejectsNulls() {
         var registry = new InfusedRegistry();
         var rolled = new Rolled.Split(List.of());
 
-        assertThrows(NullPointerException.class, () -> registry.track(null, rolled));
-        assertThrows(NullPointerException.class, () -> registry.track(UUID.randomUUID(), null));
+        assertThrows(NullPointerException.class, () -> registry.put(null, rolled));
+        assertThrows(NullPointerException.class, () -> registry.put(UUID.randomUUID(), null));
     }
 
     @Test
-    void untrackExistingForgets() {
+    void removeExistingForgets() {
         var registry = new InfusedRegistry();
         var id = UUID.randomUUID();
-        registry.track(id, new Rolled.Split(List.of()));
+        registry.put(id, new Rolled.Split(List.of()));
 
-        assertTrue(registry.untrack(id));
-        assertNull(registry.find(id));
+        assertTrue(registry.remove(id));
+        assertNull(registry.get(id));
     }
 
     @Test
-    void untrackMissingReturnsFalse() {
-        assertFalse(new InfusedRegistry().untrack(UUID.randomUUID()));
+    void removeMissingReturnsFalse() {
+        assertFalse(new InfusedRegistry().remove(UUID.randomUUID()));
     }
 
     @Test
@@ -72,9 +72,9 @@ class InfusedRegistryTest {
         var a = new InfusedRegistry();
         var b = new InfusedRegistry();
         var id = UUID.randomUUID();
-        a.track(id, new Rolled.Split(List.of()));
+        a.put(id, new Rolled.Split(List.of()));
 
-        assertNull(b.find(id));
+        assertNull(b.get(id));
     }
 
     @Test
@@ -85,9 +85,9 @@ class InfusedRegistryTest {
         var tickId = UUID.randomUUID();
         var hurtId = UUID.randomUUID();
         var bareId = UUID.randomUUID();
-        registry.track(tickId, new Rolled.Tiered(MobTier.SHADE, List.of("bane", "wraith")));
-        registry.track(hurtId, new Rolled.Tiered(MobTier.CINDER, List.of("bane")));
-        registry.track(bareId, new Rolled.Split(List.of()));
+        registry.put(tickId, new Rolled.Tiered(MobTier.SHADE, List.of("bane", "wraith")));
+        registry.put(hurtId, new Rolled.Tiered(MobTier.CINDER, List.of("bane")));
+        registry.put(bareId, new Rolled.Split(List.of()));
 
         Set<UUID> tickMobs = registry.tickMobUUIDs();
 
@@ -97,11 +97,11 @@ class InfusedRegistryTest {
     @Test
     void clearEmptiesRegistry() {
         var registry = new InfusedRegistry();
-        registry.track(UUID.randomUUID(), new Rolled.Split(List.of()));
+        registry.put(UUID.randomUUID(), new Rolled.Split(List.of()));
         registry.clear();
 
         assertTrue(registry.tickMobUUIDs().isEmpty());
-        assertNull(registry.find(UUID.randomUUID()));
+        assertNull(registry.get(UUID.randomUUID()));
     }
 
     @Test
@@ -110,8 +110,8 @@ class InfusedRegistryTest {
         var splitId = UUID.randomUUID();
         var tieredId = UUID.randomUUID();
         var missingId = UUID.randomUUID();
-        registry.track(splitId, new Rolled.Split(List.of()));
-        registry.track(tieredId, new Rolled.Tiered(MobTier.CINDER, List.of("bane")));
+        registry.put(splitId, new Rolled.Split(List.of()));
+        registry.put(tieredId, new Rolled.Tiered(MobTier.CINDER, List.of("bane")));
 
         assertTrue(registry.isSplitCopy(splitId),
                 "split copy must report as split copy for Cinder XP treatment");
