@@ -1,10 +1,10 @@
 ---
 number: 11
 title: "Claim only the exact built version, with a guard"
-state: open
+state: closed
 labels: [ready-for-agent]
 created: "2026-10-30T00:00:00Z"
-updated: "2026-10-30T00:00:00Z"
+updated: "2026-10-30T07:00:00Z"
 assignee: ""
 ---
 
@@ -27,3 +27,7 @@ Each versioned subproject's Fabric manifest claims exactly the game version that
 ## Blocked by
 
 - #10 — ship the blacklist wildcard feature as 2.9.1.
+
+## Comments
+
+**2026-10-30 — agent:** Closed. Manifests now claim `1.20.1`, `1.21.1`, `26.3`. New `ManifestVersionClaimTest` discovers the versioned projects from `settings.gradle`, reads `minecraft_version` and the manifest claim, and names both on mismatch. It failed with all three ranges before the manifests changed, passes now; `:common:test` and `build` green, and all three built jars carry the exact claim.
