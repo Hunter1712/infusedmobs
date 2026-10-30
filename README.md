@@ -39,7 +39,7 @@ Tiers roll as a single uniform decision, so the effective shares equal the confi
 ./gradlew build
 ```
 
-Jars land in `<version>/build/libs/` (e.g. `1.20.1/build/libs/infusedmobs-2.9.2+1.20.1.jar`). Use the JDK for the target version: 17 / 21 / 25. Build with system Gradle (`gradle build`); the wrapper is kept for contributors without a local install.
+Jars land in `<version>/build/libs/` (e.g. `1.20.1/build/libs/infusedmobs-2.9.2+1.20.1.jar`). Run Gradle on JDK 25 — Loom needs 21+, and the 26.3 module needs 25. Each jar still targets its game's Java: 17 / 21 / 25. Build with system Gradle (`gradle build`); the wrapper is kept for contributors without a local install.
 
 ## Licence
 
