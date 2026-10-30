@@ -1,10 +1,10 @@
 ---
 number: 12
 title: "Rewrite current support claims and ship 2.9.2"
-state: open
+state: closed
 labels: [ready-for-agent]
 created: "2026-10-30T00:00:00Z"
-updated: "2026-10-30T00:00:00Z"
+updated: "2026-10-30T08:00:00Z"
 assignee: ""
 ---
 
@@ -31,3 +31,7 @@ Make every current document promise only 1.20.1, 1.21.1 and 26.3, rename the thr
 ## Blocked by
 
 - #11 — claim only the exact built version, with a guard.
+
+## Comments
+
+**2026-10-30 — agent:** Closed by the 2.9.2 commit (`feat: exact version support for 2.9.2`). Folders and jars renamed to `1.20.1` / `1.21.1` / `26.3`, all live support claims narrowed, policy line added to the compatibility guide and `CONTEXT.md`, `AGENTS.md` points at the three Prism instances, changelog and installation warning added. `bash scripts/check-docs.sh`, `:common:test` (rerun) and `bash gradlew build` green; jars `2.9.2+1.20.1`, `2.9.2+1.21.1`, `2.9.2+26.3` carry matching exact `minecraft` claims. Issue #13 remains for human release verification and smoke testing.

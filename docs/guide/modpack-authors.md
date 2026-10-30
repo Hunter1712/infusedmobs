@@ -66,4 +66,4 @@ It persists in the world save. For dimension-level control, use `worldBlacklist`
 | Launch-time toggle | `infusedmobs:enabled` gamerule (per world save) |
 | Dimension toggle | `worldBlacklist` config list (supports `modid:*` wildcards) |
 | Type toggle | `mobBlacklist` config list (wildcards via config; command takes exact ids) |
-| Tested versions | MC 1.20.x / 1.21.x / 26.x, Fabric Loader 0.19.3+ |
+| Tested versions | MC 1.20.1 / 1.21.1 / 26.3, Fabric Loader 0.19.3+ |

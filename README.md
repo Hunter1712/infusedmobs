@@ -1,14 +1,14 @@
 # Infused Mobs
 
-A Fabric mod for Minecraft **1.20.1 / 1.21.1 / 26.x (26.1–26.3+)** that gives vanilla hostile mobs **occult-infused tiers** with randomized abilities — fully configurable via JSON.
+A Fabric mod for Minecraft **1.20.1 / 1.21.1 / 26.3** that gives vanilla hostile mobs **occult-infused tiers** with randomized abilities — fully configurable via JSON.
 
-One project page covers all three generations. Download the jar whose `+<mc>` suffix matches your generation:
+One project page covers all three generations. Download the jar whose `+<mc>` suffix matches your game version:
 
 | Minecraft | Java | Jar |
 |-----------|------|-----|
-| 1.20.1–1.20.6 | 17+ | `infusedmobs-2.9.1+1.20.x.jar` |
-| 1.21.1–1.21.11 | 21+ | `infusedmobs-2.9.1+1.21.x.jar` |
-| 26.1–26.3+ | 25+ | `infusedmobs-2.9.1+26.x.jar` |
+| 1.20.1 | 17+ | `infusedmobs-2.9.2+1.20.1.jar` |
+| 1.21.1 | 21+ | `infusedmobs-2.9.2+1.21.1.jar` |
+| 26.3 | 25+ | `infusedmobs-2.9.2+26.3.jar` |
 
 ## Quick install
 
@@ -39,7 +39,7 @@ Tiers roll as a single uniform decision, so the effective shares equal the confi
 ./gradlew build
 ```
 
-Jars land in `<version>/build/libs/` (e.g. `1.20.x/build/libs/infusedmobs-2.9.1+1.20.x.jar`). Use the JDK for the target version: 17 / 21 / 25. Build with system Gradle (`gradle build`); the wrapper is kept for contributors without a local install.
+Jars land in `<version>/build/libs/` (e.g. `1.20.1/build/libs/infusedmobs-2.9.2+1.20.1.jar`). Use the JDK for the target version: 17 / 21 / 25. Build with system Gradle (`gradle build`); the wrapper is kept for contributors without a local install.
 
 ## Licence
 

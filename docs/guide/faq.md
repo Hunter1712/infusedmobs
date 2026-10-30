@@ -6,7 +6,7 @@
 Yes. Install Fabric API for your game version alongside Fabric Loader 0.19.3+.
 
 **The game says I'm missing a dependency.**
-Usually a missing or outdated **Fabric API**, or the **wrong generation's jar** for your game version. The `+<mc>` suffix must match your generation — `+1.21.x` will not load on a 1.20.x game. See [installation.md](installation.md).
+Usually a missing or outdated **Fabric API**, or the **wrong jar** for your game version. Each jar declares its exact game version — `+1.21.1` will not load on 1.20.1. See [installation.md](installation.md).
 
 **Does it work with vanilla clients?**
 The supported setup installs the mod on **both client and server**. All logic is server-side, and tier nametags are vanilla custom names, but install the same jar on both sides to match the tested configuration. See [compatibility.md](compatibility.md#client--server).
@@ -23,7 +23,7 @@ By design. At default settings the three tier chances sum to 70%, so about **30%
 Only **hostile (`MONSTER` category)** mobs roll naturally. Animals, villagers and other non-hostiles never do. `/infusedmobs summon` can bypass this for testing.
 
 **A blocked hit still triggered poison/slowness.**
-On **1.20.x** shields don't negate HURT abilities due to a platform limitation. On 1.21.x/26.x a shield block does negate them. See [version-differences.md](version-differences.md#shield-blocks-the-one-to-know).
+On **1.20.1** shields don't negate HURT abilities due to a platform limitation. On 1.21.1 and 26.3 a shield block does negate them. See [version-differences.md](version-differences.md#shield-blocks-the-one-to-know).
 
 **Why did the Rupture copy have a grey nametag and not split again?**
 By design. Split copies carry Cinder stats but no Tier; their single ability is drawn with `rupture` and `bequest` excluded so they can never split infinitely. See [abilities.md](abilities.md#rupture).

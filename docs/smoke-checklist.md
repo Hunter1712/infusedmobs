@@ -1,6 +1,6 @@
-# Infused Mobs — In-Game Smoke Checklist (1.21.x)
+# Infused Mobs — In-Game Smoke Checklist (1.21.1)
 
-Manual checklist, nice-to-have rather than a gate. Jar: `infusedmobs-2.9.1+1.21.x.jar` (from `1.21.x/build/libs/`).
+Manual checklist, nice-to-have rather than a gate. Jar: `infusedmobs-2.9.2+1.21.1.jar` (from `1.21.1/build/libs/`).
 Needs: fresh world, cheats on, op level 2. Report failures as: version + steps + what happened vs expected.
 
 ## Setup

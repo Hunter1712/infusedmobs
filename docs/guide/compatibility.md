@@ -6,9 +6,11 @@ One project page ships all three versions. Download the jar whose `+<mc>` suffix
 
 | Mod loader | Minecraft | Java | Fabric API (built against) | Jar |
 |------------|-----------|------|----------------------------|-----|
-| Fabric | 1.20.1–1.20.6 | 17+ | `0.92.0+1.20.1` | `infusedmobs-<mod>+1.20.x.jar` |
-| Fabric | 1.21.1–1.21.11 | 21+ | `0.116.6+1.21.1` | `infusedmobs-<mod>+1.21.x.jar` |
-| Fabric | 26.1–26.3+ | 25+ | `0.162.0+26.3` | `infusedmobs-<mod>+26.x.jar` |
+| Fabric | 1.20.1 | 17+ | `0.92.0+1.20.1` | `infusedmobs-<mod>+1.20.1.jar` |
+| Fabric | 1.21.1 | 21+ | `0.116.6+1.21.1` | `infusedmobs-<mod>+1.21.1.jar` |
+| Fabric | 26.3 | 25+ | `0.162.0+26.3` | `infusedmobs-<mod>+26.3.jar` |
+
+**Support policy:** one build folder per major generation, named for the exact game version it is built and smoke-tested against (1.20.1, 1.21.1, 26.3). A new major generation adds a fourth folder; minor versions are never chased.
 
 The Fabric API numbers are the versions the mod was **built and tested against**. The mod declares `fabric-api: "*"`, so any Fabric API build for your game version works — you don't need to match those exact numbers.
 

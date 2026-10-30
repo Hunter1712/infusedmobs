@@ -4,7 +4,7 @@ Infused Mobs targets three Minecraft generations from one shared code base, with
 
 ## Player-visible differences
 
-| Behaviour | 1.20.x | 1.21.x | 26.x (26.1–26.3+) |
+| Behaviour | 1.20.x | 1.21.x | 26.x |
 |-----------|--------|--------|------|
 | **Shield blocks negate HURT abilities** | ❌ No | ✅ Yes | ✅ Yes |
 | **Damage feeding Siphon / Thorns** | pre-mitigation | post-mitigation | post-mitigation |

@@ -16,15 +16,15 @@ jobs:
           - project: common
             java: 25
             task: :common:build
-          - project: 26.x
+          - project: 26.3
             java: 25
-            task: :26.x:build
-          - project: 1.21.x
+            task: :26.3:build
+          - project: 1.21.1
             java: 21
-            task: :1.21.x:build
-          - project: 1.20.x
+            task: :1.21.1:build
+          - project: 1.20.1
             java: 17
-            task: :1.20.x:build
+            task: :1.20.1:build
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -76,8 +76,8 @@ jobs:
         with:
           name: Artifacts-all
           path: |
-            26.x/build/libs/infusedmobs-*.jar
-            1.21.x/build/libs/infusedmobs-*.jar
-            1.20.x/build/libs/infusedmobs-*.jar
+            26.3/build/libs/infusedmobs-*.jar
+            1.21.1/build/libs/infusedmobs-*.jar
+            1.20.1/build/libs/infusedmobs-*.jar
             !**/*-sources.jar
             !**/*-dev.jar
