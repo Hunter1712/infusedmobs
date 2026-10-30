@@ -22,8 +22,6 @@ Pick your version:
 | 1.21.1 | 21+ | `infusedmobs-<mod>+1.21.1.jar` |
 | 26.3 | 25+ | `infusedmobs-<mod>+26.3.jar` |
 
-**Support policy:** one build folder per major generation, named for the exact game version it is built and smoke-tested against (1.20.1, 1.21.1, 26.3). A new major generation adds a fourth folder; minor versions are never chased.
-
 Full details in [installation.md](installation.md) and [compatibility.md](compatibility.md).
 
 ## Pages

@@ -20,7 +20,7 @@ HURT covers two directions in one event:
 Rules that apply to all HURT abilities:
 
 - **Players only.** Mob-vs-mob hits never trigger abilities.
-- **A shield block negates every HURT ability** on 1.21.x and 26.x. On 1.20.x the legacy damage event doesn't report shield blocks, so a fully-blocked hit still fires them — see [version-differences.md](version-differences.md).
+- **A shield block negates every HURT ability** on 1.21.1 and 26.3. On 1.20.1 the legacy damage event doesn't report shield blocks, so a fully-blocked hit still fires them — see [version-differences.md](version-differences.md).
 - **Thorns reflection never re-triggers abilities** — the reflected damage uses a distinct damage type, so two Thorns mobs can't ping-pong forever.
 - Effect-based abilities use the configured HURT duration and amplifier (see [configuration.md](configuration.md)).
 
