@@ -6,7 +6,7 @@ All `/infusedmobs` subcommands require **gamemaster permission (operator level 2
 |---------|--------------|
 | `/infusedmobs help` | List every subcommand |
 | `/infusedmobs nametag [on\|off]` | Show or set tier-nametag visibility (persisted to config) |
-| `/infusedmobs world add\|remove <world>` | Add/remove a dimension on the **World Blacklist** |
+| `/infusedmobs world add\|remove <world>` | Add/remove a dimension (or `namespace:*` wildcard) on the **World Blacklist** |
 | `/infusedmobs world list` | Show the World Blacklist |
 | `/infusedmobs mob add\|remove <entity>` | Add/remove a type on the **Mob Blacklist** |
 | `/infusedmobs mob list` | Show the Mob Blacklist |
@@ -29,6 +29,7 @@ Turns tier nametags on or off **globally** and persists the choice to `showNamet
 Manages the **World Blacklist** — dimensions where the mod is fully disabled. In a blacklisted dimension, mobs spawn vanilla (no tiers, abilities or nametags) and `/infusedmobs summon` is refused.
 
 - `<world>` is a dimension id such as `minecraft:overworld` or `minecraft:the_nether`. The `minecraft:` namespace may be omitted (`overworld` = `minecraft:overworld`).
+- To blacklist a mod's dimensions in bulk, pass a **namespace wildcard** such as `backrooms:*` — it matches every dimension under that namespace. `/infusedmobs world add backrooms:*` is equivalent to adding the config entry `"backrooms:*"`.
 - Tab-completion offers the dimension you're standing in plus every loaded dimension.
 - Changes are persisted to `worldBlacklist` in the config immediately. Running `world` or `world list` with an empty list reports that the mod is active everywhere.
 
@@ -36,7 +37,7 @@ Manages the **World Blacklist** — dimensions where the mod is fully disabled. 
 
 Manages the **Mob Blacklist** — entity types excluded from *natural* infusion. Blacklisted types always spawn vanilla.
 
-- `<entity>` is an entity type id such as `minecraft:spider`; tab-completion offers infusable hostile types.
+- `<entity>` is an entity type id such as `minecraft:spider`; tab-completion offers infusable hostile types. Namespace wildcards (`spiders:*`) are config-file only — the command accepts exact ids.
 - **`/infusedmobs summon` bypasses this list** — it is explicit operator intent, so you can still summon a blacklisted type as an Infused Mob.
 - Changes are persisted to `mobBlacklist` in the config immediately. No restart is needed.
 

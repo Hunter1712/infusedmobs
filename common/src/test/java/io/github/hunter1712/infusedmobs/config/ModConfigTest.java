@@ -225,6 +225,60 @@ class ModConfigTest {
     }
 
     // ========================================
+    // wildcard entries (namespace:* and *)
+    // ========================================
+
+    @Test
+    void namespaceWildcardMatchesEveryDimensionUnderIt() {
+        ModConfig.Instance cfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("backrooms:*"));
+        assertTrue(cfg.isWorldBlacklisted("backrooms:level_0"));
+        assertTrue(cfg.isWorldBlacklisted("backrooms:level_71"));
+        assertFalse(cfg.isWorldBlacklisted("minecraft:overworld"));
+        assertFalse(cfg.isWorldBlacklisted("backrooms2:level_0"));
+    }
+
+    @Test
+    void globalWildcardMatchesEverything() {
+        ModConfig.Instance cfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("*"));
+        assertTrue(cfg.isWorldBlacklisted("minecraft:overworld"));
+        assertTrue(cfg.isWorldBlacklisted("backrooms:level_0"));
+    }
+
+    @Test
+    void exactEntryStillMatchesAlongsideWildcards() {
+        ModConfig.Instance cfg = ModConfig.Instance.defaults()
+                .withWorldBlacklist(List.of("backrooms:*", "minecraft:the_nether"));
+        assertTrue(cfg.isWorldBlacklisted("minecraft:the_nether"));
+        assertTrue(cfg.isWorldBlacklisted("backrooms:anything"));
+        assertFalse(cfg.isWorldBlacklisted("minecraft:overworld"));
+    }
+
+    @Test
+    void mobBlacklistSharesWildcardMatching() {
+        ModConfig.Instance cfg = ModConfig.Instance.defaults()
+                .withMobBlacklist(List.of("spiders:*"));
+        assertTrue(cfg.isMobBlacklisted("spiders:polymerized_spider"));
+        assertFalse(cfg.isMobBlacklisted("minecraft:spider"));
+    }
+
+    @Test
+    void blacklistEntryShapes() {
+        assertTrue(ModConfig.Instance.isValidBlacklistEntry("minecraft:overworld"));
+        assertTrue(ModConfig.Instance.isValidBlacklistEntry("backrooms:*"));
+        assertTrue(ModConfig.Instance.isValidBlacklistEntry("*"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry("overworld"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry("backrooms:level*"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry("*:overworld"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry("a:b:c"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry("backrooms:* junk"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry("back rooms:level"));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry(""));
+        assertFalse(ModConfig.Instance.isValidBlacklistEntry(null));
+    }
+
+    // ========================================
     // backfillFromDefaults (upgrade path)
     // ========================================
 

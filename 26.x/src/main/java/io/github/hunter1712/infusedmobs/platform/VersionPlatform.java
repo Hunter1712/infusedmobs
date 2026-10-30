@@ -5,6 +5,7 @@ import io.github.hunter1712.infusedmobs.ability.trigger.MobHurtTrigger;
 import io.github.hunter1712.infusedmobs.tier.Rolled;
 import io.github.hunter1712.infusedmobs.tier.TierSavedData;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
@@ -13,7 +14,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -35,7 +35,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
- * Platform adapter for 26.x — modern identifier, Holder-based effects,
+ * Platform adapter for 26.x — modern identifier dimensions,
+ * greedy-string world command input, Holder-based effects,
  * post-mitigation damage event and reasoned spawns.
  * <p>
  * Adapter size accepted: a single thin file per Versioned Source Set.
@@ -79,12 +80,20 @@ public final class VersionPlatform implements PlatformHooks {
 
     @Override
     public RequiredArgumentBuilder<CommandSourceStack, ?> worldIdArgument(String name) {
-        return Commands.argument(name, IdentifierArgument.id());
+        // Greedy phrase so namespace wildcards (e.g. `backrooms:*`) parse —
+        // an Identifier argument would reject the star before the handler
+        // ever runs. Ids contain no spaces, so a multi-word remainder
+        // can only be a typo the handler rejects as an invalid id.
+        return Commands.argument(name, StringArgumentType.greedyString());
     }
 
     @Override
     public String worldIdFromCommand(CommandContext<CommandSourceStack> ctx, String name) {
-        return IdentifierArgument.getId(ctx, name).toString();
+        String raw = StringArgumentType.getString(ctx, name).trim();
+        // Expands the bare-name shorthand (`overworld`) the old
+        // Identifier argument used to grant.
+        if (raw.equals("*") || raw.contains(":")) return raw;
+        return "minecraft:" + raw;
     }
 
     @Override

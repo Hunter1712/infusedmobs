@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.1] - 2026-10-14
+
+### Added
+- **Blacklist wildcards** — `worldBlacklist` and `mobBlacklist` entries now accept `namespace:*` (e.g. `backrooms:*` covers every dimension under that namespace — all 72 Backrooms levels in one entry) and `*` (matches everything). `/infusedmobs world add|remove` accepts wildcards; malformed ids (partial patterns like `backrooms:level*`, extra colons, spaces) are rejected at the command and dropped from the config with a warning. No config version change — old files load unchanged.
+
 ## [2.9.0] - 2026-10-14
 
 ### Added

@@ -1,6 +1,6 @@
 # Infused Mobs — In-Game Smoke Checklist (1.21.x)
 
-Manual checklist, nice-to-have rather than a gate. Jar: `infusedmobs-2.9.0+1.21.x.jar` (from `1.21.x/build/libs/`).
+Manual checklist, nice-to-have rather than a gate. Jar: `infusedmobs-2.9.1+1.21.x.jar` (from `1.21.x/build/libs/`).
 Needs: fresh world, cheats on, op level 2. Report failures as: version + steps + what happened vs expected.
 
 ## Setup
@@ -24,6 +24,8 @@ Needs: fresh world, cheats on, op level 2. Report failures as: version + steps +
 - [ ] `/infusedmobs nametag off` hides ALL tier tags (abilities still fire); `/infusedmobs nametag on` restores them.
 - [ ] `/infusedmobs world add minecraft:the_nether` -> nether mobs spawn vanilla and summon is refused there with a clear message.
 - [ ] `/infusedmobs world list` shows the entry; `/infusedmobs world remove minecraft:the_nether` re-enables the mod there.
+- [ ] `/infusedmobs world add minecraft:*` -> mobs spawn vanilla everywhere and summon is refused (wildcard match); `world remove minecraft:*` restores.
+- [ ] `/infusedmobs world add not an id` -> clean invalid-id error, blacklist unchanged.
 - [ ] `/infusedmobs mob add minecraft:spider` -> spiders spawn vanilla; `mob list` shows it; `mob remove minecraft:spider` re-enables natural infusion.
 - [ ] `/gamerule infusedmobs:enabled false` disables the mod fully (vanilla spawns, summon refused); true re-enables. Blacklist + gamerule combine correctly.
 

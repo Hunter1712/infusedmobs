@@ -62,10 +62,10 @@ public interface PlatformHooks {
     /** Permission predicate for gamemaster-level subcommands. */
     Predicate<CommandSourceStack> gamemasterPermission();
 
-    /** Argument node for a world/dimension id. */
+    /** Argument node for a world id or wildcard ({@code namespace:*}, {@code *}). */
     RequiredArgumentBuilder<CommandSourceStack, ?> worldIdArgument(String name);
 
-    /** Extracts the world id string from command context. */
+    /** Extracts the world id string from command context (bare names gain {@code minecraft:}). */
     String worldIdFromCommand(CommandContext<CommandSourceStack> ctx, String name);
 
     // ---- Status-effect tokens ----

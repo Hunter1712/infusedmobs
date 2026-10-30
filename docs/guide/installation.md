@@ -21,9 +21,9 @@ You must install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](htt
 
    | Minecraft | Download |
    |-----------|----------|
-   | 1.20.1–1.20.6 | `infusedmobs-2.9.0+1.20.x.jar` |
-   | 1.21.1–1.21.11 | `infusedmobs-2.9.0+1.21.x.jar` |
-   | 26.1–26.3+ | `infusedmobs-2.9.0+26.x.jar` |
+   | 1.20.1–1.20.6 | `infusedmobs-2.9.1+1.20.x.jar` |
+   | 1.21.1–1.21.11 | `infusedmobs-2.9.1+1.21.x.jar` |
+   | 26.1–26.3+ | `infusedmobs-2.9.1+26.x.jar` |
 
    One jar per generation covers its whole range — on Modrinth tick every game version in the range. Downloading the wrong generation's jar (1.20 vs 1.21 vs 26.x) is the most common install mistake.
 

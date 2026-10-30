@@ -71,8 +71,8 @@ Each of `cinder`, `shade` and `doom` takes the same four fields.
 | `acidArmorDamage` | integer | `4` | `≥ 1` | Vitriol |
 | `combustExplosionPower` | number | `4.0` | `0.5 … 10.0` | Combust |
 | `showNametags` | boolean | `true` | `true`/`false` | Tier nametag visibility |
-| `worldBlacklist` | list of strings | `[]` | `namespace:path` ids | Gating (below) |
-| `mobBlacklist` | list of strings | `[]` | `namespace:path` ids | Gating (below) |
+| `worldBlacklist` | list of strings | `[]` | `namespace:path`, `namespace:*`, `*` | Gating (below) |
+| `mobBlacklist` | list of strings | `[]` | `namespace:path`, `namespace:*`, `*` | Gating (below) |
 | `configVersion` | integer | `4` | — | Internal; **do not edit** |
 
 Notes:
@@ -90,13 +90,13 @@ Three independent controls decide whether a mob is infused. A mob is infused onl
 | Gate | Scope | Set by |
 |------|-------|--------|
 | `infusedmobs:enabled` gamerule | Per world save | `/gamerule`, datapacks, gamerule mods |
-| `worldBlacklist` | Per dimension | Config or `/infusedmobs world …` |
-| `mobBlacklist` | Per entity type | Config or `/infusedmobs mob …` |
+| `worldBlacklist` | Per dimension | Config or `/infusedmobs world …` (incl. wildcards) |
+| `mobBlacklist` | Per entity type | Config, or `/infusedmobs mob …` (exact ids; wildcards via config) |
 
 The per-dimension decision is:
 
 ```
-active  ⇔  dimension is NOT in worldBlacklist  AND  infusedmobs:enabled is true
+active  ⇔  dimension matches NO worldBlacklist entry (exact or wildcard)  AND  infusedmobs:enabled is true
 ```
 
 The **World Blacklist dominates**: if a dimension is blacklisted, the gamerule value is irrelevant there. In an inactive dimension, mobs spawn vanilla and `/infusedmobs summon` is refused.
@@ -109,6 +109,16 @@ Dimension ids where the mod is disabled, e.g.:
 "worldBlacklist": ["minecraft:overworld", "mythic:underworld"]
 ```
 
+To blacklist a mod's dimensions in bulk, use a **namespace wildcard** — one entry covers every dimension under that namespace:
+
+```json
+"worldBlacklist": ["backrooms:*"]
+```
+
+- `backrooms:*` disables the mod in every `backrooms:…` dimension (e.g. all 72 Backrooms levels) without listing each one.
+- `*` alone matches every dimension — equivalent to disabling the mod globally. Prefer the `infusedmobs:enabled` gamerule for per-save control; use `*` only when you want it off everywhere the config applies.
+- Only trailing wildcards are supported: `backrooms:*` works, partial patterns like `backrooms:level*` do not and are dropped with a warning.
+
 ### Mob Blacklist
 
 Entity type ids excluded from **natural** infusion. Explicit `/infusedmobs summon` **bypasses** this list.
@@ -117,7 +127,9 @@ Entity type ids excluded from **natural** infusion. Explicit `/infusedmobs summo
 "mobBlacklist": ["minecraft:spider", "spiders:polymerized_spider"]
 ```
 
-Both lists accept vanilla or modded ids. Entries are trimmed, blanks are dropped, duplicates are collapsed (first occurrence kept), and ids that aren't shaped `namespace:path` are dropped with a warning.
+The same wildcard shapes work here (`spiders:*` covers every type under that namespace), set via the config file.
+
+Both lists accept vanilla or modded ids. Entries are trimmed, blanks are dropped, duplicates are collapsed (first occurrence kept), and ids that aren't shaped `namespace:path`, `namespace:*` or `*` — including partial patterns (`backrooms:level*`), extra colons (`a:b:c`) and entries with spaces — are dropped with a warning.
 
 ## Validation, clamping and backfill
 
@@ -129,7 +141,7 @@ On load (at startup and on `/infusedmobs reload`) the config is **repaired rathe
    - `abilityCount` clamps into `1 … 15`.
    - multipliers below `1.0` clamp to `1.0`.
    - `combustExplosionPower` clamps into `0.5 … 10`.
-   - malformed blacklist ids are dropped.
+   - malformed blacklist ids are dropped (anything not shaped `namespace:path`, `namespace:*` or `*`).
 3. **Missing fields** (e.g. an older config) are **backfilled from defaults**, so your existing tier/effect edits survive an upgrade. Unknown or removed fields (such as `showAnnouncements` from older versions) are ignored.
 
 If anything was repaired, the corrected file is **written back to disk**. A valid, in-range, current-version config is left untouched.

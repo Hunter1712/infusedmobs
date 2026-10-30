@@ -232,6 +232,11 @@ public final class InfusedMobsCommand {
     private static int mutateWorldBlacklist(CommandContext<CommandSourceStack> ctx, boolean add) {
         CommandSourceStack source = ctx.getSource();
         String worldId = Platform.hooks().worldIdFromCommand(ctx, "world");
+        if (!ModConfig.Instance.isValidBlacklistEntry(worldId)) {
+            source.sendFailure(Component.literal(
+                    "§cInvalid world id '" + worldId + "'. Use namespace:path, namespace:* or *."));
+            return 0;
+        }
 
         ModConfig.Instance current = ModConfig.get();
         BlacklistEdit.Result edited = BlacklistEdit.edit(current.worldBlacklist(), worldId, add);

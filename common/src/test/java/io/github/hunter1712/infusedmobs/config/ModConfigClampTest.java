@@ -117,6 +117,30 @@ class ModConfigClampTest {
     }
 
     @Test
+    void wildcardBlacklistIdsSurviveClamping() {
+        var instance = InstanceBuilder.valid()
+                .blacklist(List.of("minecraft:overworld", "backrooms:*", "*"))
+                .mobBlacklist(List.of("minecraft:spider", "spiders:*"))
+                .build();
+
+        ModConfig.Instance fixed = clamped(instance);
+        assertEquals(List.of("minecraft:overworld", "backrooms:*", "*"), fixed.worldBlacklist());
+        assertEquals(List.of("minecraft:spider", "spiders:*"), fixed.mobBlacklist());
+        assertTrue(clampWarnings(instance).isEmpty());
+    }
+
+    @Test
+    void partialWildcardsAreDropped() {
+        var instance = InstanceBuilder.valid()
+                .blacklist(List.of("backrooms:*", "backrooms:level*", "*:overworld", "a:b:c", "backrooms:* junk"))
+                .build();
+
+        ModConfig.Instance fixed = clamped(instance);
+        assertEquals(List.of("backrooms:*"), fixed.worldBlacklist());
+        assertEquals(1, clampWarnings(instance).size());
+    }
+
+    @Test
     void validValuesPassThroughUntouched() {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
 

@@ -52,10 +52,13 @@ Any of:
 - set all three `spawnChance` values to `0` (though the gamerule/blacklist is cleaner)
 
 **How do I keep only certain mobs vanilla?**
-Add them to `mobBlacklist`, via config or `/infusedmobs mob add <entity>`. Note this affects **natural** rolls only; `/infusedmobs summon` still works. See [configuration.md](configuration.md#mob-blacklist).
+Add them to `mobBlacklist`, via config or `/infusedmobs mob add <entity>`. Namespace wildcards (`spiders:*`) work too but are config-file only. Note this affects **natural** rolls only; `/infusedmobs summon` still works. See [configuration.md](configuration.md#mob-blacklist).
 
 **Do modded mobs work?**
-Yes — any entity type in the hostile category can roll, and you can blacklist modded ids (`namespace:path`) like any other. `/infusedmobs summon` accepts modded mobs too.
+Yes — any entity type in the hostile category can roll, and you can blacklist modded ids (`namespace:path`, or `modid:*` wildcards via the config) like any other. `/infusedmobs summon` accepts modded mobs too.
+
+**How do I disable the mod in all of a mod's dimensions?**
+Add a namespace wildcard to `worldBlacklist`, e.g. `"backrooms:*"` covers every `backrooms:…` dimension without listing each one. The same entry works via `/infusedmobs world add backrooms:*`. See [configuration.md](configuration.md#world-blacklist).
 
 ## Performance & development
 

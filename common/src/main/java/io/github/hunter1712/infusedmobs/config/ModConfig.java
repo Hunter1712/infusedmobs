@@ -161,19 +161,37 @@ public final class ModConfig {
         private static final int CURRENT_CONFIG_VERSION = 4;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed, v4 = mobBlacklist
 
         /**
-         * Returns true if {@code id} is a non-blank, non-null resource identifier.
+         * Returns true if {@code id} is a usable blacklist entry: an exact
+         * resource id ({@code namespace:path}), a namespace wildcard
+         * ({@code namespace:*} matching every id under that namespace), or
+         * the global wildcard ({@code *} matching everything).
          * Used by the blacklist clamp to drop malformed World Blacklist and
          * Mob Blacklist entries.
          */
-        private static boolean isValidResourceId(String id) {
+        public static boolean isValidBlacklistEntry(String id) {
             if (id == null) return false;
             String trimmed = id.trim();
             if (trimmed.isEmpty()) return false;
-            // A resource id looks like "minecraft:overworld" — must contain a colon
-            // and have non-empty namespace + path halves.
+            if (trimmed.equals("*")) return true;
+            // Ids never contain whitespace — a greedy command remainder with
+            // spaces (e.g. `backrooms:* junk`) is a typo, not an id.
+            for (int i = 0; i < trimmed.length(); i++) {
+                if (Character.isWhitespace(trimmed.charAt(i))) return false;
+            }
+            // Exact ids keep the historical rule — one colon with non-empty
+            // halves — plus a star check so partial wildcards
+            // (e.g. `backrooms:level*`, `*:overworld`) are dropped.
+            // Extra colons (e.g. `a:b:c`) are dropped too: no real dimension
+            // or entity id contains them, so they could never match.
             int colon = trimmed.indexOf(':');
             if (colon <= 0 || colon >= trimmed.length() - 1) return false;
-            return true;
+            if (trimmed.indexOf(':', colon + 1) != -1) return false;
+            String namespace = trimmed.substring(0, colon);
+            String path = trimmed.substring(colon + 1);
+            if (path.equals("*")) {
+                return !namespace.contains("*");
+            }
+            return !trimmed.contains("*");
         }
 
         /** HURT/TICK effect amplifier range — vanilla caps at V (4), one headroom. */
@@ -193,7 +211,8 @@ public final class ModConfig {
          * per-Tier ability count in [1, {@code abilityPoolSize}], HURT/TICK
          * amplifiers in [0, 5], Combust power in [0.5, 10]. Positive
          * durations, multipliers at or above 1.0 and colon-shaped World
-         * Blacklist ids keep their existing rules; malformed ids are dropped.
+         * Blacklist ids (including {@code namespace:*} and {@code *}
+         * wildcards) keep their existing rules; malformed ids are dropped.
          *
          * @param abilityPoolSize live Ability pool size (upper count bound)
          */
@@ -298,7 +317,7 @@ public final class ModConfig {
 
         private static List<String> clampedBlacklist(String field, List<String> blacklist, List<String> warnings) {
             List<String> normalised = normaliseBlacklist(blacklist);
-            List<String> kept = normalised.stream().filter(Instance::isValidResourceId).toList();
+            List<String> kept = normalised.stream().filter(Instance::isValidBlacklistEntry).toList();
             if (kept.size() != normalised.size()) {
                 warnings.add("Config field '" + field + "' dropped malformed ids " + normalised
                         + " — kept " + kept + ".");
@@ -331,6 +350,10 @@ public final class ModConfig {
          * Returns true if the given world identifier is on the blacklist.
          * {@code worldId} should be the string form of a dimension's
          * resource location (e.g. {@code "minecraft:overworld"}).
+         * Exact entries match themselves; a {@code namespace:*} entry
+         * matches every dimension under that namespace (e.g.
+         * {@code "backrooms:*"} covers all 72 Backrooms dimensions) and
+         * {@code "*"} matches every dimension.
          * Matching is case-sensitive and trims the input.
          */
         public boolean isWorldBlacklisted(String worldId) {
@@ -350,6 +373,8 @@ public final class ModConfig {
          * Returns true if the given entity type id is on the Mob Blacklist.
          * {@code entityId} should be the string form of an entity type's
          * resource location (e.g. {@code "minecraft:spider"}).
+         * Exact entries match themselves; {@code namespace:*} matches every
+         * type under that namespace and {@code "*"} matches every type.
          * Matching is case-sensitive and trims the input.
          */
         public boolean isMobBlacklisted(String entityId) {
@@ -438,12 +463,21 @@ public final class ModConfig {
             );
         }
 
-        /** Shared exact-match scan behind {@link #isWorldBlacklisted} and {@link #isMobBlacklisted}. */
+        /** Shared exact-or-wildcard scan behind {@link #isWorldBlacklisted} and {@link #isMobBlacklisted}. */
         private static boolean isListed(List<String> blacklist, String id) {
             if (id == null || blacklist == null) return false;
             String trimmed = id.trim();
-            for (String entry : blacklist) {
-                if (entry != null && entry.equals(trimmed)) return true;
+            int colon = trimmed.indexOf(':');
+            String namespace = colon > 0 ? trimmed.substring(0, colon) : null;
+            for (String raw : blacklist) {
+                if (raw == null) continue;
+                String entry = raw.trim();
+                if (entry.equals(trimmed)) return true;
+                if (entry.equals("*")) return true;
+                if (entry.endsWith(":*")) {
+                    String entryNamespace = entry.substring(0, entry.length() - 2);
+                    if (!entryNamespace.isEmpty() && entryNamespace.equals(namespace)) return true;
+                }
             }
             return false;
         }

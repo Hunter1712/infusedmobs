@@ -39,6 +39,7 @@ Put an edited `config/infusedmobs.json` in your pack's overrides so every instan
 | Tame death explosions | Lower `combustExplosionPower` (range `0.5 … 10`) |
 | Hide tier tags | `showNametags: false` |
 | Keep specific mobs vanilla | Add them to `mobBlacklist` |
+| Disable a mod's dimensions in bulk | Add `modid:*` to `worldBlacklist` (e.g. `backrooms:*`) |
 
 ### Disable at launch, per world
 
@@ -63,6 +64,6 @@ It persists in the world save. For dimension-level control, use `worldBlacklist`
 | Environment | Client **and** server |
 | Config-driven | Yes — no code changes for balance |
 | Launch-time toggle | `infusedmobs:enabled` gamerule (per world save) |
-| Dimension toggle | `worldBlacklist` config list |
-| Type toggle | `mobBlacklist` config list |
+| Dimension toggle | `worldBlacklist` config list (supports `modid:*` wildcards) |
+| Type toggle | `mobBlacklist` config list (wildcards via config; command takes exact ids) |
 | Tested versions | MC 1.20.x / 1.21.x / 26.x, Fabric Loader 0.19.3+ |
