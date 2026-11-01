@@ -2,20 +2,21 @@
 
 > **Hostile mobs spawn with occult-infused tiers and randomized abilities — fully configurable via JSON.**
 
-**Infused Mobs** makes every hostile encounter a gamble. Vanilla monsters spawn with one of three occult tiers and draw from a shared pool of 15 abilities — a poison hit here, a speed buff there, a death explosion when you least want one. Infused mobs are common, but their individual effects are kept deliberately weak, and everything is tunable.
+**Infused Mobs** makes every hostile encounter a gamble. Vanilla monsters spawn with one of four occult tiers and draw from a shared pool of 15 abilities — a poison hit here, a speed buff there, a death explosion when you least want one. Infused mobs are common, but their individual effects are kept deliberately weak, and everything is tunable.
 
 ## Tiers
 
-- 🟢 **Cinder** — 40% of hostile spawns · 1 ability · 1.5× health & XP · green nametag
-- 🟡 **Shade** — 20% of hostile spawns · 2 abilities · 2× health & XP · yellow nametag
-- 🔴 **Doom** — 10% of hostile spawns · 3 abilities · 4× health & XP · red nametag
+- 🟢 **Cinder** — 20% of hostile spawns · 1 ability · 1× health & XP · green nametag
+- 🟡 **Shade** — 10% of hostile spawns · 2 abilities · 2× health & XP · yellow nametag
+- 🔴 **Doom** — 5% of hostile spawns · 3 abilities · 3× health & XP · red nametag
+- 🟣 **Void** — 2.5% of hostile spawns · 4 abilities · 4× health & XP · purple nametag
 
-Tiers roll as a single uniform decision, so at default settings about **30% of hostile mobs stay vanilla**. Abilities range from damage-over-time and passive buffs to death-time splitting and explosions.
+Tiers roll as a single uniform decision, so at default settings about **62.5% of hostile mobs stay vanilla**. Abilities range from damage-over-time and passive buffs to death-time splitting and explosions.
 
 ## Requirements
 
 - **Fabric Loader 0.19.3+** and **Fabric API**
-- Minecraft **1.20.1** (Java 17+), **1.21.1** (Java 21+) or **26.3** (Java 25+) — download the jar for your exact game version (e.g. `infusedmobs-2.9.2+1.21.1.jar`, `infusedmobs-2.9.2+26.3.jar`)
+- Minecraft **1.21.1** (Java 21+) or **26.3** (Java 25+) — download the jar for your exact game version (e.g. `infusedmobs-2.10.0+1.21.1.jar`, `infusedmobs-2.10.0+26.3.jar`)
 - Install on both client and server
 
 ## Installation

@@ -12,13 +12,12 @@ This guide is the detailed reference. The one-screen pitch and download links li
 2. Install **[Fabric API](https://modrinth.com/mod/fabric-api)** matching your game version.
 3. Drop the jar matching your game version into your `mods/` folder.
 4. Launch. The mod generates `config/infusedmobs.json` on first run.
-5. Hostile mobs now spawn infused — green/yellow/red nametags mark their Tier.
+5. Hostile mobs now spawn infused. Tier nametags are **off by default** — set `showNametags` to `true` (or run `/infusedmobs nametag on`) to show green/yellow/red/purple Tier tags.
 
 Pick your version:
 
 | Minecraft | Java | Jar |
 |-----------|------|-----|
-| 1.20.1 | 17+ | `infusedmobs-<mod>+1.20.1.jar` |
 | 1.21.1 | 21+ | `infusedmobs-<mod>+1.21.1.jar` |
 | 26.3 | 25+ | `infusedmobs-<mod>+26.3.jar` |
 
@@ -29,12 +28,12 @@ Full details in [installation.md](installation.md) and [compatibility.md](compat
 | Page | What it covers |
 |------|----------------|
 | [Installation](installation.md) | Loader/API requirements, picking the right jar, client vs server, first run |
-| [Tiers](tiers.md) | Cinder / Shade / Doom, spawn odds, stat multipliers, nametags |
+| [Tiers](tiers.md) | Cinder / Shade / Doom / Void, spawn odds, stat multipliers, nametags |
 | [Abilities](abilities.md) | HURT / TICK / DEATH tables, exact effects, shield rules, Rupture splitting |
 | [Commands](commands.md) | Every `/infusedmobs` subcommand and the gamerule |
 | [Configuration](configuration.md) | Every JSON field, defaults, valid ranges, clamping, gating lists |
 | [Compatibility](compatibility.md) | Supported versions, dependencies, safe add/remove |
-| [Version differences](version-differences.md) | What changes between 1.20.1, 1.21.1 and 26.3 |
+| [Version differences](version-differences.md) | What changes between 1.21.1 and 26.3 (nothing player-visible) |
 | [Modpack authors](modpack-authors.md) | Licence terms, launch-time gating, balance defaults |
 | [FAQ & troubleshooting](faq.md) | Common questions and known behaviour |
 

@@ -33,11 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * No source-text reads — failures report behavioral divergence, not file
  * text. Each Versioned Source Set adapter implements this same interface:
- * the real 26.x adapter is exercised directly here, the 1.21.x and 1.20.x
- * adapters are held to the same contract by the hurt-reporting doubles and
- * the shared lenient decode pinned in RolledTest, and all three compile against their own
- * game APIs in CI (holder versus raw effects, identifier versus resource
- * location arguments, post-mitigation versus legacy damage events, reasoned
+ * the real 26.x adapter is exercised directly here, the 1.21.x
+ * adapter is held to the same contract by the hurt-reporting doubles and
+ * the shared lenient decode pinned in RolledTest, and both compile against their own
+ * game APIs in CI (holder effects, identifier versus resource
+ * location arguments, post-mitigation damage events, reasoned
  * versus plain spawns, codec versus Factory versus Function persistence).
  * The Versioned Source Set layout, Artifact Suffix and gating combination
  * are unchanged.

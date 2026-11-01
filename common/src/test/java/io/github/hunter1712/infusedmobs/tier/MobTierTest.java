@@ -42,12 +42,13 @@ class MobTierTest {
     }
 
     @Test
-    void tierOrderIsCinderShadeDoom() {
+    void tierOrderIsCinderShadeDoomVoid() {
         MobTier[] values = MobTier.values();
-        assertEquals(3, values.length);
+        assertEquals(4, values.length);
         assertEquals(MobTier.CINDER, values[0]);
         assertEquals(MobTier.SHADE, values[1]);
         assertEquals(MobTier.DOOM, values[2]);
+        assertEquals(MobTier.VOID, values[3]);
     }
 
     @Test
@@ -56,6 +57,8 @@ class MobTierTest {
                 "CINDER should be more common than SHADE");
         assertTrue(MobTier.SHADE.spawnChance() > MobTier.DOOM.spawnChance(),
                 "SHADE should be more common than DOOM");
+        assertTrue(MobTier.DOOM.spawnChance() > MobTier.VOID.spawnChance(),
+                "DOOM should be more common than VOID");
     }
 
     @Test
@@ -64,6 +67,8 @@ class MobTierTest {
                 "CINDER abilityCount should not exceed SHADE");
         assertTrue(MobTier.SHADE.abilityCount() <= MobTier.DOOM.abilityCount(),
                 "SHADE abilityCount should not exceed DOOM");
+        assertTrue(MobTier.DOOM.abilityCount() <= MobTier.VOID.abilityCount(),
+                "DOOM abilityCount should not exceed VOID");
     }
 
     @Test
@@ -72,6 +77,8 @@ class MobTierTest {
                 "CINDER healthMultiplier should be less than SHADE");
         assertTrue(MobTier.SHADE.healthMultiplier() < MobTier.DOOM.healthMultiplier(),
                 "SHADE healthMultiplier should be less than DOOM");
+        assertTrue(MobTier.DOOM.healthMultiplier() < MobTier.VOID.healthMultiplier(),
+                "DOOM healthMultiplier should be less than VOID");
     }
 
     @Test

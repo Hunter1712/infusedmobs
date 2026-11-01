@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-10-30
+
+### Added
+- **Void tier** — the fourth Tier (2.5% of hostile spawns, 4 abilities, 4× health/XP, purple nametag) completes the ladder above Doom. Summon it with `/infusedmobs summon void …`; config gains a `void` block with the same four fields as the other tiers, and `abilityCount` is capped at the pool size as before.
+
+### Changed
+- **Re-tuned default tiers** — spawn chances 20% / 10% / 5% / 2.5% (Cinder / Shade / Doom / Void) and multipliers 1× / 2× / 3× / 4×: infusion is now a sprinkle of a hostile population rather than its texture, with **about 62.5% of hostile mobs staying vanilla** at defaults (up from 30%). Cinder keeps its single ability but no longer boosts health or XP, so its Rupture copies (and their XP) drop to vanilla figures with it — old configs keep their 2.9.x values.
+- **Tier nametags are off by default** — fresh installs and new configs start with `showNametags: false` (abilities still fire; `/infusedmobs nametag on` or the config field shows them). Existing configs keep their current value.
+- **Config version 4 → 5** — old files upgrade automatically on load: the missing `void` block is filled from defaults (2.5% / 4 / 4.0 / 4.0) and existing tier/effect edits are preserved.
+
+### Removed
+- **Minecraft 1.20.1 support** — 2.9.2 is the last jar for 1.20.1. The repo now ships one project page for 1.21.1 (Java 21+) and 26.3 (Java 25+). This also removes the last gameplay difference between supported versions: 1.20.1's legacy damage event was the only version where a fully-blocked shield hit still fired HURT abilities and Siphon/Thorns saw pre-mitigation damage.
+
 ## [2.9.2] - 2026-10-30
 
 ### Changed

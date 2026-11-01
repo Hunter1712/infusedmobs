@@ -11,7 +11,7 @@ A hostile Mob that was assigned a Tier and one or more Abilities at spawn.
 _Avoid_: Tiered Mob, Infused Entity
 
 **Tier**:
-A power level — Cinder (40%, 1 ability, 1.5× HP/XP, green), Shade (20%, 2, 2×, yellow) or Doom (10%, 3, 4×, red) — that sets spawn chance, ability count and multipliers.
+A power level — Cinder (40%, 1 ability, 1.5× HP/XP, green), Shade (20%, 2, 2×, yellow), Doom (10%, 3, 4×, red) or Void (5%, 4, 6×, purple) — that sets spawn chance, ability count and multipliers.
 _Avoid_: Level, Rank, Difficulty
 
 **Ability**:
@@ -39,7 +39,7 @@ _Avoid_: Enabled Flag, Global Toggle
 ### Versioning
 
 **Versioned Source Set**:
-A per-generation Gradle subproject (`1.20.1`, `1.21.1`, `26.3`) plus `common` that holds shared code; each version compiles `common/src/main/java` plus its own shims and `fabric.mod.json`. The folder is named for the exact game version it builds and is smoke-tested against, and its jar loads only on that version via its `minecraft` predicate.
+A per-generation Gradle subproject (`1.21.1`, `26.3`) plus `common` that holds shared code; each version compiles `common/src/main/java` plus its own shims and `fabric.mod.json`. The folder is named for the exact game version it builds and is smoke-tested against, and its jar loads only on that version via its `minecraft` predicate.
 _Avoid_: Version overlay, Chiseled source set
 
 **Shim**:
@@ -47,9 +47,9 @@ A small file duplicated per version where Mojang/Fabric APIs diverge (e.g. `game
 _Avoid_: Version-specific file, Compat layer
 
 **Artifact Suffix**:
-The `+mc` qualifier appended to `mod_version` for published jars (`2.9.2+1.20.1`, `2.9.2+1.21.1`, `2.9.2+26.3`) so Modrinth channels stay distinct. The qualifier is the exact built game version, which is also the Gradle project name.
+The `+mc` qualifier appended to `mod_version` for published jars (`2.10.0+1.21.1`, `2.10.0+26.3`) so Modrinth channels stay distinct. The qualifier is the exact built game version, which is also the Gradle project name.
 _Avoid_: Version suffix, Build suffix
 
 **Support Policy**:
-Three major generations are supported today — `1.20.1`, `1.21.1` and `26.3`, one folder each. A new major generation adds a fourth folder; minor versions are never chased.
+Two major generations are supported today — `1.21.1` and `26.3`, one folder each. A new major generation adds a third folder; minor versions are never chased. 1.20.1 was supported through 2.9.2.
 _Avoid_: Supported range, Minor support

@@ -5,6 +5,7 @@ import io.github.hunter1712.infusedmobs.tier.MobTier;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.SerializedName;
 
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -145,6 +146,8 @@ public final class ModConfig {
             TierConfig cinder,
             TierConfig shade,
             TierConfig doom,
+            // JSON key "void" — "voidTier" because `void` is a Java keyword.
+            @SerializedName("void") TierConfig voidTier,
             int hurtEffectDuration,
             int hurtEffectAmplifier,
             int tickEffectDuration,
@@ -158,7 +161,7 @@ public final class ModConfig {
             int configVersion
     ) {
         /** Bump when config fields change so {@link #backfillFromDefaults()} knows what to fill. */
-        private static final int CURRENT_CONFIG_VERSION = 4;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed, v4 = mobBlacklist
+        private static final int CURRENT_CONFIG_VERSION = 5;  // v1 = 2.6.0, v2 = 2.7.0 (worldBlacklist), v3 = announcements removed, v4 = mobBlacklist, v5 = void tier
 
         /**
          * Returns true if {@code id} is a usable blacklist entry: an exact
@@ -236,6 +239,7 @@ public final class ModConfig {
                     clampedTier("cinder", cinder, MobTier.CINDER, upperCount, warnings),
                     clampedTier("shade", shade, MobTier.SHADE, upperCount, warnings),
                     clampedTier("doom", doom, MobTier.DOOM, upperCount, warnings),
+                    clampedTier("void", voidTier, MobTier.VOID, upperCount, warnings),
                     clampMin("hurtEffectDuration", hurtEffectDuration, 1, warnings),
                     clampRange("hurtEffectAmplifier", hurtEffectAmplifier, 0, MAX_AMPLIFIER, warnings),
                     clampMin("tickEffectDuration", tickEffectDuration, 1, warnings),
@@ -328,7 +332,7 @@ public final class ModConfig {
         /** Returns a copy with a new showNametags value. */
         public Instance withShowNametags(boolean show) {
             return new Instance(
-                    cinder, shade, doom,
+                    cinder, shade, doom, voidTier,
                     hurtEffectDuration, hurtEffectAmplifier,
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
@@ -387,6 +391,7 @@ public final class ModConfig {
                 case CINDER -> cinder;
                 case SHADE -> shade;
                 case DOOM -> doom;
+                case VOID -> voidTier;
             };
         }
 
@@ -402,12 +407,13 @@ public final class ModConfig {
                     tierDefaults(MobTier.CINDER),
                     tierDefaults(MobTier.SHADE),
                     tierDefaults(MobTier.DOOM),
+                    tierDefaults(MobTier.VOID),
                     60, 0,   // hurt: 3s, level I
                     60, 0,   // tick: 3s, level I
                     5,       // infernoFireSeconds
                     4,       // acidArmorDamage
                     4.0f,    // combustExplosionPower
-                    true,    // showNametags
+                    false,   // showNametags
                     List.of(),// worldBlacklist — empty by default (mod active everywhere)
                     List.of(),// mobBlacklist — empty by default (every hostile mob can infuse)
                     CURRENT_CONFIG_VERSION
@@ -440,7 +446,7 @@ public final class ModConfig {
             List<String> backfilledWorlds = (worldBlacklist == null) ? List.of() : normaliseBlacklist(worldBlacklist);
             List<String> backfilledMobs = (mobBlacklist == null) ? List.of() : normaliseBlacklist(mobBlacklist);
             return new Instance(
-                    cinder, shade, doom,
+                    cinder, shade, doom, voidTier,
                     hurtEffectDuration, hurtEffectAmplifier,
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,
@@ -454,7 +460,7 @@ public final class ModConfig {
         /** Shared combiner behind {@link #withWorldBlacklist} and {@link #withMobBlacklist}. */
         private Instance withBlacklists(List<String> worlds, List<String> mobs) {
             return new Instance(
-                    cinder, shade, doom,
+                    cinder, shade, doom, voidTier,
                     hurtEffectDuration, hurtEffectAmplifier,
                     tickEffectDuration, tickEffectAmplifier,
                     infernoFireSeconds, acidArmorDamage,

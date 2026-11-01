@@ -2,15 +2,14 @@
 
 ## Supported versions
 
-One project page ships all three versions. Download the jar whose `+<mc>` suffix matches your game version.
+One project page ships both supported versions. Download the jar whose `+<mc>` suffix matches your game version.
 
 | Mod loader | Minecraft | Java | Fabric API (built against) | Jar |
 |------------|-----------|------|----------------------------|-----|
-| Fabric | 1.20.1 | 17+ | `0.92.0+1.20.1` | `infusedmobs-<mod>+1.20.1.jar` |
 | Fabric | 1.21.1 | 21+ | `0.116.6+1.21.1` | `infusedmobs-<mod>+1.21.1.jar` |
 | Fabric | 26.3 | 25+ | `0.162.0+26.3` | `infusedmobs-<mod>+26.3.jar` |
 
-**Support policy:** one build folder per major generation, named for the exact game version it is built and smoke-tested against (1.20.1, 1.21.1, 26.3). A new major generation adds a fourth folder; minor versions are never chased.
+**Support policy:** one build folder per major generation, named for the exact game version it is built and smoke-tested against (1.21.1, 26.3). A new major generation adds a third folder; minor versions are never chased. 1.20.1 was supported through 2.9.2 and is dropped from 2.10.0 onward.
 
 The Fabric API numbers are the versions the mod was **built and tested against**. The mod declares `fabric-api: "*"`, so any Fabric API build for your game version works — you don't need to match those exact numbers.
 
@@ -44,7 +43,7 @@ Because of this, the mod is **safe to add to or remove from an existing save**. 
 
 ## Version-specific behaviour
 
-The three versions are **intentionally not byte-identical**. The most visible difference is shield-block handling for HURT abilities. See [version-differences.md](version-differences.md) for the full list.
+The two versions are **intentionally not byte-identical**. The differences are all internal (API shapes, not gameplay) — see [version-differences.md](version-differences.md) for the full list.
 
 ## Licence
 

@@ -2,32 +2,34 @@
 
 A **Tier** is the power level an Infused Mob rolls at spawn. It decides how many Abilities the mob gets, how tough it is, and what colour its nametag is. A mob that rolls no Tier stays vanilla.
 
-## The three tiers
+## The four tiers
 
 | Tier | Colour | Spawn chance | Abilities | Max health | XP reward |
 |------|--------|--------------|-----------|------------|-----------|
-| **Cinder** | §aGreen | 40% | 1 | 1.5× | 1.5× |
-| **Shade** | §eYellow | 20% | 2 | 2× | 2× |
-| **Doom** | §cRed | 10% | 3 | 4× | 4× |
+| **Cinder** | §aGreen | 20% | 1 | 1× | 1× |
+| **Shade** | §eYellow | 10% | 2 | 2× | 2× |
+| **Doom** | §cRed | 5% | 3 | 3× | 3× |
+| **Void** | §5Purple | 2.5% | 4 | 4× | 4× |
 
-At defaults that leaves roughly **30% of hostile mobs vanilla** (1 − 0.4 − 0.2 − 0.1). Infused mobs are common; individual abilities are kept weak on purpose, and everything above is configurable — see [configuration.md](configuration.md).
+At defaults that leaves roughly **62.5% of hostile mobs vanilla** (1 − 0.2 − 0.1 − 0.05 − 0.025) — infusion is a sprinkle, not the texture of the game. Cinder carries no stat boost at all (vanilla health, vanilla XP); its one ability is the whole difference, and everything above is configurable — see [configuration.md](configuration.md).
 
 Spawn chance, ability count, health multiplier and XP multiplier are the four per-tier tunables. Their defaults live in one place in the code and flow into the config, so the table above is always the config's default state.
 
 ## How the roll works
 
-All three chances are resolved in a **single uniform roll** in `[0, 1)`:
+All four chances are resolved in a **single uniform roll** in `[0, 1)`:
 
 | Roll range | Result |
 |------------|--------|
-| `[0.0, 0.1)` | **Doom** |
-| `[0.1, 0.3)` | **Shade** |
-| `[0.3, 0.7)` | **Cinder** |
-| `[0.7, 1.0)` | nothing — vanilla |
+| `[0.0, 0.025)` | **Void** |
+| `[0.025, 0.075)` | **Doom** |
+| `[0.075, 0.175)` | **Shade** |
+| `[0.175, 0.375)` | **Cinder** |
+| `[0.375, 1.0)` | nothing — vanilla |
 
-Because the intervals are disjoint and sized exactly by each tier's configured chance, the **effective share of each tier equals its configured chance** (10% / 20% / 40% at defaults). There is no second roll and no chance of an "empty" tier slot.
+Because the intervals are disjoint and sized exactly by each tier's configured chance, the **effective share of each tier equals its configured chance** (2.5% / 5% / 10% / 20% at defaults). There is no second roll and no chance of an "empty" tier slot.
 
-The tiers are checked **rarest first** (Doom, then Shade, then Cinder). If your configured chances add up to more than 100%, this means the *common* tier is truncated first — the rare tier is never the one you lose.
+The tiers are checked **rarest first** (Void, then Doom, then Shade, then Cinder). If your configured chances add up to more than 100%, this means the *common* tier is truncated first — the rare tier is never the one you lose.
 
 > The single-roll rule lives in its own unit-tested class; see [docs/adr/](../adr/) for the surrounding architecture.
 
@@ -57,7 +59,7 @@ Each Infused Mob gets a coloured nametag showing its ability names and its vanil
 §aBane§7, Thorns §fZombie
 ```
 
-- The **tier colour** starts the tag (green/yellow/red for Cinder/Shade/Doom).
+- The **tier colour** starts the tag (green/yellow/red/purple for Cinder/Shade/Doom/Void).
 - Ability names follow in the tier colour, separated by grey commas.
 - The mob's **vanilla name** is white at the end.
 

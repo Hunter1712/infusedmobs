@@ -6,15 +6,17 @@ import java.util.Locale;
  * Occult-themed tiers that a hostile mob can spawn with.
  * Each tier defines its spawn probability, total ability count,
  * and health/XP multipliers. Abilities are drawn from the unified pool.
+ * Rarest tier last: VOID is the top of the ladder.
  * <p>
  * These values are the single source of truth — config defaults are
  * derived from these getters via {@code ModConfig.Instance.defaults()}.
  */
 public enum MobTier {
 
-    CINDER(0.4,  1, 1.5, 1.5),
-    SHADE(0.2,   2, 2.0, 2.0),
-    DOOM(0.1,    3, 4.0, 4.0);
+    CINDER(0.2,  1, 1.0, 1.0),
+    SHADE(0.1,   2, 2.0, 2.0),
+    DOOM(0.05,   3, 3.0, 3.0),
+    VOID(0.025,  4, 4.0, 4.0);
 
     private final double spawnChance;
     private final int abilityCount;
@@ -40,6 +42,7 @@ public enum MobTier {
             case CINDER -> "§a";
             case SHADE -> "§e";
             case DOOM -> "§c";
+            case VOID -> "§5";
         };
     }
 

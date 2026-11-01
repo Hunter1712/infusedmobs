@@ -22,7 +22,7 @@ Diff-time rules live in `docs/agents/review.md` — the reviewer enforces those,
 
 System Gradle: `gradle :common:test` (full suite), `gradle build` (all jars). The `gradlew` wrapper is a fallback for machines without Gradle. CI (`build.yml`) runs the same plus `bash scripts/check-docs.sh`.
 
-Deploy for manual testing: copy each non-sources jar from `1.20.1/build/libs`, `1.21.1/build/libs` and `26.3/build/libs` to the matching Prism instance `1.20.1`, `1.21.1` or `26.3` under `minecraft/mods`, then verify via `minecraft/logs/latest.log`.
+Deploy for manual testing: copy each non-sources jar from `1.21.1/build/libs` and `26.3/build/libs` to the matching Prism instance `1.21.1` or `26.3` under `minecraft/mods`, then verify via `minecraft/logs/latest.log`.
 
 ### Shell
 

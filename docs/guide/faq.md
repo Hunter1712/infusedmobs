@@ -6,7 +6,7 @@
 Yes. Install Fabric API for your game version alongside Fabric Loader 0.19.3+.
 
 **The game says I'm missing a dependency.**
-Usually a missing or outdated **Fabric API**, or the **wrong jar** for your game version. Each jar declares its exact game version — `+1.21.1` will not load on 1.20.1. See [installation.md](installation.md).
+Usually a missing or outdated **Fabric API**, or the **wrong jar** for your game version. Each jar declares its exact game version — `+1.21.1` will not load on 26.3. See [installation.md](installation.md).
 
 **Does it work with vanilla clients?**
 The supported setup installs the mod on **both client and server**. All logic is server-side, and tier nametags are vanilla custom names, but install the same jar on both sides to match the tested configuration. See [compatibility.md](compatibility.md#client--server).
@@ -17,13 +17,13 @@ No. Add or remove it freely; it adds no blocks, items, effects or worldgen. Remo
 ## Gameplay
 
 **Why do some mobs still spawn vanilla?**
-By design. At default settings the three tier chances sum to 70%, so about **30% of hostile mobs stay vanilla**. That's the single-roll model, not a bug — see [tiers.md](tiers.md#how-the-roll-works).
+By design. At default settings the four tier chances sum to 37.5%, so about **62.5% of hostile mobs stay vanilla**. That's the single-roll model, not a bug — see [tiers.md](tiers.md#how-the-roll-works).
 
 **Why isn't my cow/villager infused?**
 Only **hostile (`MONSTER` category)** mobs roll naturally. Animals, villagers and other non-hostiles never do. `/infusedmobs summon` can bypass this for testing.
 
 **A blocked hit still triggered poison/slowness.**
-On **1.20.1** shields don't negate HURT abilities due to a platform limitation. On 1.21.1 and 26.3 a shield block does negate them. See [version-differences.md](version-differences.md#shield-blocks-the-one-to-know).
+On every supported version a shield block negates **all** HURT abilities — poison, slowness, fire, Siphon, Vitriol and Thorns alike. See [abilities.md](abilities.md).
 
 **Why did the Rupture copy have a grey nametag and not split again?**
 By design. Split copies carry Cinder stats but no Tier; their single ability is drawn with `rupture` and `bequest` excluded so they can never split infinitely. See [abilities.md](abilities.md#rupture).
@@ -49,7 +49,7 @@ That happens when it's **malformed JSON**, **missing fields**, or has **out-of-r
 Any of:
 - `/gamerule infusedmobs:enabled false` (per world save)
 - add the dimension to `worldBlacklist`
-- set all three `spawnChance` values to `0` (though the gamerule/blacklist is cleaner)
+- set every `spawnChance` value (including `void`) to `0` (though the gamerule/blacklist is cleaner)
 
 **How do I keep only certain mobs vanilla?**
 Add them to `mobBlacklist`, via config or `/infusedmobs mob add <entity>`. Namespace wildcards (`spiders:*`) work too but are config-file only. Note this affects **natural** rolls only; `/infusedmobs summon` still works. See [configuration.md](configuration.md#mob-blacklist).

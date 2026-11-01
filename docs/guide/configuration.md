@@ -13,20 +13,26 @@ It is generated with defaults on first run. Edit it and run `/infusedmobs reload
 ```json
 {
   "cinder": {
-    "spawnChance": 0.4,
+    "spawnChance": 0.2,
     "abilityCount": 1,
-    "healthMultiplier": 1.5,
-    "xpMultiplier": 1.5
+    "healthMultiplier": 1.0,
+    "xpMultiplier": 1.0
   },
   "shade": {
-    "spawnChance": 0.2,
+    "spawnChance": 0.1,
     "abilityCount": 2,
     "healthMultiplier": 2.0,
     "xpMultiplier": 2.0
   },
   "doom": {
-    "spawnChance": 0.1,
+    "spawnChance": 0.05,
     "abilityCount": 3,
+    "healthMultiplier": 3.0,
+    "xpMultiplier": 3.0
+  },
+  "void": {
+    "spawnChance": 0.025,
+    "abilityCount": 4,
     "healthMultiplier": 4.0,
     "xpMultiplier": 4.0
   },
@@ -37,25 +43,25 @@ It is generated with defaults on first run. Edit it and run `/infusedmobs reload
   "infernoFireSeconds": 5,
   "acidArmorDamage": 4,
   "combustExplosionPower": 4.0,
-  "showNametags": true,
+  "showNametags": false,
   "worldBlacklist": [],
   "mobBlacklist": [],
-  "configVersion": 4
+  "configVersion": 5
 }
 ```
 
 ## Per-tier settings
 
-Each of `cinder`, `shade` and `doom` takes the same four fields.
+Each of `cinder`, `shade`, `doom` and `void` takes the same four fields.
 
-| Field | Type | Default (Cinder / Shade / Doom) | Valid range |
+| Field | Type | Default (Cinder / Shade / Doom / Void) | Valid range |
 |-------|------|-------------------------------|-------------|
-| `spawnChance` | number | `0.4` / `0.2` / `0.1` | `(0, 1]` |
-| `abilityCount` | integer | `1` / `2` / `3` | `1 … 15` (the pool size) |
-| `healthMultiplier` | number | `1.5` / `2.0` / `4.0` | `≥ 1.0` |
-| `xpMultiplier` | number | `1.5` / `2.0` / `4.0` | `≥ 1.0` |
+| `spawnChance` | number | `0.2` / `0.1` / `0.05` / `0.025` | `(0, 1]` |
+| `abilityCount` | integer | `1` / `2` / `3` / `4` | `1 … 15` (the pool size) |
+| `healthMultiplier` | number | `1.0` / `2.0` / `3.0` / `4.0` | `≥ 1.0` |
+| `xpMultiplier` | number | `1.0` / `2.0` / `3.0` / `4.0` | `≥ 1.0` |
 
-- `spawnChance` is the tier's **effective** share of hostile spawns (the roll is a single uniform interval — see [tiers.md](tiers.md#how-the-roll-works)). The three don't have to sum to 1; the remainder rolls vanilla.
+- `spawnChance` is the tier's **effective** share of hostile spawns (the roll is a single uniform interval — see [tiers.md](tiers.md#how-the-roll-works)). The four don't have to sum to 1; the remainder rolls vanilla.
 - `abilityCount` is capped at the live ability pool size (15). It controls how many abilities the tier draws; there is no per-tier ability selection except Cinder never drawing Bequest.
 - `healthMultiplier` scales the mob's max health; `xpMultiplier` scales its XP reward.
 
@@ -70,10 +76,10 @@ Each of `cinder`, `shade` and `doom` takes the same four fields.
 | `infernoFireSeconds` | integer (seconds) | `5` | `≥ 1` | Hellfire |
 | `acidArmorDamage` | integer | `4` | `≥ 1` | Vitriol |
 | `combustExplosionPower` | number | `4.0` | `0.5 … 10.0` | Combust |
-| `showNametags` | boolean | `true` | `true`/`false` | Tier nametag visibility |
+| `showNametags` | boolean | `false` | `true`/`false` | Tier nametag visibility |
 | `worldBlacklist` | list of strings | `[]` | `namespace:path`, `namespace:*`, `*` | Gating (below) |
 | `mobBlacklist` | list of strings | `[]` | `namespace:path`, `namespace:*`, `*` | Gating (below) |
-| `configVersion` | integer | `4` | — | Internal; **do not edit** |
+| `configVersion` | integer | `5` | — | Internal; **do not edit** |
 
 Notes:
 
@@ -146,9 +152,9 @@ On load (at startup and on `/infusedmobs reload`) the config is **repaired rathe
 
 If anything was repaired, the corrected file is **written back to disk**. A valid, in-range, current-version config is left untouched.
 
-> This corrects a common misconception: it isn't only malformed JSON that gets rewritten. A config missing newer fields, or holding any out-of-range value, is normalised and saved. See `configVersion` in the file — `4` is current, and older versions are backfilled.
+> This corrects a common misconception: it isn't only malformed JSON that gets rewritten. A config missing newer fields, or holding any out-of-range value, is normalised and saved. See `configVersion` in the file — `5` is current, and older versions are backfilled.
 
-`configVersion` is internal bookkeeping (`v1` = 2.6.0, `v2` = 2.7.0 added `worldBlacklist`, `v3` = announcements removed, `v4` = 2.8.0 added `mobBlacklist`). Leave it alone.
+`configVersion` is internal bookkeeping (`v1` = 2.6.0, `v2` = 2.7.0 added `worldBlacklist`, `v3` = announcements removed, `v4` = 2.8.0 added `mobBlacklist`, `v5` = 2.10.0 added the `void` tier). Leave it alone.
 
 ## Reloading
 

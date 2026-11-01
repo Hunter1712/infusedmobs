@@ -1,14 +1,15 @@
 # Infused Mobs
 
-A Fabric mod for Minecraft **1.20.1 / 1.21.1 / 26.3** that gives vanilla hostile mobs **occult-infused tiers** with randomized abilities — fully configurable via JSON.
+A Fabric mod for Minecraft **1.21.1 / 26.3** that gives vanilla hostile mobs **occult-infused tiers** with randomized abilities — fully configurable via JSON.
 
-One project page covers all three generations. Download the jar whose `+<mc>` suffix matches your game version:
+One project page covers both supported generations. Download the jar whose `+<mc>` suffix matches your game version:
 
 | Minecraft | Java | Jar |
 |-----------|------|-----|
-| 1.20.1 | 17+ | `infusedmobs-2.9.2+1.20.1.jar` |
-| 1.21.1 | 21+ | `infusedmobs-2.9.2+1.21.1.jar` |
-| 26.3 | 25+ | `infusedmobs-2.9.2+26.3.jar` |
+| 1.21.1 | 21+ | `infusedmobs-2.10.0+1.21.1.jar` |
+| 26.3 | 25+ | `infusedmobs-2.10.0+26.3.jar` |
+
+**1.20.1 is no longer supported** — 2.9.2 is the last jar for that version.
 
 ## Quick install
 
@@ -19,11 +20,12 @@ One project page covers all three generations. Download the jar whose `+<mc>` su
 
 ## Tiers
 
-- **Cinder** — 40% · 1 ability · 1.5× HP/XP · green
-- **Shade** — 20% · 2 abilities · 2× HP/XP · yellow
-- **Doom** — 10% · 3 abilities · 4× HP/XP · red
+- **Cinder** — 20% · 1 ability · 1× HP/XP · green
+- **Shade** — 10% · 2 abilities · 2× HP/XP · yellow
+- **Doom** — 5% · 3 abilities · 3× HP/XP · red
+- **Void** — 2.5% · 4 abilities · 4× HP/XP · purple
 
-Tiers roll as a single uniform decision, so the effective shares equal the configured chances and about **30% of hostile mobs stay vanilla** at defaults.
+Tiers roll as a single uniform decision, so the effective shares equal the configured chances and about **62.5% of hostile mobs stay vanilla** at defaults. Tier nametags are off by default — `showNametags` / `/infusedmobs nametag on` shows them.
 
 ## Documentation
 
@@ -39,7 +41,7 @@ Tiers roll as a single uniform decision, so the effective shares equal the confi
 ./gradlew build
 ```
 
-Jars land in `<version>/build/libs/` (e.g. `1.20.1/build/libs/infusedmobs-2.9.2+1.20.1.jar`). Run Gradle on JDK 25 — Loom needs 21+, and the 26.3 module needs 25. Each jar still targets its game's Java: 17 / 21 / 25. Build with system Gradle (`gradle build`); the wrapper is kept for contributors without a local install.
+Jars land in `<version>/build/libs/` (e.g. `1.21.1/build/libs/infusedmobs-2.10.0+1.21.1.jar`). Run Gradle on JDK 25 — Loom needs 21+, and the 26.3 module needs 25. Each jar still targets its game's Java: 21 / 25. Build with system Gradle (`gradle build`); the wrapper is kept for contributors without a local install.
 
 ## Licence
 

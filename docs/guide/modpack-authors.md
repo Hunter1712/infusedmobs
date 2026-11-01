@@ -33,7 +33,7 @@ Put an edited `config/infusedmobs.json` in your pack's overrides so every instan
 
 | Goal | Setting |
 |------|---------|
-| Make infused mobs rarer | Lower the three `spawnChance` values |
+| Make infused mobs rarer | Lower the `spawnChance` values (including `void`) |
 | Make them weaker | Lower `healthMultiplier` / `xpMultiplier`; lower effect amplifiers |
 | Make abilities shorter | Lower `hurtEffectDuration` / `tickEffectDuration` |
 | Tame death explosions | Lower `combustExplosionPower` (range `0.5 … 10`) |
@@ -66,4 +66,4 @@ It persists in the world save. For dimension-level control, use `worldBlacklist`
 | Launch-time toggle | `infusedmobs:enabled` gamerule (per world save) |
 | Dimension toggle | `worldBlacklist` config list (supports `modid:*` wildcards) |
 | Type toggle | `mobBlacklist` config list (wildcards via config; command takes exact ids) |
-| Tested versions | MC 1.20.1 / 1.21.1 / 26.3, Fabric Loader 0.19.3+ |
+| Tested versions | MC 1.21.1 / 26.3, Fabric Loader 0.19.3+ |

@@ -59,14 +59,14 @@ Spawns an Infused Mob at the block you're looking at (up to 10 blocks away; cons
 
 | Argument | Required? | Notes |
 |----------|-----------|-------|
-| `<tier>` | Yes | `cinder`, `shade` or `doom` (case-insensitive) |
+| `<tier>` | Yes | `cinder`, `shade`, `doom` or `void` (case-insensitive) |
 | `[entity]` | No | Any entity type; defaults to `zombie` |
 | `[abilities]` | No | Space-separated ability IDs, e.g. `"bane thorns"` |
 
 Rules:
 
 - **Abilities require an entity argument.** Type `/infusedmobs summon doom zombie "bane thorns"`, not `/infusedmobs summon doom "bane thorns"`.
-- If you omit `[abilities]`, the mob draws random abilities for its tier (1/2/3 by default).
+- If you omit `[abilities]`, the mob draws random abilities for its tier (1/2/3/4 by default).
 - Ability IDs are tab-completed and fuzzy-checked. A typo produces an **unknown ID** error with a "did you mean" hint and the valid ID list — nothing is spawned.
 - Summon **bypasses the Mob Blacklist and the MONSTER-category restriction**, so you can tier any mob, including passive ones.
 - Summon **refuses** in a blacklisted dimension or when `infusedmobs:enabled` is `false`, with a distinct message telling you which gate is closed.

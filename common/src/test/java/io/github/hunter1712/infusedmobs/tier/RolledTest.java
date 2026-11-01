@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Behaviour tests for the shared {@link Rolled} persistence model.
  * <p>
- * Every version adapter (codec on 26.x, NBT on 1.21.x/1.20.x) encodes to and
+ * Every version adapter (codec on 26.x, NBT on 1.21.x) encodes to and
  * decodes from the same ({@code kind}, {@code tier}, {@code abilityIds})
  * shape through these helpers, so the lenient rules (unknown kind, unknown
  * tier, missing fields all degrade to {@link Rolled.Nothing} instead of

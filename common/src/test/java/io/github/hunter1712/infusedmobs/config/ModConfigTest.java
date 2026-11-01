@@ -30,6 +30,7 @@ class ModConfigTest {
         assertNotNull(defaults.cinder());
         assertNotNull(defaults.shade());
         assertNotNull(defaults.doom());
+        assertNotNull(defaults.voidTier());
     }
 
     @Test
@@ -38,6 +39,7 @@ class ModConfigTest {
         assertEquals(defaults.cinder(), defaults.forTier(MobTier.CINDER));
         assertEquals(defaults.shade(), defaults.forTier(MobTier.SHADE));
         assertEquals(defaults.doom(), defaults.forTier(MobTier.DOOM));
+        assertEquals(defaults.voidTier(), defaults.forTier(MobTier.VOID));
     }
 
     @Test
@@ -45,7 +47,7 @@ class ModConfigTest {
         ModConfig.Instance defaults = ModConfig.Instance.defaults();
 
         // Tier fields are positive
-        for (var tc : new ModConfig.TierConfig[]{defaults.cinder(), defaults.shade(), defaults.doom()}) {
+        for (var tc : new ModConfig.TierConfig[]{defaults.cinder(), defaults.shade(), defaults.doom(), defaults.voidTier()}) {
             assertTrue(tc.spawnChance() > 0, "spawnChance should be > 0");
             assertTrue(tc.abilityCount() > 0, "abilityCount should be > 0");
             assertTrue(tc.healthMultiplier() >= 1.0, "healthMultiplier should be >= 1.0");
@@ -78,17 +80,17 @@ class ModConfigTest {
     }
 
     @Test
-    void showNametagsDefaultsToTrue() {
-        assertTrue(ModConfig.Instance.defaults().showNametags());
+    void showNametagsDefaultsToFalse() {
+        assertFalse(ModConfig.Instance.defaults().showNametags());
     }
 
     @Test
     void withShowNametagsCreatesCopy() {
         ModConfig.Instance original = ModConfig.Instance.defaults();
-        assertTrue(original.showNametags());
+        assertFalse(original.showNametags());
 
-        ModConfig.Instance toggled = original.withShowNametags(false);
-        assertFalse(toggled.showNametags());
+        ModConfig.Instance toggled = original.withShowNametags(true);
+        assertTrue(toggled.showNametags());
         assertEquals(original.cinder(), toggled.cinder());
     }
 
@@ -292,9 +294,10 @@ class ModConfigTest {
         assertTrue(upgraded.worldBlacklist().isEmpty());
         assertNotNull(upgraded.mobBlacklist());
         assertTrue(upgraded.mobBlacklist().isEmpty());
-        assertEquals(4, upgraded.configVersion());
-        // Tier settings preserved
+        assertEquals(5, upgraded.configVersion());
+        // Tier settings preserved; the new void tier is filled from defaults
         assertEquals(VALID_TIER, upgraded.cinder());
+        assertNotNull(upgraded.voidTier());
     }
 
     @Test
@@ -305,7 +308,7 @@ class ModConfigTest {
 
         ModConfig.Instance backfilled = current.backfillFromDefaults();
         assertEquals(List.of("minecraft:overworld"), backfilled.worldBlacklist());
-        assertEquals(4, backfilled.configVersion());
+        assertEquals(5, backfilled.configVersion());
     }
 
     @Test

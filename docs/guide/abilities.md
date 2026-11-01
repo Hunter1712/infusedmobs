@@ -20,7 +20,7 @@ HURT covers two directions in one event:
 Rules that apply to all HURT abilities:
 
 - **Players only.** Mob-vs-mob hits never trigger abilities.
-- **A shield block negates every HURT ability** on 1.21.1 and 26.3. On 1.20.1 the legacy damage event doesn't report shield blocks, so a fully-blocked hit still fires them — see [version-differences.md](version-differences.md).
+- **A shield block negates every HURT ability** on every supported version — a fully-blocked hit fires none of them, Thorns included.
 - **Thorns reflection never re-triggers abilities** — the reflected damage uses a distinct damage type, so two Thorns mobs can't ping-pong forever.
 - Effect-based abilities use the configured HURT duration and amplifier (see [configuration.md](configuration.md)).
 
@@ -67,9 +67,9 @@ Duration and amplifier are configurable (`tickEffectDuration`, `tickEffectAmplif
 
 When a mob with Rupture dies it spawns **2 copies of itself**:
 
-- Each copy has **Cinder stats** (1.5× base health) but starts at **60% of that boosted max health**.
+- Each copy has **Cinder stats** — vanilla max health at the Cinder 1.0× multiplier — but starts at **60% of it**.
 - Each copy gets **1 random ability**, drawn with `rupture` and `bequest` excluded — so a copy can never split again and never draws dead-weight support. Any other ability, including **Combust**, is possible.
-- Copies show a **grey nametag** with no Tier colour, and grant the **Cinder XP multiplier**.
+- Copies show a **grey nametag** with no Tier colour, and grant the **Cinder XP multiplier** (vanilla at defaults).
 - Their split-copy status is persisted **before** they enter the world, so chunk reloads and restarts keep them as copies — they can never be re-rolled into a normal Infused Mob.
 
 ### Combust
@@ -97,7 +97,7 @@ When a mob with Bequest dies it passes its **other** abilities to nearby infused
 |---|---|
 | Total abilities | 15 (8 HURT, 4 TICK, 3 DEATH) |
 | Draw | Random, **no duplicates within a mob**, from the whole pool |
-| Count | Set by the tier's `abilityCount` (1 / 2 / 3 by default) |
+| Count | Set by the tier's `abilityCount` (1 / 2 / 3 / 4 by default) |
 | Cap | The configured count is clamped to the live pool size (15) |
 | Cinder | Never draws `bequest` (a single-Ability support would have nothing to migrate) |
 

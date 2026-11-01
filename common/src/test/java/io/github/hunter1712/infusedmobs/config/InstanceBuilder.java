@@ -13,6 +13,7 @@ public final class InstanceBuilder {
     private ModConfig.TierConfig cinder = VALID_TIER;
     private ModConfig.TierConfig shade = VALID_TIER;
     private ModConfig.TierConfig doom = VALID_TIER;
+    private ModConfig.TierConfig voidTier = VALID_TIER;
     private int hurtEffectDuration = 60;
     private int hurtEffectAmplifier = 0;
     private int tickEffectDuration = 60;
@@ -51,6 +52,11 @@ public final class InstanceBuilder {
         return this;
     }
 
+    public InstanceBuilder voidTier(ModConfig.TierConfig tier) {
+        voidTier = tier;
+        return this;
+    }
+
     public InstanceBuilder hurtAmplifier(int amplifier) {
         hurtEffectAmplifier = amplifier;
         return this;
@@ -83,7 +89,7 @@ public final class InstanceBuilder {
 
     public ModConfig.Instance build() {
         return new ModConfig.Instance(
-                cinder, shade, doom,
+                cinder, shade, doom, voidTier,
                 hurtEffectDuration, hurtEffectAmplifier,
                 tickEffectDuration, tickEffectAmplifier,
                 infernoFireSeconds, acidArmorDamage,
