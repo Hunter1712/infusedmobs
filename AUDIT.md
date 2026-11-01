@@ -2,52 +2,49 @@
 
 ## What this repo does
 
-Infused Mobs is a Fabric mod for Minecraft 1.21.1 and 26.3. Hostile mobs spawn with a random occult tier (Cinder, Shade, Doom, Void) and random abilities from a pool, all configurable through `config/infusedmobs.json`. Rolls are persisted per world so mobs keep their tier and abilities across chunk reloads and restarts; commands and the `infusedmobs:enabled` gamerule gate where the mod runs.
+Infused Mobs is a Fabric mod for Minecraft 1.21.1 and 26.3. Hostile mobs spawn with a random occult tier (Cinder, Shade, Doom, Void) and random abilities from a shared pool, configured through `config/infusedmobs.json`. Rolls are persisted per world so mobs keep their tier and abilities across chunk reloads and restarts; commands (`/infusedmobs`) and the `infusedmobs:enabled` gamerule gate where the mod runs.
 
-Load assumed: one Minecraft process at a time — a client or a single server with a few players, tens of hostile mobs loaded at once. The config file is written only at startup and by operator commands; there is no network input, no money, and no auth.
+## Load assumed
+
+One Minecraft process at a time — a client or a single dedicated server with a few players, tens of hostile mobs loaded at once. The config file is written only at startup and by operator commands. There is no network input, no money, no auth, and no shared state between processes.
 
 ## Must fix
 
-1. **Config save can destroy the user's config** (`common/src/main/java/io/github/hunter1712/infusedmobs/config/ModConfig.java:L116-125`, `L56-71`)
-   - **What this is:** `save()` writes the new JSON straight over `config/infusedmobs.json` with `Files.writeString`; `load()` replaces any unreadable or malformed file with defaults.
-   - **Problem:** A crash or kill mid-write (from `/infusedmobs nametag on`, `world add`, etc.) leaves a truncated file. The next start treats it as malformed, logs a warning, and overwrites it with defaults — all user tier edits, blacklists and the nametag preference are gone with no backup. The same fate awaits a hand-edited file with a typo.
-   - **Fix:** Write to a temp file in the same folder and move it atomically (`Files.move` with `REPLACE_EXISTING` and `ATOMIC_MOVE`). On a malformed file, keep the original (rename it to `.bak`) instead of destroying it.
-   - **If we skip it:** A crash during a config write silently loses all user config.
-
-2. **`CONTEXT.md` documents the wrong tier balance** (`CONTEXT.md:L14`)
-   - **What this is:** `CONTEXT.md` is the repo's domain glossary — the single source of truth for terms such as Tier.
-   - **Problem:** Its Tier paragraph says Cinder 40% / 1.5×, Shade 20% / 2×, Doom 10% / 4×, Void 5% / 6×. The code (`MobTier.java:L16-19`) and `tiers.md`, `README.md`, `configuration.md` say 20% / 1.0×, 10% / 2.0×, 5% / 3.0×, 2.5% / 4.0×.
-   - **Fix:** Update the Tier paragraph and numbers in `CONTEXT.md` to match `MobTier`.
-   - **If we skip it:** Anyone reading the domain doc builds or advises on the wrong balance.
+None.
 
 ## Should fix
 
-3. **Bequest ignores the per-tier ability limit** (`common/.../tier/MobTierManager.java:L327-357`, `common/.../ability/effect/BequestEffect.java:L54`)
-   - **What this is:** When an Infused Mob dies, Bequest migrates its abilities to the nearest living Tiered allies. Natural draws cap each tier at its configured `abilityCount` (Cinder = 1).
-   - **Problem:** `planBequest` and `grantAbility` cap at the whole ability pool (15), not at the heir's tier limit. A Cinder can collect bane, thorns, chill… across several nearby deaths and end with far more abilities than its tier allows — every one still firing.
-   - **Fix:** Cap grants at `config.forTier(heir's tier).abilityCount()` instead of the pool size, and pass that per-heir cap through `planBequest`.
-   - **If we skip it:** The ability-count balance rule is breakable through normal play, and the same rule lives in two places that disagree.
+1. **Config disk paths are defensive but untested** (`common/src/main/java/io/github/hunter1712/infusedmobs/config/ModConfig.java`, `load` and `save`)
+   - **What this is:** `load()` reads `config/infusedmobs.json` through FabricLoader; malformed JSON is moved to `.bak` and replaced with defaults. `save()` rewrites the file atomically (temp file + `ATOMIC_MOVE`) and logs failures at error level.
+   - **Problem:** The test suite runs without Minecraft or FabricLoader, so neither the corrupt-file rescue path nor the atomic save is exercised by a test. A future refactor could reintroduce a truncated write or silent disk failure; the first sign would be a user's missing config, visible only in `latest.log`.
+   - **Fix:** Add disk-backed tests for `load`/`save` once a FabricLoader test harness exists; keep the atomic move, the `.bak` backup, and error-level logging.
+   - **If we skip it:** Config corruption or loss is detected by users, never by CI.
 
-4. **Config disk failures are silent and untested** (`ModConfig.java:L125`; `:common:test`)
-   - **What this is:** `load()` and `save()` touch disk (`config/infusedmobs.json`); `save()` reports failures with `LOGGER.warn`, and the test suite explicitly does not load from disk.
-   - **Problem:** A read-only config folder, a missing directory, or a full disk makes config changes via `/infusedmobs reload`, `nametag` or `world` silently fail — operators only see it in `latest.log` if they look. No test covers these paths.
-   - **Fix:** Log save/load failures at `error` so they cannot be missed; add disk-path tests if a FabricLoader test harness is added later.
-   - **If we skip it:** Config edits appear to succeed while nothing is persisted, found only by chance.
+2. **Tiered mob health may multiply on every world restart** (`common/src/main/java/io/github/hunter1712/infusedmobs/tier/MobTierManager.java`, `trackTiered`; `tier/RestartRestoreTest.java`)
+   - **What this is:** on chunk/world reload a mob's persisted roll is restored, and restore re-applies the tier health multiplier to the mob's max health.
+   - **Problem:** `RestartRestoreTest` assumes vanilla never persists modified attribute bases, so each restore multiplies a fresh vanilla base exactly once. If 1.21.1 or 26.3 persist attribute bases to the world save (the `Attributes` NBT tag), a Cinder mob's max health is multiplied by 1.5 on every restart — 2.25× after two restarts, compounding.
+   - **Concrete check:** spawn a Cinder, note its max health, restart the world, confirm max health is unchanged.
+   - **Fix:** Verify on a real server; if health creeps, make the restore apply the boost only once.
+   - **If we skip it:** stat creep on every restart, compounding across restarts.
+   - **Note:** could not be verified here without launching Minecraft.
 
 ## Nice to have
 
-5. **Two roll maps kept in sync by caller discipline** (`MobTierManager.java`, `TierRollStore.java`, `TierSavedData.java`)
-   - **What this is:** `MobTierManager.SHARED` (live memory) and each world's `TierSavedData.store` (disk) are separate `UUID -> Rolled` maps. Every write must hit both (`put` then `storeRoll`; `removeMob` clears both).
-   - **Problem:** It works today, but a future caller that updates one map without the other diverges live state from persisted state — mobs re-roll or keep old tiers after reload.
-   - **Fix:** Funnel persistence through one method (for example `MobTierManager.persist(uuid, rolled)`) so callers cannot forget one side.
-   - **If we skip it:** A missed sync call is a silent, hard-to-reproduce bug.
+3. **Two near-identical roll-tracking methods** (`MobTierManager.trackTiered` and `trackSplit`)
+   - **What this is:** both store the roll in the shared registry, apply a health boost, and set the nametag; only the multiplier, health fraction and nametag source differ.
+   - **Fix:** Merge into one private `track` method. About -15 lines, no behaviour change.
+   - **If we skip it:** two sites to keep in sync when health or nametag logic changes.
 
 ## Verdict
 
-Needs work — fix 1 and 2 first; 1 risks silent data loss and 2 corrupts the domain doc the whole team reads.
+Healthy. No must-fix findings; verify finding 2 on a live server and add the disk tests in finding 1 when a test harness exists.
+
+## Lean
+
+- About -15 lines possible (finding 3), 0 dependencies removable.
 
 ## Not checked
 
 - In-game behaviour on 1.21.1 and 26.3 (no Minecraft instance available to launch).
-- Full remapped jar builds (`:1.21.1:build`, `:26.3:build` jars were not produced here; `:common:test` — 262 tests — and all `compileJava` tasks passed).
-- Offline resolution of `loom_version=1.17-SNAPSHOT`.
+- Full remapped jar builds for both subprojects (`:1.21.1:build`, `:26.3:build`).
+- Whether Minecraft persists `LivingEntity` attribute bases to NBT — the assumption behind finding 2.
