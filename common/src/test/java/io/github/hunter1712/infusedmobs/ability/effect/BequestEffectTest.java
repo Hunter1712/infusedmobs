@@ -86,7 +86,26 @@ class BequestEffectTest {
 
         assertEquals(List.of(
                 new BequestEffect.Conversion(0, "bane"),
-                new BequestEffect.Conversion(1, "bane")), conversions);
+                new BequestEffect.Conversion(1, "thorns")), conversions);
+    }
+
+    @Test
+    void abilitiesRotateUntilExhaustedThenNone() {
+        ModConfig.Instance config = config();
+
+        // dead has bane, chill, ward; three eligible allies get one each, a fourth gets none
+        List<BequestEffect.Conversion> conversions =
+                BequestEffect.planConversions(List.of("bane", "chill", "ward"), List.of(
+                        candidate("minecraft:zombie", MobCategory.MONSTER.name(), false, false, 1.0),
+                        candidate("minecraft:skeleton", MobCategory.MONSTER.name(), false, false, 2.0),
+                        candidate("minecraft:spider", MobCategory.MONSTER.name(), false, false, 3.0),
+                        candidate("minecraft:creeper", MobCategory.MONSTER.name(), false, false, 4.0)),
+                        config, true);
+
+        assertEquals(List.of(
+                new BequestEffect.Conversion(0, "bane"),
+                new BequestEffect.Conversion(1, "chill"),
+                new BequestEffect.Conversion(2, "ward")), conversions);
     }
 
     @Test
@@ -159,8 +178,7 @@ class BequestEffectTest {
                         config, true);
 
         assertEquals(List.of(
-                new BequestEffect.Conversion(0, "bane"),
-                new BequestEffect.Conversion(1, "bane")), conversions);
+                new BequestEffect.Conversion(0, "bane")), conversions);
     }
 
     @Test

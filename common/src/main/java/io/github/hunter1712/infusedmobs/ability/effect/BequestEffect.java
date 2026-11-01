@@ -83,11 +83,12 @@ public final class BequestEffect {
     }
 
     /**
-     * Pure conversion plan behind {@link #apply}: selects the dead mob's first
-     * transferable (non-Bequest) ability, then pairs it with each eligible
-     * ally — not already tiered, not a split copy, a hostile monster, not
-     * blacklisted — nearest first. Each ally receives exactly one ability,
-     * honouring Cinder's ability-count cap.
+     * Pure conversion plan behind {@link #apply}: selects the dead mob's
+     * transferable (non-Bequest) abilities, then hands them out one at a time
+     * to each eligible ally — not already tiered, not a split copy, a hostile
+     * monster, not blacklisted — nearest first. Each ally receives at most one
+     * ability (Cinder's cap); once the dead mob's abilities are exhausted the
+     * remaining allies convert with none.
      *
      * @param deadIds   the dead mob's persisted ability ids
      * @param allies    nearby mobs, pre-sorted nearest first
@@ -99,21 +100,22 @@ public final class BequestEffect {
                                             ModConfig.Instance config, boolean gateActive) {
         if (!gateActive) return List.of();
 
-        String firstId = deadIds.stream()
+        List<String> transferable = deadIds.stream()
                 .filter(id -> !id.equals(AbilityRegistry.BEQUEST_ID))
                 .distinct()
-                .findFirst()
-                .orElse(null);
-        if (firstId == null) return List.of();
+                .toList();
+        if (transferable.isEmpty()) return List.of();
 
         List<Conversion> conversions = new ArrayList<>();
+        int abilityIndex = 0;
         for (int i = 0; i < allies.size(); i++) {
             MobCandidate ally = allies.get(i);
             if (ally.tiered()) continue;
             if (ally.splitCopy()) continue;
             if (!MobCategory.MONSTER.name().equals(ally.category())) continue;
             if (ally.entityKey() != null && config.isMobBlacklisted(ally.entityKey())) continue;
-            conversions.add(new Conversion(i, firstId));
+            if (abilityIndex >= transferable.size()) continue;  // exhausted — no ability left to give
+            conversions.add(new Conversion(i, transferable.get(abilityIndex++)));
         }
         return conversions;
     }
