@@ -61,7 +61,7 @@ public final class MobTickTrigger {
      */
     public static void tickServer(MinecraftServer server) {
         tickOnce(
-                MobTierManager.getTickMobUUIDs(),
+                MobTierManager.tickCapableMobUUIDs(),
                 uuid -> MobTierManager.findMob(server, uuid),
                 mob -> MobTierManager.getAbilitiesByTrigger(mob, TriggerType.TICK),
                 AbilityRegistry::fireTick);

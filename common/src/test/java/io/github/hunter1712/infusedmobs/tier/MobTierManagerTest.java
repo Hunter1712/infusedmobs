@@ -92,36 +92,6 @@ class MobTierManagerTest {
         assertNull(MobTierManager.decideTier(0.5, config));
     }
 
-    // ========================================
-    // nametagText — roll-to-text mapping
-    // ========================================
-
-    @Test
-    void nametagTextUsesTierColourForTieredRoll() {
-        Rolled rolled = new Rolled.Tiered(MobTier.DOOM, List.of("bane"));
-
-        assertEquals("§cBane §fZombie",
-                MobTierManager.nametagText(rolled, List.of("Bane"), "Zombie"));
-    }
-
-    @Test
-    void nametagTextIsGreyscaleForSplitRoll() {
-        Rolled rolled = new Rolled.Split(List.of("ward"));
-
-        assertEquals("§7Ward §fZombie",
-                MobTierManager.nametagText(rolled, List.of("Ward"), "Zombie"));
-    }
-
-    @Test
-    void nametagTextOmitsEmptyAbilityNames() {
-        assertEquals("§aZombie",
-                MobTierManager.nametagText(
-                        new Rolled.Tiered(MobTier.CINDER, List.of()), List.of(), "Zombie"));
-        assertEquals("§7Zombie",
-                MobTierManager.nametagText(
-                        new Rolled.Split(List.of()), List.of(), "Zombie"));
-    }
-
     @Test
     void decideTierEffectiveSharesMatchContractByEnumeration() {
         ModConfig.Instance config = ModConfig.Instance.defaults();

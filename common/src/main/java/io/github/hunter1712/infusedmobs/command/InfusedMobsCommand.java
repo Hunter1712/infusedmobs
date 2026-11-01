@@ -8,6 +8,7 @@ import io.github.hunter1712.infusedmobs.platform.PlatformHooks;
 import io.github.hunter1712.infusedmobs.tier.InfusionGate;
 import io.github.hunter1712.infusedmobs.tier.MobTier;
 import io.github.hunter1712.infusedmobs.tier.MobTierManager;
+import io.github.hunter1712.infusedmobs.tier.NametagPresentation;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -208,7 +209,7 @@ public final class InfusedMobsCommand {
         CommandSourceStack source = ctx.getSource();
         ModConfig.Instance updated = ModConfig.get().withShowNametags(show);
         ModConfig.swapInstance(updated);
-        MobTierManager.refreshNametags(source.getServer());
+        NametagPresentation.refresh(source.getServer(), show);
         source.sendSuccess(() -> Component.literal(
                 "§eNametags turned " + (show ? "§aON" : "§cOFF")), true);
         return 1;
@@ -385,7 +386,7 @@ public final class InfusedMobsCommand {
     private static int executeReload(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
         ModConfig.load(AbilityRegistry.getAllAbilityIds().size());
-        MobTierManager.refreshNametags(source.getServer());
+        NametagPresentation.refresh(source.getServer(), ModConfig.get().showNametags());
         source.sendSuccess(() -> Component.literal("§aConfig reloaded from disk."), true);
         return 1;
     }
