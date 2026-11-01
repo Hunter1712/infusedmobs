@@ -11,7 +11,7 @@ A hostile Mob that was assigned a Tier and one or more Abilities at spawn.
 _Avoid_: Tiered Mob, Infused Entity
 
 **Tier**:
-A power level — Cinder (40%, 1 ability, 1.5× HP/XP, green), Shade (20%, 2, 2×, yellow), Doom (10%, 3, 4×, red) or Void (5%, 4, 6×, purple) — that sets spawn chance, ability count and multipliers.
+A power level — Cinder (20%, 1 ability, 1× HP/XP, green), Shade (10%, 2, 2×, yellow), Doom (10%, 3, 3×, red) or Void (2.5%, 4, 4×, purple) — that sets spawn chance, ability count and multipliers.
 _Avoid_: Level, Rank, Difficulty
 
 **Ability**:

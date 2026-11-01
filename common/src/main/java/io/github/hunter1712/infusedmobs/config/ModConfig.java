@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -68,9 +69,13 @@ public final class ModConfig {
                     }
                     return;
                 }
-                LOGGER.warn("Config file {} is malformed or invalid — rewriting with defaults.", configPath);
+                // Malformed JSON: keep the original file for the user to inspect,
+                // mark it as a backup, and fall back to in-memory defaults.
+                Path backup = configPath.resolveSibling(configPath.getFileName() + ".bak");
+                Files.move(configPath, backup, StandardCopyOption.REPLACE_EXISTING);
+                LOGGER.error("Config file {} is malformed — moved to {} and replaced with defaults.", configPath, backup);
             } catch (IOException e) {
-                LOGGER.warn("Could not read config file {} — rewriting with defaults.", configPath, e);
+                LOGGER.error("Could not read config file {} — leaving it untouched and using defaults.", configPath, e);
             }
         }
 
@@ -112,17 +117,19 @@ public final class ModConfig {
         save();
     }
 
-    /** Persists the current config to disk. */
+    /** Persists the current config to disk atomically. */
     public static void save() {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("infusedmobs.json");
         try {
             Files.createDirectories(configPath.getParent());
             String json = GSON.toJson(instance);
-            Files.writeString(configPath, json);
+            Path temp = Files.createTempFile(configPath.getParent(), configPath.getFileName().toString(), ".tmp");
+            Files.writeString(temp, json);
+            Files.move(temp, configPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            // Non-critical — in-memory config is still correct, but log so
-            // silent disk failures are diagnosable.
-            LOGGER.warn("Could not write config file {} — in-memory values remain active.", configPath, e);
+            // Non-critical — in-memory config is still correct, but log at
+            // error so silent disk failures cannot be missed.
+            LOGGER.error("Could not write config file {} — in-memory values remain active.", configPath, e);
         }
     }
 
@@ -235,11 +242,19 @@ public final class ModConfig {
          */
         Instance clamped(int abilityPoolSize, List<String> warnings) {
             int upperCount = Math.max(1, abilityPoolSize);
+            TierConfig cinderFixed = clampedTier("cinder", cinder, MobTier.CINDER, upperCount, warnings);
+            TierConfig shadeFixed = clampedTier("shade", shade, MobTier.SHADE, upperCount, warnings);
+            TierConfig doomFixed = clampedTier("doom", doom, MobTier.DOOM, upperCount, warnings);
+            TierConfig voidFixed = clampedTier("void", voidTier, MobTier.VOID, upperCount, warnings);
+            double total = voidFixed.spawnChance() + doomFixed.spawnChance()
+                    + shadeFixed.spawnChance() + cinderFixed.spawnChance();
+            if (total > 1.0) {
+                warnings.add("Config field 'spawnChance' tiers sum to " + total
+                        + " — exceeds 1.0; tiers rolled last may never spawn. "
+                        + "Roll order is void, doom, shade, cinder.");
+            }
             return new Instance(
-                    clampedTier("cinder", cinder, MobTier.CINDER, upperCount, warnings),
-                    clampedTier("shade", shade, MobTier.SHADE, upperCount, warnings),
-                    clampedTier("doom", doom, MobTier.DOOM, upperCount, warnings),
-                    clampedTier("void", voidTier, MobTier.VOID, upperCount, warnings),
+                    cinderFixed, shadeFixed, doomFixed, voidFixed,
                     clampMin("hurtEffectDuration", hurtEffectDuration, 1, warnings),
                     clampRange("hurtEffectAmplifier", hurtEffectAmplifier, 0, MAX_AMPLIFIER, warnings),
                     clampMin("tickEffectDuration", tickEffectDuration, 1, warnings),

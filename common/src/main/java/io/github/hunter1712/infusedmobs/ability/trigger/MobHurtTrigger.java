@@ -62,9 +62,24 @@ public final class MobHurtTrigger {
 
     /** Player hit an Infused Mob — fire its Thorns Ability exactly once if present. */
     private static void onMobDamagedByPlayer(Mob mob, DamageSource source, float damageTaken) {
-        if (!(source.getEntity() instanceof Player player)) return;
+        Player player = findPlayerAttacker(source);
+        if (player == null) return;
         if (!MobTierManager.hasAbility(mob, AbilityRegistry.THORNS_ID)) return;
         AbilityRegistry.fireThorns(mob, player, damageTaken);
+    }
+
+    /**
+     * Resolves the player who dealt this damage, following projectile owners so a
+     * Thorns mob reflects back at an archer just as an offensive mob poisons one.
+     */
+    private static Player findPlayerAttacker(DamageSource source) {
+        Entity attacker = source.getEntity();
+        if (attacker instanceof Player player) return player;
+        if (attacker instanceof Projectile projectile) {
+            Entity owner = projectile.getOwner();
+            if (owner instanceof Player player) return player;
+        }
+        return null;
     }
 
     /** Player damaged by an Infused Mob (melee or projectile) — fire its offensive HURT Abilities. */

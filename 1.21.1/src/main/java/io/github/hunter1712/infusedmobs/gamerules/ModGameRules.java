@@ -38,9 +38,15 @@ public final class ModGameRules {
         // No-op: ENABLED is registered via GameRuleRegistry at class init.
     }
 
-    /** Version-agnostic check for the master switch. */
+    /** Version-agnostic check for the master switch. Resolves a missing rule to its default. */
     public static boolean isEnabled(MinecraftServer server) {
-        return server.getGameRules().getBoolean(ENABLED);
+        try {
+            return server.getGameRules().getBoolean(ENABLED);
+        } catch (IllegalArgumentException absent) {
+            // Rule not yet stored in this save (e.g. pre-registration or an
+            // older save) — resolve to the registered default instead of throwing.
+            return defaultValue();
+        }
     }
 
     // ========================================

@@ -36,9 +36,10 @@ class ModConfigClampTest {
 
         assertEquals(1.0, clamped(instance).cinder().spawnChance());
         List<String> warnings = clampWarnings(instance);
-        assertEquals(1, warnings.size());
+        assertEquals(2, warnings.size());
         assertTrue(warnings.get(0).contains("cinder.spawnChance"));
         assertTrue(warnings.get(0).contains("1.5"));
+        assertTrue(warnings.get(1).contains("tiers sum to"));
     }
 
     @Test
@@ -150,7 +151,7 @@ class ModConfigClampTest {
 
     @Test
     void clampingIsIdempotent() {
-        var bad = new ModConfig.TierConfig(2.0, 99, 0.5, 0.5);
+        var bad = new ModConfig.TierConfig(0.5, 99, 0.5, 0.5);
         var instance = InstanceBuilder.valid()
                 .cinder(bad).hurtAmplifier(-2).explosion(50.0f)
                 .blacklist(List.of("bogus")).build();
